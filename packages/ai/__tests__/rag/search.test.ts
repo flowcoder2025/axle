@@ -16,6 +16,18 @@ vi.mock("@axle/db", () => ({
   prisma: { $queryRaw: mockQueryRaw },
 }));
 
+vi.mock("@prisma/client", () => ({
+  Prisma: {
+    sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
+      strings,
+      values,
+      _tag: "PrismaRawSql",
+    }),
+    raw: (value: string) => ({ value, _tag: "PrismaRaw" }),
+    empty: { strings: [""], values: [], _tag: "PrismaRawSql" },
+  },
+}));
+
 // ── SUT imports ───────────────────────────────────────────────────────────────
 import { semanticSearch, hybridSearch } from "../../src/rag/search.js";
 import { resetOpenAIClient } from "../../src/rag/embeddings.js";
