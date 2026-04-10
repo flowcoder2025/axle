@@ -198,6 +198,8 @@ model Client {
   financialReports  FinancialReport[]
   schedules         Schedule[]
   emailLogs         EmailLog[]
+  estimates         Estimate[]
+  contracts         Contract[]
 
   organization      Organization @relation(fields: [orgId], references: [id])
   createdAt         DateTime     @default(now())
@@ -424,6 +426,8 @@ model Project {
   estimates         Estimate[]
   contracts         Contract[]
   emailLogs         EmailLog[]
+  comments          ProjectComment[]
+  portalTokens      PortalToken[]
 
   client            Client       @relation(fields: [clientId], references: [id])
   createdAt         DateTime     @default(now())
@@ -602,6 +606,7 @@ enum NotificationType {
   HANDOFF
   ESTIMATE_SENT
   BUNDLE_COMPLETE
+  MENTION
 }
 
 enum EmailType {
@@ -835,6 +840,7 @@ model Estimate {
   documentId        String?
   sentAt            DateTime?
 
+  client            Client   @relation(fields: [clientId], references: [id])
   project           Project? @relation(fields: [projectId], references: [id])
   createdAt         DateTime @default(now())
 
@@ -857,8 +863,62 @@ model Contract {
   documentId        String?
   signedAt          DateTime?
 
+  client            Client   @relation(fields: [clientId], references: [id])
   project           Project? @relation(fields: [projectId], references: [id])
   createdAt         DateTime @default(now())
 
   @@index([clientId])
+}
+
+// ========================================
+// Collaboration Models (Phase 12)
+// ========================================
+
+model ProjectComment {
+  id          String   @id @default(cuid())
+  projectId   String
+  authorId    String
+  body        String
+  mentions    String[] // user IDs mentioned via @
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([authorId])
+}
+
+enum PortalTokenScope {
+  FULL
+  UPLOAD
+  JOURNAL
+}
+
+model PortalToken {
+  id          String           @id @default(cuid())
+  token       String           @unique @default(cuid())
+  projectId   String
+  clientId    String
+  scope       PortalTokenScope @default(FULL)
+  expiresAt   DateTime?
+  createdBy   String
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  journals    PortalJournal[]
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+}
+
+model PortalJournal {
+  id          String      @id @default(cuid())
+  tokenId     String
+  title       String
+  content     String
+  submittedAt DateTime    @default(now())
+
+  token       PortalToken @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+
+  @@index([tokenId])
 }
