@@ -78,6 +78,30 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
 
     const { status, ...rest } = parsed.data;
 
+    // Validate status transition
+    if (status !== undefined) {
+      const from = result.item.status as string;
+      const to = status as string;
+      const validTransitions: Record<string, string[]> = {
+        PENDING: ["REQUESTED"],
+        REQUESTED: ["UPLOADED", "PENDING"],
+        UPLOADED: ["VERIFIED", "PENDING"],
+        VERIFIED: ["PENDING"],
+      };
+      const allowed = validTransitions[from] ?? [];
+      if (!allowed.includes(to)) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "INVALID_TRANSITION",
+              message: `Cannot transition from ${from} to ${to}`,
+            },
+          },
+          { status: 400 },
+        );
+      }
+    }
+
     // Build timestamp updates based on status transition
     const statusData: Record<string, unknown> = {};
     if (status === "REQUESTED" && result.item.status === "PENDING") {

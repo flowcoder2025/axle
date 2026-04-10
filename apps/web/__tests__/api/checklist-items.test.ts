@@ -373,7 +373,13 @@ describe("PATCH /api/projects/[projectId]/checklist/[itemId]", () => {
     expect(body.error.code).toBe("VALIDATION_ERROR");
   });
 
-  it("updates status to VERIFIED and returns 200", async () => {
+  it("updates status to VERIFIED and returns 200 (from UPLOADED)", async () => {
+    // UPLOADED → VERIFIED is the only valid path to VERIFIED
+    mockChecklistItem.findFirst.mockResolvedValue({
+      ...ITEM,
+      status: "UPLOADED",
+      uploadedAt: new Date().toISOString(),
+    });
     const updated = { ...ITEM, status: "VERIFIED" };
     mockChecklistItem.update.mockResolvedValue(updated);
     const { PATCH } = await import(
@@ -390,6 +396,23 @@ describe("PATCH /api/projects/[projectId]/checklist/[itemId]", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.status).toBe("VERIFIED");
+  });
+
+  it("returns 400 for invalid status transition (PENDING → VERIFIED)", async () => {
+    const { PATCH } = await import(
+      "../../app/api/projects/[projectId]/checklist/[itemId]/route"
+    );
+    const req = makeRequest(
+      "PATCH",
+      "http://localhost/api/projects/proj-1/checklist/item-1",
+      { status: "VERIFIED" },
+    );
+    const res = await PATCH(req as never, {
+      params: Promise.resolve({ projectId: "proj-1", itemId: "item-1" }),
+    });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe("INVALID_TRANSITION");
   });
 
   it("sets requestedAt when transitioning PENDING→REQUESTED", async () => {

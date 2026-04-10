@@ -126,7 +126,6 @@ export function ExpiringDocumentsWidget() {
                 {doc.autoRenew && (
                   <RefreshCw
                     className="h-3 w-3 text-muted-foreground"
-                    title="자동 갱신"
                     aria-label="자동 갱신"
                   />
                 )}

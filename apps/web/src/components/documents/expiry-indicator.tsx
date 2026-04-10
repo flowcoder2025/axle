@@ -64,7 +64,6 @@ export function ExpiryIndicator({ expiresAt, autoRenew }: ExpiryIndicatorProps) 
       {autoRenew && (
         <RefreshCw
           className="h-3 w-3 text-muted-foreground"
-          title="자동 갱신"
           aria-label="자동 갱신"
         />
       )}

@@ -12,6 +12,7 @@ import { prisma } from "@axle/db";
 import { getSignedUrl, BUCKETS } from "@axle/storage";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Prisma } from "@prisma/client";
+import { extractStoragePath } from "@/lib/utils/storage";
 
 /** File types that are eligible for OCR */
 const OCR_SUPPORTED_TYPES = new Set([
@@ -19,19 +20,6 @@ const OCR_SUPPORTED_TYPES = new Set([
   "image/png",
   "application/pdf",
 ]);
-
-/**
- * Extract the storage path from a full Supabase public URL.
- * URL format: https://<project>.supabase.co/storage/v1/object/public/<bucket>/<path>
- */
-function extractStoragePath(fileUrl: string): string {
-  const marker = `/object/public/${BUCKETS.documents}/`;
-  const idx = fileUrl.indexOf(marker);
-  if (idx !== -1) {
-    return fileUrl.slice(idx + marker.length);
-  }
-  return fileUrl;
-}
 
 /**
  * Parse the Gemini text response as JSON, stripping markdown fences if present.
@@ -120,7 +108,7 @@ export async function triggerDocumentOcr(documentId: string): Promise<void> {
   try {
     // 4. Download file via signed URL
     const storagePath = extractStoragePath(document.fileUrl);
-    const { url: signedUrl } = await getSignedUrl(BUCKETS.documents, storagePath);
+    const { url: signedUrl } = await getSignedUrl(BUCKETS.DOCUMENTS, storagePath);
 
     const response = await fetch(signedUrl);
     if (!response.ok) {

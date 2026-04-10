@@ -7,22 +7,9 @@ import {
   unauthorizedResponse,
   notFoundResponse,
 } from "@/lib/api-helpers";
+import { extractStoragePath } from "@/lib/utils/storage";
 
 type RouteContext = { params: Promise<{ documentId: string }> };
-
-/**
- * Extract the storage path from a full public URL.
- * The URL format from Supabase is:
- *   https://<project>.supabase.co/storage/v1/object/public/<bucket>/<path>
- */
-function extractStoragePath(fileUrl: string): string {
-  const marker = `/object/public/${BUCKETS.DOCUMENTS}/`;
-  const idx = fileUrl.indexOf(marker);
-  if (idx !== -1) {
-    return fileUrl.slice(idx + marker.length);
-  }
-  return fileUrl;
-}
 
 // GET /api/documents/[documentId]/download
 // Returns JSON with a signed URL valid for 1 hour.

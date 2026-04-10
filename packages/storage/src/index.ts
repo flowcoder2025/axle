@@ -5,7 +5,7 @@
  * - createStorageClient, resetStorageClient, BUCKETS  → Supabase client singleton
  * - uploadFile, uploadFromFormData, StorageValidationError → Upload helpers
  * - getSignedUrl, getPublicUrl, deleteFile, getFileMetadata → Download / URL helpers
- * - generateThumbnail, getImageDimensions, generatePdfPreview → Image utilities
+ * - generateThumbnail, getImageDimensions → Image utilities
  * - Types: BucketName, UploadResult, SignedUrlResult, StorageConfig, FileMetadata, UploadOptions
  */
 
@@ -33,7 +33,6 @@ export {
 export {
   generateThumbnail,
   getImageDimensions,
-  generatePdfPreview,
 } from "./image.js";
 
 // Types

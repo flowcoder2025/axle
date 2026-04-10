@@ -54,7 +54,7 @@ export async function POST(
 
     let uploadResult;
     try {
-      uploadResult = await uploadFromFormData(BUCKETS.documents, formData, "file");
+      uploadResult = await uploadFromFormData(BUCKETS.DOCUMENTS, formData, "file");
     } catch (err) {
       if (err instanceof StorageValidationError) {
         return NextResponse.json(

@@ -66,6 +66,7 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
         category: true,
         ocrStatus: true,
         expiresAt: true,
+        autoRenew: true,
         version: true,
         createdAt: true,
         clientId: true,
@@ -86,6 +87,7 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
     ocrStatus: d.ocrStatus as OcrStatus,
     expiresAt: d.expiresAt ? d.expiresAt.toISOString() : null,
     createdAt: d.createdAt.toISOString(),
+    autoRenew: d.autoRenew ?? false,
   }));
 
   return (

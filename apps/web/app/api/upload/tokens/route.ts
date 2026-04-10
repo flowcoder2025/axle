@@ -124,9 +124,10 @@ export async function POST(req: NextRequest) {
 
     const uploadUrl = `/api/upload/${token}`;
 
-    return NextResponse.json({
-      data: { token, uploadUrl, expiresAt, documentId },
-    });
+    return NextResponse.json(
+      { data: { token, uploadUrl, expiresAt, documentId } },
+      { status: 201 },
+    );
   } catch (err) {
     return handleInternalError(err);
   }

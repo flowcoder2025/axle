@@ -29,7 +29,7 @@ vi.mock("@axle/auth", () => ({
 }));
 
 vi.mock("@axle/storage", () => ({
-  BUCKETS: { documents: "documents" },
+  BUCKETS: { DOCUMENTS: "documents", RECORDINGS: "recordings", EXPORTS: "exports" },
   uploadFromFormData: vi.fn(),
   StorageValidationError: class StorageValidationError extends Error {
     constructor(message: string) {
@@ -324,7 +324,7 @@ describe("POST /api/upload/tokens", () => {
         clientId: "client-1",
       }) as never
     );
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     const body = await res.json();
     expect(body.data).toMatchObject({
       uploadUrl: expect.stringContaining("/api/upload/"),
@@ -360,7 +360,7 @@ describe("POST /api/upload/tokens", () => {
         clientId: "client-1",
       }) as never
     );
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     const body = await res.json();
     expect(body.data.documentId).toBe("doc-existing");
 

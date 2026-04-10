@@ -39,6 +39,7 @@ export interface DocumentRow {
   category: DocCategory;
   ocrStatus: OcrStatus;
   expiresAt: string | null;
+  autoRenew: boolean;
   version: number;
   createdAt: string;
   clientId: string;
@@ -255,7 +256,7 @@ export function DocumentTable({
                   <TableCell>
                     <ExpiryIndicator
                       expiresAt={doc.expiresAt}
-                      autoRenew={false}
+                      autoRenew={doc.autoRenew}
                     />
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">

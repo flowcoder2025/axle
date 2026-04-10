@@ -75,14 +75,3 @@ export async function getImageDimensions(
   return { width: metadata.width, height: metadata.height };
 }
 
-/**
- * PDF preview generation — not implemented yet.
- *
- * @stub
- */
-export async function generatePdfPreview(
-  _pdfBuffer: Buffer,
-  _page: number = 1
-): Promise<Buffer> {
-  throw new Error("PDF preview generation is not implemented yet");
-}

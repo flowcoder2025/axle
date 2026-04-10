@@ -9,6 +9,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockPrismaChecklistTemplate = {
   findMany: vi.fn(),
+  count: vi.fn(),
   findFirst: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
@@ -194,6 +195,7 @@ describe("GET /api/checklist-templates", () => {
 
   it("returns all templates for the user's org", async () => {
     mockPrismaChecklistTemplate.findMany.mockResolvedValue([TEMPLATE]);
+    mockPrismaChecklistTemplate.count.mockResolvedValue(1);
     const { GET } = await import(
       "../../app/api/checklist-templates/route"
     );
@@ -203,10 +205,14 @@ describe("GET /api/checklist-templates", () => {
     const body = await res.json();
     expect(body.data).toHaveLength(1);
     expect(body.data[0].id).toBe("tmpl-1");
+    expect(body.total).toBe(1);
+    expect(body.page).toBe(1);
+    expect(body.pageSize).toBe(20);
   });
 
   it("filters by projectType query param", async () => {
     mockPrismaChecklistTemplate.findMany.mockResolvedValue([TEMPLATE]);
+    mockPrismaChecklistTemplate.count.mockResolvedValue(1);
     const { GET } = await import(
       "../../app/api/checklist-templates/route"
     );
@@ -227,6 +233,7 @@ describe("GET /api/checklist-templates", () => {
 
   it("scopes query to the user's orgId", async () => {
     mockPrismaChecklistTemplate.findMany.mockResolvedValue([]);
+    mockPrismaChecklistTemplate.count.mockResolvedValue(0);
     const { GET } = await import(
       "../../app/api/checklist-templates/route"
     );

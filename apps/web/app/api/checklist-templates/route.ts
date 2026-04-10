@@ -22,18 +22,28 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const projectTypeParam = searchParams.get("projectType");
+    const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
+    const pageSize = Math.min(
+      100,
+      Math.max(1, Number(searchParams.get("pageSize") ?? "20") || 20),
+    );
 
     const where: Record<string, unknown> = { orgId: user.orgId };
     if (projectTypeParam) {
       where.projectType = projectTypeParam;
     }
 
-    const data = await prisma.checklistTemplate.findMany({
-      where,
-      orderBy: [{ projectType: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
-    });
+    const [data, total] = await Promise.all([
+      prisma.checklistTemplate.findMany({
+        where,
+        orderBy: [{ projectType: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.checklistTemplate.count({ where }),
+    ]);
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data, total, page, pageSize });
   } catch (error) {
     return handleInternalError(error);
   }

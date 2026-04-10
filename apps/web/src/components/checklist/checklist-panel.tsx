@@ -195,6 +195,9 @@ export function ChecklistPanel({ projectId, clientId }: ChecklistPanelProps) {
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
   const [actionError, setActionError] = useState<string | null>(null);
 
+  // Maps itemId → upload token (populated after POST /api/upload/tokens succeeds)
+  const [uploadTokens, setUploadTokens] = useState<Record<string, string>>({});
+
   // ---------------------------------------------------------------------------
   // Data fetching
   // ---------------------------------------------------------------------------
@@ -266,6 +269,11 @@ export function ChecklistPanel({ projectId, clientId }: ChecklistPanelProps) {
           (json as { error?: { message?: string } }).error?.message ?? "요청에 실패했습니다.",
         );
       }
+      const json = await res.json();
+      const token = (json as { data?: { token?: string } }).data?.token;
+      if (token) {
+        setUploadTokens((prev) => ({ ...prev, [item.id]: token }));
+      }
       await fetchItems();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "요청에 실패했습니다.");
@@ -326,6 +334,7 @@ export function ChecklistPanel({ projectId, clientId }: ChecklistPanelProps) {
 
   function renderItemAction(item: ChecklistItem) {
     const busy = actionLoading[item.id] ?? false;
+    const uploadToken = uploadTokens[item.id];
 
     switch (item.status) {
       case "PENDING":
@@ -350,9 +359,9 @@ export function ChecklistPanel({ projectId, clientId }: ChecklistPanelProps) {
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Clock className="h-3.5 w-3.5 shrink-0" />
             <span>대기중</span>
-            {item.document && (
+            {uploadToken && (
               <a
-                href={`/api/upload/${item.documentId}`}
+                href={`/api/upload/${uploadToken}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="ml-1 underline underline-offset-2 hover:text-foreground"
