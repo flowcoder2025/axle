@@ -107,6 +107,26 @@ model Membership {
 }
 
 // ========================================
+// ReBAC Models (WI-008)
+// ========================================
+
+// Zanzibar-style relation tuple: subject has `relation` on object in namespace
+model RelationTuple {
+  id          String @id @default(cuid())
+  namespace   String
+  objectId    String
+  relation    String
+  subjectType String
+  subjectId   String
+
+  createdAt DateTime @default(now())
+
+  @@unique([namespace, objectId, relation, subjectType, subjectId])
+  @@index([subjectType, subjectId])
+  @@index([namespace, objectId, relation])
+}
+
+// ========================================
 // CRM Models (WI-005)
 // ========================================
 
