@@ -68,3 +68,7 @@ export type {
 // ── Journal Report Generator (WI-069) ────────────────────────────────────────
 export { generateJournalReportDocx } from "./generators/journal-report.js";
 export type { JournalReportInput, JournalEntry } from "./generators/journal-report.js";
+
+// ── Financial Report Generator (WI-101) ──────────────────────────────────────
+export { generateFinancialReportDocx } from "./generators/financial-report.js";
+export type { FinancialReportInput } from "./generators/financial-report.js";
