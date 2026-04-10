@@ -62,8 +62,12 @@ VERIFY_PROMPT
 
 # 결과 파싱
 if [[ -f "$RESULT_FILE" ]]; then
-  MISSING=$(grep -c '^- ❌' "$RESULT_FILE" 2>/dev/null || echo "0")
-  INCOMPLETE=$(grep -c '^- ⚠️' "$RESULT_FILE" 2>/dev/null || echo "0")
+  MISSING=$(grep -c '^- ❌' "$RESULT_FILE" 2>/dev/null || true)
+  MISSING=$(echo "$MISSING" | tail -1)
+  MISSING=${MISSING:-0}
+  INCOMPLETE=$(grep -c '^- ⚠️' "$RESULT_FILE" 2>/dev/null || true)
+  INCOMPLETE=$(echo "$INCOMPLETE" | tail -1)
+  INCOMPLETE=${INCOMPLETE:-0}
 
   if [[ "$MISSING" -gt 0 || "$INCOMPLETE" -gt 0 ]]; then
     echo ""

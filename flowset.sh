@@ -1944,6 +1944,7 @@ main() {
         local fc=$(git diff --stat HEAD~1 HEAD 2>/dev/null | tail -1 | grep -oE '[0-9]+ file' | grep -oE '[0-9]+' || echo "0")
         if [[ $merge_result -eq 0 ]]; then
           mark_wi_done "$current_wi" || true
+          consecutive_no_progress=0  # WI 완료 = progress
           record_pattern "$current_wi" "merged" "" "$iter_elapsed" || true
           log_trace "$current_wi" "merged" "$fc" "$iter_elapsed"
         else
@@ -1957,6 +1958,7 @@ main() {
         current_sha_now=$(git rev-parse HEAD 2>/dev/null || echo "none")
         if [[ "$current_sha_now" != "$last_git_sha" ]]; then
           mark_wi_done "$current_wi" || true
+          consecutive_no_progress=0  # WI 완료 = progress
           last_git_sha="$current_sha_now"
           record_pattern "$current_wi" "merged" "" "$iter_elapsed" || true
           log_trace "$current_wi" "merged" "0" "$iter_elapsed"
