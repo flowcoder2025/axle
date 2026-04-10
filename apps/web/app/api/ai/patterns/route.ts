@@ -18,6 +18,9 @@ const querySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
 
+// SkillPatterns are global (shared across all orgs) — no orgId filter needed.
+// Patterns represent learned AI task signatures, not org-specific data.
+
 // GET /api/ai/patterns — list SkillPatterns sorted by successCount desc
 export async function GET(req: NextRequest) {
   try {

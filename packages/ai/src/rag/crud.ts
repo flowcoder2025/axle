@@ -1,6 +1,7 @@
 import { prisma } from "@axle/db";
 import { Prisma } from "@prisma/client";
 import { generateEmbedding } from "./embeddings.js";
+import { vectorParam } from "./vector-utils.js";
 
 export interface EmbeddingRecord {
   id: string;
@@ -8,13 +9,6 @@ export interface EmbeddingRecord {
   sourceId: string;
   content: string;
   metadata: unknown;
-}
-
-function toVectorLiteral(embedding: number[]): string {
-  if (embedding.some((v) => !Number.isFinite(v))) {
-    throw new Error("Embedding contains non-finite values");
-  }
-  return `[${embedding.join(",")}]`;
 }
 
 /**
@@ -28,7 +22,6 @@ export async function upsertEmbedding(
   metadata?: Record<string, unknown>
 ): Promise<void> {
   const embedding = await generateEmbedding(content);
-  const vectorLiteral = toVectorLiteral(embedding);
   const metadataJson = metadata !== undefined ? JSON.stringify(metadata) : null;
 
   await prisma.$executeRaw(
@@ -39,7 +32,7 @@ export async function upsertEmbedding(
         ${sourceType},
         ${sourceId},
         ${content},
-        ${Prisma.raw(`'${vectorLiteral}'::vector`)},
+        ${vectorParam(embedding)},
         ${metadataJson}::jsonb
       )
       ON CONFLICT ("sourceType", "sourceId") DO UPDATE SET

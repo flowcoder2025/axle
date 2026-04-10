@@ -128,8 +128,8 @@ function scoreCriterion(
     const score = Math.round(lengthScore * 10) / 10;
     const feedback =
       wordCount >= criterion.minWords
-        ? `문서 분량이 충분합니다 (${wordCount}자).`
-        : `문서 분량이 부족합니다 (${wordCount}자 / 권장 ${criterion.minWords}자 이상).`;
+        ? `문서 분량이 충분합니다 (${wordCount}단어).`
+        : `문서 분량이 부족합니다 (${wordCount}단어 / 권장 ${criterion.minWords}단어 이상).`;
     return { score, feedback };
   }
 

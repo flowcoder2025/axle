@@ -314,7 +314,7 @@ describe("PATCH /api/ai/jobs/[jobId]", () => {
 
   it("updates job status", async () => {
     vi.mocked(getCurrentUser).mockResolvedValue(authedUser as any);
-    mockAiJob.findFirst.mockResolvedValue({ id: "job-1" });
+    mockAiJob.findFirst.mockResolvedValue({ id: "job-1", status: "RUNNING" });
     const updatedJob = { id: "job-1", status: "COMPLETED" };
     mockAiJob.update.mockResolvedValue(updatedJob);
 

@@ -39,8 +39,9 @@ export type {
 // RAG — document embedding + semantic search
 export {
   generateEmbedding,
-  createDocumentEmbedding,
   resetOpenAIClient,
+  toVectorLiteral,
+  vectorParam,
   semanticSearch,
   hybridSearch,
   upsertEmbedding,

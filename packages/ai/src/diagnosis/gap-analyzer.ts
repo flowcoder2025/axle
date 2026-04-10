@@ -1,5 +1,4 @@
 import { prisma } from "@axle/db";
-import { semanticSearch } from "../rag/index.js";
 
 export interface GapAnalysisInput {
   clientId: string;
@@ -365,17 +364,8 @@ export async function analyzeGaps(input: GapAnalysisInput): Promise<GapResult> {
   const requirements = toObject(program.requirements);
   const eligibility = toObject(program.eligibility);
 
-  // Use RAG to find relevant documents from the knowledge base
-  let ragContext = "";
-  try {
-    const ragResults = await semanticSearch(program.name, {
-      sourceType: "program",
-      limit: 3,
-    });
-    ragContext = ragResults.map((r) => r.content).join("\n");
-  } catch {
-    // RAG is best-effort; proceed without it
-  }
+  // TODO(Phase 14): integrate RAG-powered deep analysis via agent-bridge.
+  // Semantic search will enrich gap analysis with learned program context.
 
   const gaps: GapItem[] = [
     ...detectDocumentGaps(client.documents, requirements),
@@ -396,9 +386,6 @@ export async function analyzeGaps(input: GapAnalysisInput): Promise<GapResult> {
     summary = `${client.name}의 '${program.name}' 준비도: ${readiness}점. ` +
       `중요 미충족 항목 ${criticalCount}건, 주요 미충족 항목 ${majorCount}건이 있습니다.`;
   }
-
-  // Suppress unused variable warning for ragContext (will be used in Phase 14)
-  void ragContext;
 
   return { gaps, readiness, summary };
 }

@@ -1,6 +1,7 @@
 import { prisma } from "@axle/db";
 import { Prisma } from "@prisma/client";
 import { generateEmbedding } from "./embeddings.js";
+import { vectorParam } from "./vector-utils.js";
 
 export interface SearchResult {
   id: string;
@@ -31,9 +32,7 @@ export async function semanticSearch(
   const queryEmbedding = await generateEmbedding(query);
   const limit = options?.limit ?? 10;
   const threshold = options?.threshold ?? 0.7;
-
-  // Format vector literal — safe because values come from OpenAI (validated floats)
-  const vectorLiteral = `[${queryEmbedding.join(",")}]`;
+  const vec = vectorParam(queryEmbedding);
 
   const results: SearchResult[] = await prisma.$queryRaw(
     options?.sourceType
@@ -44,11 +43,11 @@ export async function semanticSearch(
             "sourceId",
             content,
             metadata,
-            (1 - (embedding <=> ${Prisma.raw(`'${vectorLiteral}'::vector`)})) AS similarity
+            (1 - (embedding <=> ${vec})) AS similarity
           FROM "DocumentEmbedding"
           WHERE "sourceType" = ${options.sourceType}
-            AND (1 - (embedding <=> ${Prisma.raw(`'${vectorLiteral}'::vector`)})) > ${threshold}
-          ORDER BY embedding <=> ${Prisma.raw(`'${vectorLiteral}'::vector`)}
+            AND (1 - (embedding <=> ${vec})) > ${threshold}
+          ORDER BY embedding <=> ${vec}
           LIMIT ${limit}
         `
       : Prisma.sql`
@@ -58,10 +57,10 @@ export async function semanticSearch(
             "sourceId",
             content,
             metadata,
-            (1 - (embedding <=> ${Prisma.raw(`'${vectorLiteral}'::vector`)})) AS similarity
+            (1 - (embedding <=> ${vec})) AS similarity
           FROM "DocumentEmbedding"
-          WHERE (1 - (embedding <=> ${Prisma.raw(`'${vectorLiteral}'::vector`)})) > ${threshold}
-          ORDER BY embedding <=> ${Prisma.raw(`'${vectorLiteral}'::vector`)}
+          WHERE (1 - (embedding <=> ${vec})) > ${threshold}
+          ORDER BY embedding <=> ${vec}
           LIMIT ${limit}
         `
   );
@@ -87,7 +86,7 @@ export async function hybridSearch(
 ): Promise<SearchResult[]> {
   const queryEmbedding = await generateEmbedding(query);
   const limit = options?.limit ?? 10;
-  const vectorLiteral = `[${queryEmbedding.join(",")}]`;
+  const vec = vectorParam(queryEmbedding);
 
   // RRF constant — rank 60 is the standard default
   const K = 60;
@@ -98,8 +97,8 @@ export async function hybridSearch(
           WITH semantic AS (
             SELECT
               id,
-              (1 - (embedding <=> ${Prisma.raw(`'${vectorLiteral}'::vector`)})) AS score,
-              ROW_NUMBER() OVER (ORDER BY embedding <=> ${Prisma.raw(`'${vectorLiteral}'::vector`)}) AS rank
+              (1 - (embedding <=> ${vec})) AS score,
+              ROW_NUMBER() OVER (ORDER BY embedding <=> ${vec}) AS rank
             FROM "DocumentEmbedding"
             WHERE "sourceType" = ${options.sourceType}
             LIMIT 50
@@ -137,8 +136,8 @@ export async function hybridSearch(
           WITH semantic AS (
             SELECT
               id,
-              (1 - (embedding <=> ${Prisma.raw(`'${vectorLiteral}'::vector`)})) AS score,
-              ROW_NUMBER() OVER (ORDER BY embedding <=> ${Prisma.raw(`'${vectorLiteral}'::vector`)}) AS rank
+              (1 - (embedding <=> ${vec})) AS score,
+              ROW_NUMBER() OVER (ORDER BY embedding <=> ${vec}) AS rank
             FROM "DocumentEmbedding"
             LIMIT 50
           ),

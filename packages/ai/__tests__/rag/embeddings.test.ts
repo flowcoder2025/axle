@@ -32,9 +32,9 @@ vi.mock("@prisma/client", () => ({
 // ── SUT imports ───────────────────────────────────────────────────────────────
 import {
   generateEmbedding,
-  createDocumentEmbedding,
   resetOpenAIClient,
 } from "../../src/rag/embeddings.js";
+import { upsertEmbedding } from "../../src/rag/crud.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const FAKE_EMBEDDING = Array.from({ length: 1536 }, (_, i) => i / 1536);
@@ -89,7 +89,7 @@ describe("WI-057: generateEmbedding", () => {
   });
 });
 
-describe("WI-057: createDocumentEmbedding", () => {
+describe("WI-057: upsertEmbedding (formerly createDocumentEmbedding)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
@@ -103,14 +103,14 @@ describe("WI-057: createDocumentEmbedding", () => {
   });
 
   it("calls generateEmbedding and executes raw SQL upsert", async () => {
-    await createDocumentEmbedding("document", "doc-1", "Some content");
+    await upsertEmbedding("document", "doc-1", "Some content");
 
     expect(mocks.create).toHaveBeenCalledOnce();
     expect(mocks.executeRaw).toHaveBeenCalledOnce();
   });
 
   it("passes a Prisma.sql object to $executeRaw", async () => {
-    await createDocumentEmbedding("client", "client-42", "Client description");
+    await upsertEmbedding("client", "client-42", "Client description");
 
     expect(mocks.executeRaw).toHaveBeenCalledOnce();
     const [sqlArg] = mocks.executeRaw.mock.calls[0] as [{ _tag: string }];
@@ -118,7 +118,7 @@ describe("WI-057: createDocumentEmbedding", () => {
   });
 
   it("includes metadata when provided", async () => {
-    await createDocumentEmbedding("program", "prog-7", "Program text", {
+    await upsertEmbedding("program", "prog-7", "Program text", {
       tags: ["startup", "tech"],
     });
 
@@ -127,7 +127,7 @@ describe("WI-057: createDocumentEmbedding", () => {
 
   it("handles undefined metadata without error", async () => {
     await expect(
-      createDocumentEmbedding("document", "doc-2", "Content without meta")
+      upsertEmbedding("document", "doc-2", "Content without meta")
     ).resolves.toBeUndefined();
   });
 });

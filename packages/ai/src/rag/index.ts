@@ -1,8 +1,12 @@
 export {
   generateEmbedding,
-  createDocumentEmbedding,
   resetOpenAIClient,
 } from "./embeddings.js";
+
+export {
+  toVectorLiteral,
+  vectorParam,
+} from "./vector-utils.js";
 
 export {
   semanticSearch,

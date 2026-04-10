@@ -510,7 +510,7 @@ model DocumentEmbedding {
   embedding         Unsupported("vector(1536)")
   metadata          Json?
 
-  @@index([sourceType, sourceId])
+  @@unique([sourceType, sourceId])
 }
 
 model ResearchJournal {

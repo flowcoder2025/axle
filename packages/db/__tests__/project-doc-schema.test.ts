@@ -197,8 +197,8 @@ describe("WI-006: Project/Document schema — 7 models", () => {
       expect(schema).toContain('Unsupported("vector(1536)")');
     });
 
-    it("has @@index on sourceType and sourceId", () => {
-      expect(schema).toContain("@@index([sourceType, sourceId])");
+    it("has @@unique on sourceType and sourceId", () => {
+      expect(schema).toContain("@@unique([sourceType, sourceId])");
     });
   });
 

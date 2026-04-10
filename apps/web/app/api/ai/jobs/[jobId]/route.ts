@@ -56,6 +56,13 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
   }
 }
 
+const VALID_JOB_TRANSITIONS: Record<string, string[]> = {
+  QUEUED: ["RUNNING"],
+  RUNNING: ["COMPLETED", "FAILED"],
+  COMPLETED: [], // terminal
+  FAILED: ["QUEUED"], // allow retry
+};
+
 // PATCH /api/ai/jobs/[jobId] — update job status (for agent-bridge webhook callbacks)
 export async function PATCH(req: NextRequest, ctx: RouteContext) {
   try {
@@ -76,7 +83,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         id: jobId,
         project: { client: { orgId: user.orgId } },
       },
-      select: { id: true },
+      select: { id: true, status: true },
     });
 
     if (!existing) return notFoundResponse("AiJob");
@@ -86,6 +93,20 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     if (!parsed.success) return handleZodError(parsed.error);
 
     const { status, output, errorMessage, durationMs } = parsed.data;
+
+    // Validate status transition
+    const allowedNext = VALID_JOB_TRANSITIONS[existing.status] ?? [];
+    if (!allowedNext.includes(status)) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "INVALID_TRANSITION",
+            message: `Cannot transition job from ${existing.status} to ${status}.`,
+          },
+        },
+        { status: 400 }
+      );
+    }
 
     const updated = await prisma.aiJob.update({
       where: { id: jobId },
