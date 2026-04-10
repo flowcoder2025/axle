@@ -254,7 +254,7 @@ describe("GET /api/clients/[clientId]/certificates", () => {
 });
 
 describe("POST /api/clients/[clientId]/certificates", () => {
-  it("returns 422 for missing required type", async () => {
+  it("returns 400 for missing required type", async () => {
     const { POST } = await import(
       "../../app/api/clients/[clientId]/certificates/route"
     );
@@ -266,12 +266,12 @@ describe("POST /api/clients/[clientId]/certificates", () => {
     const res = await POST(req as never, {
       params: Promise.resolve({ clientId: "client-1" }),
     });
-    expect(res.status).toBe(422);
+    expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error.code).toBe("VALIDATION_ERROR");
   });
 
-  it("returns 422 for missing required subjectName", async () => {
+  it("returns 400 for missing required subjectName", async () => {
     const { POST } = await import(
       "../../app/api/clients/[clientId]/certificates/route"
     );
@@ -283,7 +283,7 @@ describe("POST /api/clients/[clientId]/certificates", () => {
     const res = await POST(req as never, {
       params: Promise.resolve({ clientId: "client-1" }),
     });
-    expect(res.status).toBe(422);
+    expect(res.status).toBe(400);
   });
 
   it("creates a certificate and returns 201", async () => {
@@ -444,7 +444,7 @@ describe("PATCH /api/clients/[clientId]/certificates/[certificateId]", () => {
     expect(res.status).toBe(404);
   });
 
-  it("returns 422 for invalid validFrom format", async () => {
+  it("returns 400 for invalid validFrom format", async () => {
     mockPrismaCertificate.findFirst.mockResolvedValue(CERTIFICATE);
     const { PATCH } = await import(
       "../../app/api/clients/[clientId]/certificates/[certificateId]/route"
@@ -457,7 +457,7 @@ describe("PATCH /api/clients/[clientId]/certificates/[certificateId]", () => {
     const res = await PATCH(req as never, {
       params: Promise.resolve({ clientId: "client-1", certificateId: "cert-1" }),
     });
-    expect(res.status).toBe(422);
+    expect(res.status).toBe(400);
   });
 
   it("converts date strings to Date objects on update", async () => {

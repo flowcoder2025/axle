@@ -12,6 +12,7 @@ import {
   Input,
   Label,
 } from "@axle/ui";
+import { BusinessCardUpload, type BusinessCardData } from "./business-card-upload";
 
 // ---------------------------------------------------------------------------
 // Schema (mirrors server-side contactCreateSchema)
@@ -93,6 +94,7 @@ export function ContactForm({
   const [errors, setErrors] = useState<Partial<Record<keyof ContactFormValues, string>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [showOcr, setShowOcr] = useState(false);
 
   // Reset when dialog opens/closes or contact changes
   function handleOpenChange(nextOpen: boolean) {
@@ -165,12 +167,43 @@ export function ContactForm({
     }
   }
 
+  function handleOcrResult(data: BusinessCardData) {
+    setValues((prev) => ({
+      ...prev,
+      name: data.name ?? prev.name,
+      position: data.position ?? prev.position,
+      department: data.department ?? prev.department,
+      phone: data.phone ?? prev.phone,
+      email: data.email ?? prev.email,
+    }));
+    setShowOcr(false);
+  }
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "인물 편집" : "인물 추가"}</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>{isEdit ? "인물 편집" : "인물 추가"}</DialogTitle>
+            {!showOcr && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowOcr(true)}
+              >
+                명함 OCR
+              </Button>
+            )}
+          </div>
         </DialogHeader>
+
+        {showOcr && (
+          <BusinessCardUpload
+            onResult={handleOcrResult}
+            onClose={() => setShowOcr(false)}
+          />
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           {/* Name */}

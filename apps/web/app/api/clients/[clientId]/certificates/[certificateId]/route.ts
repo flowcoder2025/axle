@@ -61,11 +61,19 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
     );
   }
 
-  const { clientId, certificateId } = await params;
-  const result = await resolveCertificate(clientId, certificateId, user.orgId);
-  if (!result.ok) return result.response;
+  try {
+    const { clientId, certificateId } = await params;
+    const result = await resolveCertificate(clientId, certificateId, user.orgId);
+    if (!result.ok) return result.response;
 
-  return NextResponse.json({ data: result.certificate });
+    return NextResponse.json({ data: result.certificate });
+  } catch (error) {
+    console.error("Error:", error);
+    return NextResponse.json(
+      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      { status: 500 },
+    );
+  }
 }
 
 /**
@@ -81,45 +89,53 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     );
   }
 
-  const { clientId, certificateId } = await params;
-  const result = await resolveCertificate(clientId, certificateId, user.orgId);
-  if (!result.ok) return result.response;
-
-  let body: unknown;
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json(
-      { error: { code: "BAD_REQUEST", message: "Invalid JSON body" } },
-      { status: 400 },
-    );
-  }
+    const { clientId, certificateId } = await params;
+    const result = await resolveCertificate(clientId, certificateId, user.orgId);
+    if (!result.ok) return result.response;
 
-  const parsed = certificateUpdateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      {
-        error: {
-          code: "VALIDATION_ERROR",
-          message: parsed.error.issues.map((i) => i.message).join(", "),
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Invalid JSON body" } },
+        { status: 400 },
+      );
+    }
+
+    const parsed = certificateUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "VALIDATION_ERROR",
+            message: parsed.error.issues.map((i) => i.message).join(", "),
+          },
         },
+        { status: 400 },
+      );
+    }
+
+    const { validFrom, validTo, ...rest } = parsed.data;
+
+    const updated = await prisma.certificate.update({
+      where: { id: certificateId },
+      data: {
+        ...rest,
+        ...(validFrom !== undefined ? { validFrom: validFrom ? new Date(validFrom) : null } : {}),
+        ...(validTo !== undefined ? { validTo: validTo ? new Date(validTo) : null } : {}),
       },
-      { status: 422 },
+    });
+
+    return NextResponse.json({ data: updated });
+  } catch (error) {
+    console.error("Error:", error);
+    return NextResponse.json(
+      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      { status: 500 },
     );
   }
-
-  const { validFrom, validTo, ...rest } = parsed.data;
-
-  const updated = await prisma.certificate.update({
-    where: { id: certificateId },
-    data: {
-      ...rest,
-      ...(validFrom !== undefined ? { validFrom: validFrom ? new Date(validFrom) : null } : {}),
-      ...(validTo !== undefined ? { validTo: validTo ? new Date(validTo) : null } : {}),
-    },
-  });
-
-  return NextResponse.json({ data: updated });
 }
 
 /**
@@ -135,11 +151,19 @@ export async function DELETE(_req: NextRequest, { params }: RouteContext) {
     );
   }
 
-  const { clientId, certificateId } = await params;
-  const result = await resolveCertificate(clientId, certificateId, user.orgId);
-  if (!result.ok) return result.response;
+  try {
+    const { clientId, certificateId } = await params;
+    const result = await resolveCertificate(clientId, certificateId, user.orgId);
+    if (!result.ok) return result.response;
 
-  await prisma.certificate.delete({ where: { id: certificateId } });
+    await prisma.certificate.delete({ where: { id: certificateId } });
 
-  return new NextResponse(null, { status: 204 });
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    console.error("Error:", error);
+    return NextResponse.json(
+      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      { status: 500 },
+    );
+  }
 }

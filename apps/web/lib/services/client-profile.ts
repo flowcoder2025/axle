@@ -211,8 +211,8 @@ export async function generateMasterProfile(clientId: string): Promise<void> {
   await prisma.client.update({
     where: { id: clientId },
     data: {
-      masterProfile: masterProfile as Prisma.InputJsonValue,
-      profileBlocks: profileBlocks as Prisma.InputJsonValue,
+      masterProfile: masterProfile as unknown as Prisma.InputJsonValue,
+      profileBlocks: profileBlocks as unknown as Prisma.InputJsonValue,
     },
   });
 }

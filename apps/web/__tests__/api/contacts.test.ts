@@ -164,7 +164,7 @@ describe("GET /api/clients/[clientId]/contacts", () => {
 });
 
 describe("POST /api/clients/[clientId]/contacts", () => {
-  it("returns 422 for missing required name", async () => {
+  it("returns 400 for missing required name", async () => {
     const { POST } = await import("../../app/api/clients/[clientId]/contacts/route");
     const req = makeRequest(
       "POST",
@@ -172,7 +172,7 @@ describe("POST /api/clients/[clientId]/contacts", () => {
       { position: "CEO" },
     );
     const res = await POST(req as never, { params: Promise.resolve({ clientId: "client-1" }) });
-    expect(res.status).toBe(422);
+    expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error.code).toBe("VALIDATION_ERROR");
   });

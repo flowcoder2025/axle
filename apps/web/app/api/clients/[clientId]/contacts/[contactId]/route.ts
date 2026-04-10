@@ -61,11 +61,19 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
     );
   }
 
-  const { clientId, contactId } = await params;
-  const result = await resolveContact(clientId, contactId, user.orgId);
-  if (!result.ok) return result.response;
+  try {
+    const { clientId, contactId } = await params;
+    const result = await resolveContact(clientId, contactId, user.orgId);
+    if (!result.ok) return result.response;
 
-  return NextResponse.json({ data: result.contact });
+    return NextResponse.json({ data: result.contact });
+  } catch (error) {
+    console.error("Error:", error);
+    return NextResponse.json(
+      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      { status: 500 },
+    );
+  }
 }
 
 /**
@@ -80,49 +88,57 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     );
   }
 
-  const { clientId, contactId } = await params;
-  const result = await resolveContact(clientId, contactId, user.orgId);
-  if (!result.ok) return result.response;
-
-  let body: unknown;
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json(
-      { error: { code: "BAD_REQUEST", message: "Invalid JSON body" } },
-      { status: 400 },
-    );
-  }
+    const { clientId, contactId } = await params;
+    const result = await resolveContact(clientId, contactId, user.orgId);
+    if (!result.ok) return result.response;
 
-  const parsed = contactUpdateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      {
-        error: {
-          code: "VALIDATION_ERROR",
-          message: parsed.error.issues.map((i) => i.message).join(", "),
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: { code: "BAD_REQUEST", message: "Invalid JSON body" } },
+        { status: 400 },
+      );
+    }
+
+    const parsed = contactUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "VALIDATION_ERROR",
+            message: parsed.error.issues.map((i) => i.message).join(", "),
+          },
         },
-      },
-      { status: 422 },
+        { status: 400 },
+      );
+    }
+
+    const input = parsed.data;
+
+    // Enforce isPrimary uniqueness: unset existing primary before setting a new one
+    if (input.isPrimary) {
+      await prisma.contact.updateMany({
+        where: { clientId, isPrimary: true, id: { not: contactId } },
+        data: { isPrimary: false },
+      });
+    }
+
+    const updated = await prisma.contact.update({
+      where: { id: contactId },
+      data: input,
+    });
+
+    return NextResponse.json({ data: updated });
+  } catch (error) {
+    console.error("Error:", error);
+    return NextResponse.json(
+      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      { status: 500 },
     );
   }
-
-  const input = parsed.data;
-
-  // Enforce isPrimary uniqueness: unset existing primary before setting a new one
-  if (input.isPrimary) {
-    await prisma.contact.updateMany({
-      where: { clientId, isPrimary: true, id: { not: contactId } },
-      data: { isPrimary: false },
-    });
-  }
-
-  const updated = await prisma.contact.update({
-    where: { id: contactId },
-    data: input,
-  });
-
-  return NextResponse.json({ data: updated });
 }
 
 /**
@@ -137,11 +153,19 @@ export async function DELETE(_req: NextRequest, { params }: RouteContext) {
     );
   }
 
-  const { clientId, contactId } = await params;
-  const result = await resolveContact(clientId, contactId, user.orgId);
-  if (!result.ok) return result.response;
+  try {
+    const { clientId, contactId } = await params;
+    const result = await resolveContact(clientId, contactId, user.orgId);
+    if (!result.ok) return result.response;
 
-  await prisma.contact.delete({ where: { id: contactId } });
+    await prisma.contact.delete({ where: { id: contactId } });
 
-  return new NextResponse(null, { status: 204 });
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    console.error("Error:", error);
+    return NextResponse.json(
+      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      { status: 500 },
+    );
+  }
 }
