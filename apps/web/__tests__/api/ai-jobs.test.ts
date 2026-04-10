@@ -31,6 +31,7 @@ vi.mock("@axle/ai", () => ({
     if (jobType === "BUSINESS_PLAN" || jobType === "RESEARCH") return "CLI_CLAUDE";
     return "API_HAIKU";
   }),
+  extractAndStorePattern: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { getCurrentUser } from "@axle/auth";

@@ -9,6 +9,7 @@ import {
   unauthorizedResponse,
   notFoundResponse,
 } from "@/lib/api-helpers";
+import { extractAndStorePattern } from "@axle/ai";
 
 type RouteContext = { params: Promise<{ jobId: string }> };
 
@@ -96,7 +97,27 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         ...(errorMessage !== undefined ? { errorMessage } : {}),
         ...(durationMs !== undefined ? { durationMs } : {}),
       },
+      select: {
+        id: true,
+        type: true,
+        status: true,
+        input: true,
+        output: true,
+        errorMessage: true,
+        durationMs: true,
+      },
     });
+
+    // Fire-and-forget: learn from completed jobs without blocking the response
+    if (status === "COMPLETED") {
+      void extractAndStorePattern({
+        aiJobId: updated.id,
+        type: updated.type,
+        input: updated.input,
+        output: updated.output,
+        success: true,
+      });
+    }
 
     return NextResponse.json({ data: updated });
   } catch (err) {
