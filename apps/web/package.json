@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@axle/ai": "^0.0.1",
     "@axle/auth": "*",
     "@axle/db": "*",
     "@axle/notification": "*",
