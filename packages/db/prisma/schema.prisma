@@ -28,9 +28,10 @@ model User {
   emailVerified DateTime?
   image         String?
 
-  accounts    Account[]
-  sessions    Session[]
-  memberships Membership[]
+  accounts      Account[]
+  sessions      Session[]
+  memberships   Membership[]
+  notifications Notification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -173,6 +174,9 @@ model Client {
   projects          Project[]
   documents         Document[]
   journals          ResearchJournal[]
+  meetings          Meeting[]
+  financialReports  FinancialReport[]
+  schedules         Schedule[]
 
   organization      Organization @relation(fields: [orgId], references: [id])
   createdAt         DateTime     @default(now())
@@ -215,6 +219,8 @@ model ClientFinancial {
   totalEquity       Decimal?
   creditRating      String?
   source            String?
+
+  reports           FinancialReport[]
 
   client            Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
@@ -271,6 +277,7 @@ model ProgramInfo {
   crawledAt         DateTime?
 
   matchingResults   MatchingResult[]
+  schedules         Schedule[]
 
   organization      Organization @relation(fields: [orgId], references: [id])
 
@@ -391,6 +398,10 @@ model Project {
   members           ProjectMember[]
   checklist         ChecklistItem[]
   documents         Document[]
+  meetings          Meeting[]
+  aiJobs            AiJob[]
+  estimates         Estimate[]
+  contracts         Contract[]
 
   client            Client       @relation(fields: [clientId], references: [id])
   createdAt         DateTime     @default(now())
@@ -501,4 +512,325 @@ model ResearchJournal {
 
   @@index([clientId])
   @@index([researcherContactId])
+}
+
+// ========================================
+// AI/Communication/Schedule Models (WI-007)
+// ========================================
+
+enum ScheduleType {
+  DEADLINE
+  MEETING
+  REMINDER
+  PROGRAM_DUE
+}
+
+enum AiJobType {
+  BUSINESS_PLAN
+  RESEARCH
+  OCR
+  TRANSCRIBE
+  SUMMARY
+  JOURNAL_DRAFT
+  FINANCIAL_ANALYSIS
+  GAP_DIAGNOSIS
+  EVALUATION
+  MATCHING
+}
+
+enum AiTier {
+  LOCAL_MLX
+  API_HAIKU
+  API_OPUS
+  CLI_CLAUDE
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum AutoType {
+  HOMETAX_ISSUE
+  MINWON24_ISSUE
+  INSURANCE_ISSUE
+  PORTAL_UPLOAD
+  DART_FETCH
+}
+
+enum NotificationType {
+  DOC_REQUESTED
+  DOC_UPLOADED
+  DOC_EXPIRING
+  DEADLINE
+  MEETING_NOTIFY
+  JOURNAL_DUE
+  ACTION_ITEM
+  ACTION_ITEM_DUE
+  PROJECT_ASSIGNED
+  MATCHING_RESULT
+  AI_JOB_COMPLETE
+  AI_JOB_FAILED
+  PORTAL_COMPLETE
+  HANDOFF
+  ESTIMATE_SENT
+  BUNDLE_COMPLETE
+}
+
+enum EmailType {
+  DOC_REQUEST
+  DOC_PUSH
+  MEETING_SUMMARY
+  ESTIMATE
+  CONTRACT
+  JOURNAL_REMINDER
+  DEADLINE_ALERT
+  MATCHING_DIGEST
+  ONBOARDING
+}
+
+enum ActionStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+}
+
+enum EstimateStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+}
+
+enum ContractStatus {
+  DRAFT
+  SENT
+  SIGNED
+  EXPIRED
+}
+
+model Meeting {
+  id                String   @id @default(cuid())
+  projectId         String?
+  clientId          String
+  title             String
+  date              DateTime
+  location          String?
+  recordingUrl      String?
+
+  attendees         MeetingAttendee[]
+  transcript        MeetingTranscript?
+  actionItems       ActionItem[]
+  emailLogs         EmailLog[]
+
+  client            Client   @relation(fields: [clientId], references: [id])
+  project           Project? @relation(fields: [projectId], references: [id])
+  createdAt         DateTime @default(now())
+
+  @@index([clientId])
+  @@index([projectId])
+}
+
+model MeetingAttendee {
+  id                String  @id @default(cuid())
+  meetingId         String
+  contactId         String?
+  userId            String?
+  name              String
+  role              String?
+
+  meeting           Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId])
+}
+
+model MeetingTranscript {
+  id                String  @id @default(cuid())
+  meetingId         String  @unique
+  rawTranscript     String
+  summary           String?
+  keyDecisions      Json?
+  sentiment         String?
+  aiJobId           String?
+
+  meeting           Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+}
+
+model ActionItem {
+  id                String       @id @default(cuid())
+  meetingId         String
+  description       String
+  assigneeUserId    String?
+  assigneeContactId String?
+  dueDate           DateTime?
+  status            ActionStatus @default(OPEN)
+  linkedChecklistId String?
+
+  meeting           Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId])
+}
+
+model AiJob {
+  id                String     @id @default(cuid())
+  projectId         String?
+  type              AiJobType
+  tier              AiTier
+  status            JobStatus  @default(QUEUED)
+  input             Json
+  output            Json?
+  cost              Decimal?
+  durationMs        Int?
+  errorMessage      String?
+  skillPatternId    String?
+
+  skillPattern      SkillPattern? @relation(fields: [skillPatternId], references: [id])
+  project           Project?      @relation(fields: [projectId], references: [id])
+  createdAt         DateTime      @default(now())
+
+  @@index([projectId])
+  @@index([type])
+}
+
+model SkillPattern {
+  id                String   @id @default(cuid())
+  name              String
+  taskType          String
+  inputSchema       Json
+  outputSchema      Json
+  promptTemplate    String?
+  successCount      Int      @default(0)
+  lastUsedAt        DateTime?
+  isFineTuned       Boolean  @default(false)
+
+  aiJobs            AiJob[]
+  createdAt         DateTime @default(now())
+}
+
+model AutomationLog {
+  id                String    @id @default(cuid())
+  clientId          String?
+  type              AutoType
+  target            String
+  status            JobStatus
+  resultUrl         String?
+  errorMessage      String?
+  executedAt        DateTime  @default(now())
+}
+
+model Notification {
+  id                String           @id @default(cuid())
+  userId            String
+  type              NotificationType
+  title             String
+  body              String?
+  link              String?
+  isRead            Boolean          @default(false)
+
+  user              User @relation(fields: [userId], references: [id])
+  createdAt         DateTime @default(now())
+
+  @@index([userId])
+}
+
+model EmailLog {
+  id                String    @id @default(cuid())
+  meetingId         String?
+  clientId          String?
+  projectId         String?
+  to                String
+  subject           String
+  type              EmailType
+  channel           String    @default("email")
+  resendMessageId   String?
+  sentAt            DateTime  @default(now())
+  openedAt          DateTime?
+
+  meeting           Meeting? @relation(fields: [meetingId], references: [id])
+
+  @@index([clientId])
+  @@index([meetingId])
+}
+
+model Schedule {
+  id                String       @id @default(cuid())
+  orgId             String
+  clientId          String?
+  projectId         String?
+  programId         String?
+  title             String
+  description       String?
+  type              ScheduleType
+  startDate         DateTime
+  endDate           DateTime?
+  isAllDay          Boolean      @default(false)
+  reminderDays      Int[]        @default([7, 3, 1])
+  googleCalendarId  String?
+
+  client            Client?      @relation(fields: [clientId], references: [id])
+  program           ProgramInfo? @relation(fields: [programId], references: [id])
+  createdAt         DateTime     @default(now())
+
+  @@index([orgId])
+  @@index([clientId])
+  @@index([programId])
+}
+
+model FinancialReport {
+  id                  String           @id @default(cuid())
+  clientId            String
+  clientFinancialId   String?
+  year                Int
+  analysis            Json?
+  adjustments         Json?
+  reportUrl           String?
+
+  client              Client           @relation(fields: [clientId], references: [id])
+  clientFinancial     ClientFinancial? @relation(fields: [clientFinancialId], references: [id])
+  createdAt           DateTime         @default(now())
+
+  @@unique([clientId, year])
+}
+
+model Estimate {
+  id                String         @id @default(cuid())
+  projectId         String?
+  clientId          String
+  estimateNumber    String         @unique
+  items             Json
+  totalAmount       Decimal
+  taxAmount         Decimal?
+  validUntil        DateTime?
+  status            EstimateStatus @default(DRAFT)
+  documentId        String?
+  sentAt            DateTime?
+
+  project           Project? @relation(fields: [projectId], references: [id])
+  createdAt         DateTime @default(now())
+
+  @@index([clientId])
+}
+
+model Contract {
+  id                String         @id @default(cuid())
+  projectId         String?
+  clientId          String
+  contractNumber    String         @unique
+  title             String
+  partyA            Json
+  partyB            Json
+  terms             Json
+  totalAmount       Decimal?
+  startDate         DateTime?
+  endDate           DateTime?
+  status            ContractStatus @default(DRAFT)
+  documentId        String?
+  signedAt          DateTime?
+
+  project           Project? @relation(fields: [projectId], references: [id])
+  createdAt         DateTime @default(now())
+
+  @@index([clientId])
 }
