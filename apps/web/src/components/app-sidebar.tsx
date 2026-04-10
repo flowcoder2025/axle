@@ -13,6 +13,7 @@ import {
   DollarSign,
   FileSignature,
   Award,
+  Sparkles,
 } from "lucide-react";
 import {
   Sidebar,
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { href: "/projects", label: "프로젝트", icon: FolderKanban },
   { href: "/documents", label: "서류", icon: FileText },
   { href: "/programs", label: "지원사업", icon: Award },
+  { href: "/matching", label: "매칭 분석", icon: Sparkles },
   { href: "/calendar", label: "일정", icon: Calendar },
   { href: "/meetings", label: "미팅", icon: Video },
   { href: "/journal", label: "연구일지", icon: BookOpen },

@@ -1,0 +1,10 @@
+export type { ClientProfile, ProgramProfile, MatchResult } from "./types.js";
+export { matchClientToPrograms } from "./pipeline.js";
+export { stage1Disqualify } from "./stages/stage1-disqualify.js";
+export { stage2Penalties } from "./stages/stage2-penalties.js";
+export { stage3Scoring } from "./stages/stage3-scoring.js";
+export { recordFeedback, getFeedbackStats } from "./feedback.js";
+export type { Stage1Result } from "./stages/stage1-disqualify.js";
+export type { Stage2Result, Penalty } from "./stages/stage2-penalties.js";
+export type { Stage3Result } from "./stages/stage3-scoring.js";
+export type { FeedbackInput, FeedbackStats } from "./feedback.js";
