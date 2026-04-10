@@ -1,1 +1,24 @@
-export const AUTH_PACKAGE = "@axle/auth" as const;
+/**
+ * @axle/auth — Auth.js v5 Split Config
+ *
+ * Export map:
+ * - auth, signIn, signOut, handlers  → Node.js runtime (Next.js Route Handler / Server Actions)
+ * - authConfig                        → Edge-compatible config (middleware)
+ * - getCurrentUser, requireUser, requireOrg → DAL helpers (Server Components)
+ * - getCachedSession, invalidateCachedSession → 3-tier session cache
+ */
+
+// Node.js runtime exports
+export { auth, signIn, signOut, handlers } from "./auth.js";
+
+// Edge-compatible config
+export { authConfig } from "./auth.config.js";
+
+// Middleware helper (Edge)
+export { auth as authMiddleware, config as middlewareConfig } from "./middleware.js";
+
+// Data Access Layer
+export { getCurrentUser, requireUser, requireOrg } from "./dal.js";
+
+// Session cache
+export { getCachedSession, invalidateCachedSession } from "./session-cache.js";
