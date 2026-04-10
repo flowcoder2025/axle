@@ -54,3 +54,29 @@ export type {
   PrismaEmailLogDelegate,
   EmailLogCreateInput,
 } from "./types.js";
+
+// Email templates
+export {
+  docRequestEmail,
+  docPushEmail,
+  meetingSummaryEmail,
+  estimateEmail,
+  contractEmail,
+  journalReminderEmail,
+  deadlineAlertEmail,
+  matchingDigestEmail,
+  onboardingEmail,
+} from "./templates/index.js";
+export type {
+  DocRequestEmailProps,
+  DocPushEmailProps,
+  MeetingSummaryEmailProps,
+  EstimateEmailProps,
+  EstimateItem,
+  ContractEmailProps,
+  JournalReminderEmailProps,
+  DeadlineAlertEmailProps,
+  MatchingDigestEmailProps,
+  MatchItem,
+  OnboardingEmailProps,
+} from "./templates/index.js";
