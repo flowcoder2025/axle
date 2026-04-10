@@ -1,0 +1,13 @@
+// AXLE — Prisma 7 Schema
+// Models are added in subsequent WIs (WI-004 ~ WI-007)
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "client"
+}
