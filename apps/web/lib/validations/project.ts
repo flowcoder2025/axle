@@ -41,6 +41,8 @@ export const projectCreateSchema = z.object({
   feeAmount: z.number().nonnegative().optional(),
   successRate: z.number().min(0).max(100).optional(),
   isPaid: z.boolean().optional().default(false),
+  /** Only used when type === 'BUNDLE'. Overrides default child types. */
+  childTypes: z.array(projectTypeSchema).optional(),
 });
 
 export const projectUpdateSchema = z.object({
@@ -68,6 +70,24 @@ export const projectSearchSchema = z.object({
 export const projectStatusTransitionSchema = z.object({
   status: projectStatusSchema,
 });
+
+// ---- RESEARCH_TASK metadata ----
+
+export const investigationItemSchema = z.object({
+  topic: z.string().min(1, "topic is required"),
+  description: z.string().optional(),
+  priority: z.enum(["HIGH", "MEDIUM", "LOW"]).optional(),
+});
+
+export const researchTaskMetadataSchema = z.object({
+  investigationItems: z
+    .array(investigationItemSchema)
+    .min(1, "at least one investigation item is required"),
+  clientContext: z.unknown().optional(),
+});
+
+export type InvestigationItem = z.infer<typeof investigationItemSchema>;
+export type ResearchTaskMetadata = z.infer<typeof researchTaskMetadataSchema>;
 
 export type ProjectCreateInput = z.infer<typeof projectCreateSchema>;
 export type ProjectUpdateInput = z.infer<typeof projectUpdateSchema>;

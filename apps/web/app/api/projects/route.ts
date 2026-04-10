@@ -4,6 +4,7 @@ import { getCurrentUser } from "@axle/auth";
 import { projectCreateSchema, projectSearchSchema } from "@/lib/validations/project";
 import { handleZodError, handleInternalError, unauthorizedResponse } from "@/lib/api-helpers";
 import { Prisma } from "@prisma/client";
+import { createBundleChildren } from "@/lib/services/project-bundle";
 
 // GET /api/projects — list projects with filters and pagination
 export async function GET(req: NextRequest) {
@@ -105,7 +106,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { dueDate, feeAmount, successRate, metadata, ...rest } = parsed.data;
+    const { dueDate, feeAmount, successRate, metadata, childTypes, ...rest } = parsed.data;
 
     // Create project and auto-apply checklist templates in a transaction
     const project = await prisma.$transaction(async (tx) => {
@@ -134,6 +135,18 @@ export async function POST(req: NextRequest) {
             isRequired: tpl.isRequired,
           })),
         });
+      }
+
+      // For BUNDLE projects: auto-create child projects inside the same transaction
+      if (created.type === "BUNDLE") {
+        await createBundleChildren(
+          tx,
+          created.id,
+          created.title,
+          created.clientId,
+          user.orgId!,
+          childTypes
+        );
       }
 
       return created;
