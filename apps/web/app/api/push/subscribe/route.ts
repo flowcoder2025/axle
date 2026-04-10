@@ -1,17 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@axle/auth";
 import { handleInternalError, unauthorizedResponse } from "@/lib/api-helpers";
-
-/**
- * In-memory push subscription store (Phase 4 simplicity).
- *
- * Maps userId → PushSubscription. In a production setup this would be
- * persisted in a dedicated DB table or in User.metadata.
- */
-const pushSubscriptions = new Map<
-  string,
-  { endpoint: string; keys: { p256dh: string; auth: string } }
->();
+import {
+  setPushSubscription,
+  deletePushSubscription,
+} from "@/lib/push/subscriptions";
 
 /**
  * POST /api/push/subscribe
@@ -49,7 +42,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    pushSubscriptions.set(user.id, { endpoint, keys });
+    setPushSubscription(user.id, { endpoint, keys });
 
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (err) {
@@ -69,18 +62,10 @@ export async function DELETE(_req: NextRequest) {
       return unauthorizedResponse();
     }
 
-    pushSubscriptions.delete(user.id);
+    deletePushSubscription(user.id);
 
     return NextResponse.json({ ok: true });
   } catch (err) {
     return handleInternalError(err);
   }
-}
-
-/**
- * getPushSubscription — retrieve a stored subscription by userId.
- * Exported for use by server-side notification dispatch code.
- */
-export function getPushSubscription(userId: string) {
-  return pushSubscriptions.get(userId) ?? null;
 }

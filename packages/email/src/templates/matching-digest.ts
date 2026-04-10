@@ -2,6 +2,8 @@
  * matching-digest — 매칭 다이제스트 이메일 템플릿
  */
 
+import { escapeHtml } from "./utils.js";
+
 export interface MatchItem {
   programName: string;
   score: number;
@@ -29,9 +31,9 @@ export function matchingDigestEmail(props: MatchingDigestEmailProps): string {
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
           <span style="font-size: 12px; font-weight: 600; color: #2563eb; background: #eff6ff; padding: 2px 8px; border-radius: 999px;">#${idx + 1}</span>
         </div>
-        <p style="margin: 8px 0 6px; font-weight: 700; font-size: 15px;">${match.programName}</p>
+        <p style="margin: 8px 0 6px; font-weight: 700; font-size: 15px;">${escapeHtml(match.programName)}</p>
         <div style="margin: 0 0 8px;">${scoreBar(match.score)}</div>
-        <p style="margin: 0; font-size: 13px; color: #374151; line-height: 1.5;">${match.reason}</p>
+        <p style="margin: 0; font-size: 13px; color: #374151; line-height: 1.5;">${escapeHtml(match.reason)}</p>
       </div>`
     )
     .join("");
@@ -41,7 +43,7 @@ export function matchingDigestEmail(props: MatchingDigestEmailProps): string {
   <div style="background: #f8f9fa; padding: 32px; border-radius: 8px;">
     <h2 style="margin: 0 0 8px; font-size: 22px; color: #1a1a1a;">맞춤 지원사업 매칭 결과</h2>
     <p style="margin: 0 0 24px; font-size: 14px; color: #6b7280;">
-      <strong>${props.consultantName}</strong> 컨설턴트가 분석한 추천 프로그램입니다.
+      <strong>${escapeHtml(props.consultantName)}</strong> 컨설턴트가 분석한 추천 프로그램입니다.
     </p>
     ${matchCards}
     <p style="margin: 16px 0 0; font-size: 13px; color: #9ca3af;">

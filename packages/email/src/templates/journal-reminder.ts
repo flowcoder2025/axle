@@ -2,6 +2,8 @@
  * journal-reminder — 연구일지 리마인더 이메일 템플릿
  */
 
+import { escapeHtml } from "./utils.js";
+
 export interface JournalReminderEmailProps {
   researcherName: string;
   clientName: string;
@@ -15,8 +17,8 @@ export function journalReminderEmail(props: JournalReminderEmailProps): string {
   <div style="background: #f8f9fa; padding: 32px; border-radius: 8px;">
     <h2 style="margin: 0 0 24px; font-size: 22px; color: #1a1a1a;">연구일지 작성 알림</h2>
     <p style="margin: 0 0 16px; line-height: 1.6;">
-      안녕하세요, <strong>${props.researcherName}</strong>님.<br>
-      <strong>${props.clientName}</strong>의 <strong>${props.month}</strong> 연구일지 작성 기한이 다가왔습니다.
+      안녕하세요, <strong>${escapeHtml(props.researcherName)}</strong>님.<br>
+      <strong>${escapeHtml(props.clientName)}</strong>의 <strong>${escapeHtml(props.month)}</strong> 연구일지 작성 기한이 다가왔습니다.
     </p>
     <div style="padding: 16px; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 0 6px 6px 0; margin: 0 0 24px;">
       <p style="margin: 0; font-size: 14px; color: #92400e;">

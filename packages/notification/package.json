@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@axle/db": "*",
+    "@axle/email": "*",
     "@types/web-push": "^3.6.4",
     "web-push": "^3.6.7"
   },

@@ -27,7 +27,8 @@ describe("docRequestEmail", () => {
 
     expect(isValidHtml(html)).toBe(true);
     expect(html).toContain("홍길동");
-    expect(html).toContain("R&D 지원사업");
+    // "&" is escaped to "&amp;" in user-provided strings (XSS prevention)
+    expect(html).toContain("R&amp;D 지원사업");
     expect(html).toContain("사업자등록증");
     expect(html).toContain("재무제표");
     expect(html).toContain("기술확인서");
@@ -146,7 +147,8 @@ describe("contractEmail", () => {
 
     expect(isValidHtml(html)).toBe(true);
     expect(html).toContain("홍길동");
-    expect(html).toContain("R&D 컨설팅 서비스 계약서");
+    // "&" is escaped to "&amp;" in user-provided strings (XSS prevention)
+    expect(html).toContain("R&amp;D 컨설팅 서비스 계약서");
     expect(html).toContain("https://axle.app/sign/contract-abc");
   });
 });

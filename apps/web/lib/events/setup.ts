@@ -19,17 +19,22 @@ export function setupEventHandlers(): void {
 
   // ── DOC_UPLOADED ──────────────────────────────────────────────────────────
   eventBus.on("DOC_UPLOADED", async (payload) => {
+    // DOC_UPLOADED: notify the project assignee, not the uploader.
+    // Fall back to an empty list when no assignee is available yet —
+    // full resolution from project context will be wired in a future WI.
     await dispatch({
       event: "DOC_UPLOADED",
       title: "서류 업로드 완료",
       body: "새 서류가 업로드되었습니다. 확인해 주세요.",
-      recipientUserIds: [payload.uploaderId],
+      recipientUserIds: payload.assigneeId ? [payload.assigneeId] : [],
       metadata: { documentId: payload.documentId, clientId: payload.clientId },
     });
   });
 
   // ── DOC_REQUESTED ─────────────────────────────────────────────────────────
   eventBus.on("DOC_REQUESTED", async (payload) => {
+    // TODO: recipientUserIds needs resolution from project/client context.
+    // Will be wired when the document request feature is fully integrated.
     await dispatch({
       event: "DOC_REQUESTED",
       title: "서류 제출 요청",
@@ -44,6 +49,8 @@ export function setupEventHandlers(): void {
 
   // ── DOC_EXPIRING ──────────────────────────────────────────────────────────
   eventBus.on("DOC_EXPIRING", async (payload) => {
+    // TODO: recipientUserIds needs resolution from project/client context.
+    // Will be wired when document expiry scheduling is fully integrated.
     await dispatch({
       event: "DOC_EXPIRING",
       title: "서류 만료 예정",
@@ -77,6 +84,8 @@ export function setupEventHandlers(): void {
 
   // ── JOURNAL_DUE ───────────────────────────────────────────────────────────
   eventBus.on("JOURNAL_DUE", async (payload) => {
+    // TODO: recipientUserIds needs resolution from project/client context.
+    // Will be wired when journal reminder scheduling is fully integrated.
     await dispatch({
       event: "JOURNAL_DUE",
       title: "저널 제출 기한",

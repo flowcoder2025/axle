@@ -24,13 +24,6 @@ export interface SendAlimTalkOptions {
 
 export type SendChannel = "email" | "sms" | "kakao";
 
-export interface SendOptions {
-  channel: SendChannel;
-  email?: SendEmailOptions;
-  sms?: SendSmsOptions;
-  alimtalk?: SendAlimTalkOptions;
-}
-
 /** Minimal Prisma-compatible EmailLog create interface */
 export interface EmailLogCreateInput {
   channel: string;

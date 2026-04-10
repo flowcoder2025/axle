@@ -30,6 +30,8 @@ import {
   DropdownMenuTrigger,
 } from "@axle/ui";
 
+// Matches Prisma NotificationType enum — keep in sync
+// (Cannot import Prisma types directly in a client component.)
 type NotificationType =
   | "DOC_REQUESTED"
   | "DOC_UPLOADED"

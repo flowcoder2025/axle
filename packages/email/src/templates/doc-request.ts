@@ -2,6 +2,8 @@
  * doc-request — 서류 요청 이메일 템플릿
  */
 
+import { escapeHtml } from "./utils.js";
+
 export interface DocRequestEmailProps {
   clientName: string;
   projectName: string;
@@ -11,7 +13,7 @@ export interface DocRequestEmailProps {
 
 export function docRequestEmail(props: DocRequestEmailProps): string {
   const itemList = props.items
-    .map((item) => `<li style="margin: 6px 0;">${item}</li>`)
+    .map((item) => `<li style="margin: 6px 0;">${escapeHtml(item)}</li>`)
     .join("");
 
   return `
@@ -19,8 +21,8 @@ export function docRequestEmail(props: DocRequestEmailProps): string {
   <div style="background: #f8f9fa; padding: 32px; border-radius: 8px;">
     <h2 style="margin: 0 0 24px; font-size: 22px; color: #1a1a1a;">서류 요청</h2>
     <p style="margin: 0 0 16px; line-height: 1.6;">
-      안녕하세요, <strong>${props.clientName}</strong>님.<br>
-      <strong>${props.projectName}</strong> 프로젝트 진행을 위해 아래 서류가 필요합니다.
+      안녕하세요, <strong>${escapeHtml(props.clientName)}</strong>님.<br>
+      <strong>${escapeHtml(props.projectName)}</strong> 프로젝트 진행을 위해 아래 서류가 필요합니다.
     </p>
     <ul style="margin: 0 0 24px; padding-left: 20px; line-height: 1.8;">
       ${itemList}

@@ -13,6 +13,8 @@ export type EventMap = {
     documentId: string;
     clientId: string;
     uploaderId: string;
+    /** Optional: project assignee to notify instead of the uploader. */
+    assigneeId?: string;
   };
   DOC_REQUESTED: {
     checklistItemId: string;

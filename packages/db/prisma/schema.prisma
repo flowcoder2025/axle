@@ -197,6 +197,7 @@ model Client {
   meetings          Meeting[]
   financialReports  FinancialReport[]
   schedules         Schedule[]
+  emailLogs         EmailLog[]
 
   organization      Organization @relation(fields: [orgId], references: [id])
   createdAt         DateTime     @default(now())
@@ -422,6 +423,7 @@ model Project {
   aiJobs            AiJob[]
   estimates         Estimate[]
   contracts         Contract[]
+  emailLogs         EmailLog[]
 
   client            Client       @relation(fields: [clientId], references: [id])
   createdAt         DateTime     @default(now())
@@ -772,9 +774,12 @@ model EmailLog {
   openedAt          DateTime?
 
   meeting           Meeting? @relation(fields: [meetingId], references: [id])
+  client            Client?  @relation(fields: [clientId], references: [id])
+  project           Project? @relation(fields: [projectId], references: [id])
 
   @@index([clientId])
   @@index([meetingId])
+  @@index([projectId])
 }
 
 model Schedule {

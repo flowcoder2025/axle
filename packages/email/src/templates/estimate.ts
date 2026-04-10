@@ -2,6 +2,8 @@
  * estimate — 견적서 발송 이메일 템플릿
  */
 
+import { escapeHtml } from "./utils.js";
+
 export interface EstimateItem {
   name: string;
   quantity: number;
@@ -27,7 +29,7 @@ export function estimateEmail(props: EstimateEmailProps): string {
     .map(
       (item) => `
       <tr>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb;">${item.name}</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb;">${escapeHtml(item.name)}</td>
         <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${item.quantity}</td>
         <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatKRW(item.unitPrice)}</td>
         <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatKRW(item.amount)}</td>
@@ -39,11 +41,11 @@ export function estimateEmail(props: EstimateEmailProps): string {
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a1a;">
   <div style="background: #f8f9fa; padding: 32px; border-radius: 8px;">
     <h2 style="margin: 0 0 8px; font-size: 22px; color: #1a1a1a;">견적서</h2>
-    <p style="margin: 0 0 24px; font-size: 14px; color: #6b7280;">견적번호: ${props.estimateNumber}</p>
+    <p style="margin: 0 0 24px; font-size: 14px; color: #6b7280;">견적번호: ${escapeHtml(props.estimateNumber)}</p>
 
     <p style="margin: 0 0 20px; line-height: 1.6;">
-      안녕하세요, <strong>${props.clientName}</strong>님.<br>
-      요청하신 견적서를 보내드립니다. 유효기간은 <strong>${props.validUntil}</strong>까지입니다.
+      안녕하세요, <strong>${escapeHtml(props.clientName)}</strong>님.<br>
+      요청하신 견적서를 보내드립니다. 유효기간은 <strong>${escapeHtml(props.validUntil)}</strong>까지입니다.
     </p>
 
     <table style="width: 100%; border-collapse: collapse; margin: 0 0 16px; background: #fff; border-radius: 6px; overflow: hidden;">

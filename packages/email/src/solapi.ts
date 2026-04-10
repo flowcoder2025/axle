@@ -112,6 +112,8 @@ export async function sendSms(to: string, text: string): Promise<void> {
       to: formattedTo,
       from: formattedFrom,
       text,
+      // Note: Solapi API handles SMS/LMS classification server-side based on byte count.
+      // This client-side check is a rough hint. Korean chars are 2 bytes in EUC-KR.
       type: text.length > 90 ? "LMS" : "SMS",
     },
   });
