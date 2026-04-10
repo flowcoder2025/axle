@@ -1,0 +1,629 @@
+#!/usr/bin/env bash
+# vault-helpers.sh — Obsidian vault CRUD via Local REST API
+# flowset.sh에서 source하여 사용
+# VAULT_ENABLED=false이면 모든 함수가 조용히 실패 (graceful degradation)
+
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
+# 설정값 (.flowsetrc에서 로드됨)
+: "${VAULT_ENABLED:=false}"
+: "${VAULT_URL:=https://localhost:27124}"
+: "${VAULT_API_KEY:=}"
+: "${VAULT_PROJECT_NAME:=}"
+
+# curl 공통 옵션 (self-signed cert 허용, 타임아웃 5초)
+_vault_curl() {
+  curl -s -k --max-time 5 \
+    -H "Authorization: Bearer ${VAULT_API_KEY}" \
+    "$@" 2>/dev/null
+}
+
+# vault 연결 확인
+# 성공 시 VAULT_ENABLED=true 유지, 실패 시 VAULT_ENABLED=false로 전환
+vault_check() {
+  if [[ "${VAULT_ENABLED}" != "true" ]]; then
+    return 1
+  fi
+
+  if [[ -z "${VAULT_API_KEY}" ]]; then
+    VAULT_ENABLED=false
+    return 1
+  fi
+
+  local response
+  response=$(_vault_curl "${VAULT_URL}/vault/")
+  if [[ $? -ne 0 || -z "$response" ]]; then
+    VAULT_ENABLED=false
+    return 1
+  fi
+
+  return 0
+}
+
+# vault 파일 읽기
+# $1: 경로 (예: "settings/state.md")
+# stdout으로 내용 반환, 실패 시 빈 문자열
+vault_read() {
+  [[ "${VAULT_ENABLED}" != "true" ]] && return 0
+  local path="${1:?vault_read: path required}"
+  _vault_curl "${VAULT_URL}/vault/${path}"
+}
+
+# vault 파일 쓰기
+# $1: 경로, $2: 내용
+# 실패해도 에러 없이 종료 (graceful)
+vault_write() {
+  [[ "${VAULT_ENABLED}" != "true" ]] && return 0
+  local path="${1:?vault_write: path required}"
+  local content="${2:-}"
+  local tmpfile
+  tmpfile=$(mktemp 2>/dev/null || echo "/tmp/vault_write_$$")
+  printf '%s' "$content" > "$tmpfile"
+  _vault_curl "${VAULT_URL}/vault/${path}" \
+    -X PUT \
+    -H "Content-Type: text/markdown; charset=utf-8" \
+    --data-binary "@${tmpfile}" > /dev/null
+  rm -f "$tmpfile"
+}
+
+# vault 파일 삭제
+# $1: 경로
+vault_delete() {
+  [[ "${VAULT_ENABLED}" != "true" ]] && return 0
+  local path="${1:?vault_delete: path required}"
+  _vault_curl "${VAULT_URL}/vault/${path}" -X DELETE > /dev/null
+}
+
+# vault 시맨틱 검색
+# $1: 검색어
+# stdout으로 JSON 배열 반환
+vault_search() {
+  [[ "${VAULT_ENABLED}" != "true" ]] && echo "[]" && return 0
+  local query="${1:?vault_search: query required}"
+  local encoded
+  encoded=$(printf '%s' "$query" | jq -sRr @uri 2>/dev/null || printf '%s' "$query" | sed 's/ /%20/g')
+  _vault_curl "${VAULT_URL}/search/simple/?query=${encoded}" -X POST
+}
+
+# vault 프로젝트 폴더 초기화
+# VAULT_PROJECT_NAME 하위에 기본 구조 생성
+vault_init_project() {
+  [[ "${VAULT_ENABLED}" != "true" ]] && return 0
+  [[ -z "${VAULT_PROJECT_NAME}" ]] && return 0
+
+  local base="${VAULT_PROJECT_NAME}"
+
+  # state.md가 없으면 초기화
+  local existing
+  existing=$(vault_read "${base}/state.md")
+  if [[ -z "$existing" ]]; then
+    vault_write "${base}/state.md" "# ${VAULT_PROJECT_NAME} State
+- Status: initialized
+- Updated: $(date '+%Y-%m-%d %H:%M:%S')"
+  fi
+}
+
+# 실행 모드 감지: loop | team | interactive
+# loop_state.json이 30초 이내 갱신 → loop
+# TEAM_NAME 존재 → team
+# 둘 다 아님 → interactive
+vault_detect_mode() {
+  if [[ -f ".flowset/loop_state.json" ]]; then
+    local now state_mtime age
+    now=$(date +%s)
+    if stat --version &>/dev/null 2>&1; then
+      state_mtime=$(stat -c %Y ".flowset/loop_state.json" 2>/dev/null || echo 0)
+    else
+      state_mtime=$(stat -f %m ".flowset/loop_state.json" 2>/dev/null || echo 0)
+    fi
+    age=$(( now - state_mtime ))
+    if [[ $age -le 30 ]]; then
+      echo "loop"
+      return 0
+    fi
+  fi
+
+  if [[ -n "${TEAM_NAME:-}" ]]; then
+    echo "team"
+    return 0
+  fi
+  if [[ -f ".flowset/scripts/resolve-team.sh" ]]; then
+    source ".flowset/scripts/resolve-team.sh" 2>/dev/null || true
+    resolve_team_name "" 2>/dev/null
+    if [[ -n "${RESOLVED_TEAM_NAME:-}" ]]; then
+      echo "team"
+      return 0
+    fi
+  fi
+
+  echo "interactive"
+}
+
+# vault state.md 범용 업데이트
+# 루프: vault_sync_state "running" "$loop_count" "$MAX_ITERATIONS" "$completed" "$cost"
+# 대화형/팀: vault_sync_state "idle" "" "" "" "" "$summary" "$team_name"
+# 하위 호환: 기존 5인자 호출 그대로 동작 (6-7번째는 빈 문자열)
+vault_sync_state() {
+  [[ "${VAULT_ENABLED}" != "true" ]] && return 0
+  [[ -z "${VAULT_PROJECT_NAME}" ]] && return 0
+
+  local status="${1:-active}"
+  local loop_count="${2:-}"
+  local max_iter="${3:-}"
+  local completed="${4:-}"
+  local cost="${5:-}"
+  local summary="${6:-}"
+  local team_name="${7:-}"
+
+  local branch
+  branch=$(git branch --show-current 2>/dev/null || echo 'unknown')
+  local changed_files
+  changed_files=$(git diff --name-only HEAD 2>/dev/null | head -10 | tr '\n' ', ')
+  changed_files="${changed_files%,}"
+  local timestamp
+  timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+
+  local content="# ${VAULT_PROJECT_NAME} State
+- Status: ${status}
+- Branch: ${branch}
+- Updated: ${timestamp}"
+
+  # 루프 모드 (loop_count가 있으면)
+  if [[ -n "$loop_count" ]]; then
+    content+="
+- Mode: loop
+- Iteration: ${loop_count} / ${max_iter}
+- Completed WIs: ${completed}
+- Cost: \$${cost}"
+  else
+    local mode="interactive"
+    [[ -n "$team_name" ]] && mode="team"
+    content+="
+- Mode: ${mode}"
+  fi
+
+  [[ -n "$team_name" ]] && content+="
+- Team: ${team_name}"
+
+  [[ -n "$changed_files" ]] && content+="
+- Recent changes: ${changed_files}"
+
+  if [[ -n "$summary" ]]; then
+    content+="
+
+## Last Session Summary
+${summary}"
+  fi
+
+  vault_write "${VAULT_PROJECT_NAME}/state.md" "${content}"
+}
+
+# 세션 작업 로그를 vault sessions/ 에 저장
+# $1: 작업 요약 (last_assistant_message 처음 500자)
+# $2: 변경 파일 (optional)
+# $3: 이슈 수 (optional)
+vault_save_session_log() {
+  [[ "${VAULT_ENABLED}" != "true" ]] && return 0
+  [[ -z "${VAULT_PROJECT_NAME}" ]] && return 0
+
+  local summary="${1:-}"
+  local changed="${2:-none}"
+  local issue_count="${3:-0}"
+  local branch
+  branch=$(git branch --show-current 2>/dev/null || echo unknown)
+  local timestamp
+  timestamp=$(date '+%Y%m%d-%H%M%S')
+
+  local team_line=""
+  [[ -n "${TEAM_NAME:-}" ]] && team_line="
+- Team: ${TEAM_NAME}"
+
+  vault_write "${VAULT_PROJECT_NAME}/sessions/${timestamp}.md" "# Session ${timestamp}
+- Branch: ${branch}
+- Changed: ${changed}
+- Issues: ${issue_count}${team_line}
+
+## Summary
+${summary}"
+}
+
+# 일별 통합 세션 로그 (하루 1파일에 append)
+vault_save_daily_session_log() {
+  [[ "${VAULT_ENABLED}" != "true" ]] && return 0
+  [[ -z "${VAULT_PROJECT_NAME}" ]] && return 0
+
+  local summary="${1:-}"
+  local changed="${2:-none}"
+  local issue_count="${3:-0}"
+  local branch
+  branch=$(git branch --show-current 2>/dev/null || echo unknown)
+  local today
+  today=$(date '+%Y%m%d')
+  local time_now
+  time_now=$(date '+%H:%M:%S')
+  local daily_file="${VAULT_PROJECT_NAME}/sessions/${today}-daily.md"
+
+  local team_line=""
+  [[ -n "${TEAM_NAME:-}" ]] && team_line=" | Team: ${TEAM_NAME}"
+
+  local existing
+  existing=$(vault_read "$daily_file" 2>/dev/null)
+
+  local new_entry="
+### ${time_now} (Branch: ${branch}${team_line})
+- Changed: ${changed}
+- Issues: ${issue_count}
+- Summary: ${summary}"
+
+  if [[ -n "$existing" && "$existing" != *'"errorCode"'* ]]; then
+    vault_write "$daily_file" "${existing}
+${new_entry}"
+  else
+    vault_write "$daily_file" "# Session Log — ${today}
+${new_entry}"
+  fi
+}
+
+# 최근 세션 로그 1건 읽기
+vault_read_latest_session() {
+  [[ "${VAULT_ENABLED}" != "true" ]] && return 0
+  [[ -z "${VAULT_PROJECT_NAME}" ]] && return 0
+
+  local results
+  results=$(vault_search "${VAULT_PROJECT_NAME} session" 2>/dev/null)
+  if [[ -n "$results" && "$results" != "[]" ]]; then
+    local latest_file
+    latest_file=$(echo "$results" | jq -r '[.[] | select(.filename | test("sessions/"))] | .[0].filename // empty' 2>/dev/null)
+    if [[ -n "$latest_file" ]]; then
+      vault_read "$latest_file"
+    fi
+  fi
+}
+
+# 팀별 state 업데이트
+vault_sync_team_state() {
+  [[ "${VAULT_ENABLED}" != "true" ]] && return 0
+  [[ -z "${VAULT_PROJECT_NAME}" ]] && return 0
+  local team_name="${1:?vault_sync_team_state: team_name required}"
+  local summary="${2:-}"
+
+  local branch
+  branch=$(git branch --show-current 2>/dev/null || echo 'unknown')
+
+  vault_write "${VAULT_PROJECT_NAME}/teams/${team_name}.md" "# ${team_name} Team State
+- Updated: $(date '+%Y-%m-%d %H:%M:%S')
+- Branch: ${branch}
+
+## Last Activity
+${summary}"
+}
+
+# 팀별 state 읽기
+vault_read_team_state() {
+  [[ "${VAULT_ENABLED}" != "true" ]] && return 0
+  [[ -z "${VAULT_PROJECT_NAME}" ]] && return 0
+  local team_name="${1:?vault_read_team_state: team_name required}"
+  vault_read "${VAULT_PROJECT_NAME}/teams/${team_name}.md"
+}
+
+# vault에 패턴/이슈 기록
+# $1: 카테고리 (patterns/issues/decisions)
+# $2: 파일명
+# $3: 내용
+vault_record() {
+  [[ "${VAULT_ENABLED}" != "true" ]] && return 0
+  [[ -z "${VAULT_PROJECT_NAME}" ]] && return 0
+
+  local category="${1:?vault_record: category required}"
+  local filename="${2:?vault_record: filename required}"
+  local content="${3:-}"
+
+  vault_write "${VAULT_PROJECT_NAME}/${category}/${filename}" "${content}"
+}
+
+# 기술부채 수 확인 → 임계치 초과 시 경고 메시지 반환
+# $1: 임계치 (기본 10)
+vault_check_tech_debt() {
+  local threshold="${1:-10}"
+  local debt_file=".flowset/tech-debt.md"
+
+  [[ ! -f "$debt_file" ]] && return 0
+
+  local open_count
+  open_count=$(grep -c '^\- \*\*상태\*\*: open' "$debt_file" 2>/dev/null || echo "0")
+
+  if [[ "$open_count" -ge "$threshold" ]]; then
+    echo "기술부채 ${open_count}건 누적 (임계치: ${threshold}). 해소 작업을 우선 배치하세요."
+    return 1
+  fi
+  return 0
+}
+
+# ============================================================
+# v3.1: Graph RAG Memory — Entity-aware vault functions
+# ============================================================
+
+# Entity type → vault subdirectory mapping
+_entity_vault_dir() {
+  local type="$1" project="$2"
+  case "$type" in
+    File)        echo "${project}/entities/files" ;;
+    Decision)    echo "${project}/entities/decisions" ;;
+    Technology)  echo "_global/technologies" ;;
+    Pattern)     echo "${project}/patterns" ;;
+    Bug)         echo "${project}/bugs" ;;
+    Lesson)      echo "${project}/lessons" ;;
+    WI)          echo "${project}/wis" ;;
+    Constraint)  echo "${project}/constraints" ;;
+    Project)     echo "${project}" ;;
+    *)           echo "${project}/entities" ;;
+  esac
+}
+
+# Slugify a name for vault file path
+_entity_slug() {
+  echo "$1" | sed 's|/|-|g; s|\.|-|g; s|[^a-zA-Z0-9가-힣_-]|-|g; s|--*|-|g; s|^-||; s|-$||' | head -c 60
+}
+
+# Write an entity page to vault with wikilinks
+# $1: type  $2: name  $3: project  $4: summary
+# $5: relationships (multiline, "- rel_type: [[target_name]]" format)
+# $6: extra content (optional)
+# Returns: vault_path
+vault_write_entity() {
+  [[ "${VAULT_ENABLED}" != "true" || -z "$VAULT_API_KEY" ]] && return 0
+  local type="${1:?type required}"
+  local name="${2:?name required}"
+  local project="${3:?project required}"
+  local summary="${4:-}"
+  local relationships="${5:-}"
+  local extra="${6:-}"
+
+  local dir slug vault_path
+  dir=$(_entity_vault_dir "$type" "$project")
+  slug=$(_entity_slug "$name")
+  vault_path="${dir}/${slug}.md"
+
+  local timestamp
+  timestamp=$(date '+%Y-%m-%d %H:%M')
+
+  local content="---
+type: ${type}
+project: ${project}
+created: ${timestamp}
+tags: [entity/${type,,}]
+---
+
+# ${name}
+
+- **Type**: ${type}
+- **Project**: ${project}
+- **Last Updated**: ${timestamp}
+
+## Summary
+${summary:-_No summary_}
+"
+
+  if [[ -n "$relationships" ]]; then
+    content+="
+## Relationships
+${relationships}
+"
+  fi
+
+  if [[ -n "$extra" ]]; then
+    content+="
+${extra}
+"
+  fi
+
+  local encoded
+  encoded=$(printf '%s' "$vault_path" | jq -sRr @uri 2>/dev/null || printf '%s' "$vault_path" | sed 's| |%20|g; s|/|%2F|g')
+  _vault_curl "${VAULT_URL}/vault/${encoded}" \
+    -X PUT \
+    -H "Content-Type: text/markdown; charset=utf-8" \
+    --data-binary "$content" > /dev/null
+
+  echo "$vault_path"
+}
+
+# Read an entity page from vault
+# $1: vault_path
+# $2: max_lines (default: 50)
+vault_read_entity() {
+  [[ "${VAULT_ENABLED}" != "true" || -z "$VAULT_API_KEY" ]] && return 0
+  local vault_path="${1:?vault_path required}"
+  local max_lines="${2:-50}"
+
+  local encoded
+  encoded=$(printf '%s' "$vault_path" | jq -sRr @uri 2>/dev/null || printf '%s' "$vault_path" | sed 's| |%20|g; s|/|%2F|g')
+  local content
+  content=$(_vault_curl "${VAULT_URL}/vault/${encoded}")
+
+  if echo "$content" | grep -q '"errorCode"' 2>/dev/null; then
+    return 1
+  fi
+
+  echo "$content" | head -"$max_lines"
+}
+
+# List entity files in a vault directory
+# $1: directory path (e.g., "my-project/bugs")
+vault_list_entities() {
+  [[ "${VAULT_ENABLED}" != "true" || -z "$VAULT_API_KEY" ]] && return 0
+  local dir_path="${1:?dir_path required}"
+
+  # Use vault search to find files in directory
+  local encoded
+  encoded=$(printf '%s' "path:${dir_path}" | jq -sRr @uri 2>/dev/null || printf '%s' "path:${dir_path}" | sed 's/ /%20/g')
+  _vault_curl "${VAULT_URL}/search/simple/?query=${encoded}" -X POST | jq -r '.[].filename // empty' 2>/dev/null
+}
+
+# Generate project _index.md with graph summary
+# $1: project name
+vault_generate_index() {
+  [[ "${VAULT_ENABLED}" != "true" || -z "$VAULT_API_KEY" ]] && return 0
+
+  local project="${1:-$VAULT_PROJECT_NAME}"
+  [[ -z "$project" ]] && return 0
+
+  # Requires SQLite graph DB
+  local db="${GRAPH_DB_PATH:-$HOME/.flowset/graph.db}"
+  [[ ! -f "$db" ]] && return 0
+
+  local timestamp
+  timestamp=$(date '+%Y-%m-%d %H:%M')
+
+  # Entity counts by type
+  local type_stats
+  type_stats=$(sqlite3 -separator $'\t' "$db" \
+    "SELECT type, COUNT(*) FROM entities WHERE project='$project' OR project='_global' GROUP BY type ORDER BY COUNT(*) DESC;" 2>/dev/null)
+
+  local total_entities
+  total_entities=$(sqlite3 "$db" "SELECT COUNT(*) FROM entities WHERE project='$project' OR project='_global';" 2>/dev/null || echo "0")
+  local total_relations
+  total_relations=$(sqlite3 "$db" \
+    "SELECT COUNT(*) FROM relations r
+     JOIN entities e ON e.id=r.source_id
+     WHERE e.project='$project' OR e.project='_global';" 2>/dev/null || echo "0")
+
+  # Top connected entities (most relationships)
+  local top_connected
+  top_connected=$(sqlite3 -separator $'\t' "$db" \
+    "SELECT e.type, e.name, COUNT(*) as connections
+     FROM entities e
+     JOIN relations r ON (r.source_id=e.id OR r.target_id=e.id)
+     WHERE e.project='$project' OR e.project='_global'
+     GROUP BY e.id
+     ORDER BY connections DESC
+     LIMIT 8;" 2>/dev/null)
+
+  # Most active (highest access_count)
+  local most_active
+  most_active=$(sqlite3 -separator $'\t' "$db" \
+    "SELECT type, name, access_count, ROUND(decay_score,2)
+     FROM entities
+     WHERE (project='$project' OR project='_global') AND access_count > 0
+     ORDER BY access_count DESC
+     LIMIT 5;" 2>/dev/null)
+
+  # Recent entities (last 7 days)
+  local recent
+  recent=$(sqlite3 -separator $'\t' "$db" \
+    "SELECT type, name, DATE(updated_at)
+     FROM entities
+     WHERE (project='$project' OR project='_global')
+     AND updated_at > datetime('now', '-7 days')
+     ORDER BY updated_at DESC
+     LIMIT 10;" 2>/dev/null)
+
+  # Cross-project links
+  local cross_links
+  cross_links=$(sqlite3 -separator $'\t' "$db" \
+    "SELECT cl.link_type, e.type, e.name, cl.source_project
+     FROM cross_project_links cl
+     JOIN entities e ON e.id=cl.entity_id
+     WHERE cl.source_project='$project' OR cl.target_project='$project'
+     ORDER BY cl.created_at DESC
+     LIMIT 10;" 2>/dev/null)
+
+  # Build markdown content
+  local content="---
+generated: ${timestamp}
+auto: true
+---
+
+# ${project} — Knowledge Graph Index
+
+> Auto-generated from Graph RAG Memory. Updated: ${timestamp}
+
+## Overview
+- **Entities**: ${total_entities}
+- **Relationships**: ${total_relations}
+
+## Entity Distribution
+| Type | Count |
+|------|-------|
+"
+
+  while IFS=$'\t' read -r stype scount; do
+    [[ -z "$stype" ]] && continue
+    content+="| ${stype} | ${scount} |
+"
+  done <<< "$type_stats"
+
+  content+="
+## Most Connected Entities
+"
+  if [[ -n "$top_connected" ]]; then
+    content+="| Type | Name | Connections |
+|------|------|-------------|
+"
+    while IFS=$'\t' read -r ctype cname ccount; do
+      [[ -z "$ctype" ]] && continue
+      local cslug
+      cslug=$(_entity_slug "$cname")
+      content+="| ${ctype} | [[${cslug}\\|${cname}]] | ${ccount} |
+"
+    done <<< "$top_connected"
+  else
+    content+="_No connected entities yet._
+"
+  fi
+
+  content+="
+## Most Active Entities
+"
+  if [[ -n "$most_active" ]]; then
+    content+="| Type | Name | Accesses | Decay |
+|------|------|----------|-------|
+"
+    while IFS=$'\t' read -r atype aname acount adecay; do
+      [[ -z "$atype" ]] && continue
+      content+="| ${atype} | ${aname} | ${acount} | ${adecay} |
+"
+    done <<< "$most_active"
+  else
+    content+="_No access data yet._
+"
+  fi
+
+  content+="
+## Recent Activity (7 days)
+"
+  if [[ -n "$recent" ]]; then
+    while IFS=$'\t' read -r rtype rname rdate; do
+      [[ -z "$rtype" ]] && continue
+      content+="- \`${rdate}\` [${rtype}] ${rname}
+"
+    done <<< "$recent"
+  else
+    content+="_No recent activity._
+"
+  fi
+
+  if [[ -n "$cross_links" ]]; then
+    content+="
+## Cross-Project Knowledge
+| Link | Type | Name | From |
+|------|------|------|------|
+"
+    while IFS=$'\t' read -r ltype etype ename lsource; do
+      [[ -z "$ltype" ]] && continue
+      content+="| ${ltype} | ${etype} | ${ename} | ${lsource} |
+"
+    done <<< "$cross_links"
+  fi
+
+  # Write to vault
+  local index_path="${project}/_index.md"
+  local encoded
+  encoded=$(printf '%s' "$index_path" | jq -sRr @uri 2>/dev/null || printf '%s' "$index_path" | sed 's| |%20|g; s|/|%2F|g')
+  _vault_curl "${VAULT_URL}/vault/${encoded}" \
+    -X PUT \
+    -H "Content-Type: text/markdown; charset=utf-8" \
+    --data-binary "$content" > /dev/null
+
+  echo "$index_path"
+}

@@ -1,0 +1,116 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: http://localhost:3000
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: |
+          npm start &
+          npx wait-on http://localhost:3000 --timeout 30000
+          npx playwright test --reporter=json > e2e-results.json 2>&1 || true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: http://localhost:3000
+
+      - name: Check results and create regression issues
+        if: always()
+        run: |
+          if [ ! -f e2e-results.json ]; then
+            echo "No e2e results file found"
+            exit 0
+          fi
+
+          # 실패한 테스트 추출
+          FAILED_TESTS=$(cat e2e-results.json | node -e "
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('/dev/stdin', 'utf8'));
+            const suites = data.suites || [];
+            const failures = [];
+            function walk(suite, parentTitle) {
+              const suiteTitle = parentTitle ? parentTitle + ' > ' + (suite.title || '') : (suite.title || '');
+              for (const spec of (suite.specs || [])) {
+                for (const test of (spec.tests || [])) {
+                  if (test.status === 'unexpected' || test.status === 'failed') {
+                    failures.push({
+                      title: suiteTitle + ' > ' + spec.title,
+                      file: suite.file || '',
+                      error: (test.results?.[0]?.error?.message || '').substring(0, 500)
+                    });
+                  }
+                }
+              }
+              for (const child of (suite.suites || [])) { walk(child, suiteTitle); }
+            }
+            suites.forEach(s => walk(s, ''));
+            console.log(JSON.stringify(failures));
+          " 2>/dev/null || echo "[]")
+
+          if [ "$FAILED_TESTS" = "[]" ] || [ -z "$FAILED_TESTS" ]; then
+            echo "All E2E tests passed"
+            exit 0
+          fi
+
+          echo "E2E failures detected, creating regression issues..."
+
+          echo "$FAILED_TESTS" | node -e "
+            const failures = JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8'));
+            for (const f of failures) {
+              // describe 블록에서 WI 번호 추출 (예: 'WI-063: 휴가 신청 폼')
+              const wiMatch = f.title.match(/WI-\d+/);
+              const wiNum = wiMatch ? wiMatch[0] : 'UNKNOWN';
+              console.log(JSON.stringify({ wi: wiNum, title: f.title, file: f.file, error: f.error }));
+            }
+          " | while IFS= read -r line; do
+            WI_NUM=$(echo "$line" | node -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).wi)")
+            TITLE=$(echo "$line" | node -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).title)")
+            ERROR=$(echo "$line" | node -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).error)")
+            FILE=$(echo "$line" | node -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).file)")
+
+            # 같은 WI의 open regression issue가 있으면 스킵 (정확 매칭)
+            EXISTING=$(gh issue list --label regression --search "$WI_NUM" --state open --json number,title --jq "[.[] | select(.title | test(\"^${WI_NUM}[^0-9]\"))] | length" 2>/dev/null || echo "0")
+            if [ "$EXISTING" != "0" ]; then
+              echo "Skipping $WI_NUM - regression issue already exists"
+              continue
+            fi
+
+            ISSUE_BODY="E2E 테스트 실패: WI=${WI_NUM}, 테스트=${TITLE}, 파일=${FILE}, 커밋=${{ github.sha }}. 에러: ${ERROR}"
+            gh issue create \
+              --label regression \
+              --title "${WI_NUM} e2e 실패: ${TITLE}" \
+              --body "$ISSUE_BODY" || true
+
+            echo "Created regression issue for $WI_NUM"
+          done
+        env:
+          GH_TOKEN: ${{ github.token }}

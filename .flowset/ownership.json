@@ -1,0 +1,24 @@
+{
+  "teams": {
+    "frontend": ["apps/web/src/app/**", "apps/web/src/components/**", "packages/ui/**"],
+    "backend": ["apps/web/src/app/api/**", "packages/db/**", "packages/auth/**"],
+    "qa": ["e2e/**", "packages/*/tests/**"],
+    "devops": [".github/**", ".claude/**", ".flowset/**"],
+    "planning": ["docs/**", "wireframes/**"]
+  },
+  "shared": [
+    "package.json",
+    "turbo.json",
+    "tsconfig.json",
+    "packages/db/prisma/schema.prisma"
+  ],
+  "crossTeamReview": {
+    ".flowset/contracts/api-standard.md": ["frontend", "backend"],
+    ".flowset/contracts/data-flow.md": ["frontend", "backend", "qa"],
+    "packages/db/prisma/schema.prisma": ["frontend", "backend"],
+    ".flowset/requirements.md": ["all"],
+    "packages/ui/src/index.ts": ["frontend"],
+    "packages/auth/src/auth.config.ts": ["frontend", "backend"],
+    "turbo.json": ["frontend", "backend", "devops"]
+  }
+}

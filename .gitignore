@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+vendor/
+__pycache__/
+*.pyc
+.venv/
+venv/
+target/
+
+# Environment / Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+secrets.json
+
+# Build artifacts
+dist/
+build/
+out/
+*.o
+*.exe
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# FlowSet logs (local only)
+.flowset/logs/
+.flowset/.claude_session_id
+.flowset/completed_wis.txt
+.flowset/loop_state.json
+.flowset/teams/
+.flowset/eval-results/
+
+# Parallel worktree (flowset.sh 자동 생성/정리)
+.worktrees/
+
+# Test coverage
+coverage/
+.nyc_output/
+htmlcov/

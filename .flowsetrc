@@ -1,0 +1,46 @@
+# FlowSet Configuration
+# 프로젝트별 설정 파일
+
+# 프로젝트 정보
+PROJECT_NAME="axle"
+PROJECT_TYPE="typescript"  # Turborepo + Next.js 16 + Prisma 7
+
+# 루프 제어
+MAX_ITERATIONS=50
+RATE_LIMIT_PER_HOUR=80
+COOLDOWN_SEC=5
+ERROR_COOLDOWN_SEC=30
+NO_PROGRESS_LIMIT=3
+
+# 워커 토큰 제어
+MAX_TURNS=40              # 워커당 최대 턴 수 (탐색 과잉 방지, 0=무제한)
+
+# 파일 경로
+PROMPT_FILE=".flowset/PROMPT.md"
+FIX_PLAN=".flowset/fix_plan.md"
+
+# 병렬 실행 (1 = 순차, 2+ = 병렬 worktree)
+# 병렬 시 같은 batch 내 WI만 동시 처리 (fix_plan.md batch 태그 기반)
+PARALLEL_COUNT=1
+
+# 브랜치 규칙
+BRANCH_PREFIX="feature"  # feature, fix, chore
+COMMIT_PREFIX="WI"       # WI-NNN-[type] 한글 작업명 (NNN = 3자리 순번)
+
+# GitHub 계정 (wi:init Step 4.5에서 설정, wi:start Phase 5.9에서 참조)
+GITHUB_ACCOUNT_TYPE="org"
+GITHUB_ORG="flowcoder2025"
+
+# Obsidian Vault 연동 (v3.0)
+# 기본 활성화. wi:init에서 연결 확인 후 API_KEY 자동 설정.
+# Obsidian 미설치 시 preflight에서 자동 감지 → graceful degradation.
+VAULT_ENABLED=true
+VAULT_URL="https://localhost:27124"
+VAULT_API_KEY="59fd2e8853823903c3e9839bd5eb8406386f219b5b7a2170de5f66d2d32b0546"
+VAULT_PROJECT_NAME="axle"
+
+# Graph RAG Memory (v3.1)
+# SQLite 그래프 + Obsidian wikilinks 기반 메모리 시스템.
+# 세션 간 맥락 자동 추출·저장·검색.
+GRAPH_MEMORY_ENABLED=true
+GRAPH_DB_PATH="$HOME/.flowset/graph.db"
