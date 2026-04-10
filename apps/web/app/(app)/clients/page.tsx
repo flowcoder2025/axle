@@ -1,12 +1,22 @@
+import { notFound } from "next/navigation";
 import Link from "next/link";
+import { getCurrentUser } from "@axle/auth";
+import { prisma } from "@axle/db";
 import { Button } from "@axle/ui";
 import { ClientTable } from "../../../src/components/clients/client-table";
 import { Plus } from "lucide-react";
 import { Suspense } from "react";
+import { Prisma } from "@prisma/client";
 
 export const metadata = {
   title: "고객사 관리 | AXLE",
 };
+
+type SortBy = "name" | "createdAt" | "updatedAt" | "status";
+type SortOrder = "asc" | "desc";
+
+const VALID_SORT_BY = ["name", "createdAt", "updatedAt", "status"] as const;
+const VALID_SORT_ORDER = ["asc", "desc"] as const;
 
 interface SearchParams {
   q?: string;
@@ -17,55 +27,69 @@ interface SearchParams {
   sortOrder?: string;
 }
 
-async function fetchClients(searchParams: SearchParams) {
-  const params = new URLSearchParams();
-  if (searchParams.q) params.set("q", searchParams.q);
-  if (searchParams.status) params.set("status", searchParams.status);
-  if (searchParams.page) params.set("page", searchParams.page);
-  if (searchParams.pageSize) params.set("pageSize", searchParams.pageSize);
-  if (searchParams.sortBy) params.set("sortBy", searchParams.sortBy);
-  if (searchParams.sortOrder) params.set("sortOrder", searchParams.sortOrder);
-
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-  const res = await fetch(`${baseUrl}/api/clients?${params.toString()}`, {
-    cache: "no-store",
-    headers: {
-      // Pass cookies so auth works server-side
-      Cookie: "",
-    },
-  });
-
-  if (!res.ok) {
-    return { data: [], total: 0, page: 1, pageSize: 20 };
-  }
-
-  return res.json() as Promise<{
-    data: Array<{
-      id: string;
-      name: string;
-      ceoName?: string | null;
-      status: "ACTIVE" | "INACTIVE" | "PROSPECT";
-      assignedTo?: string | null;
-      updatedAt: string;
-      industry?: string | null;
-      region?: string | null;
-    }>;
-    total: number;
-    page: number;
-    pageSize: number;
-  }>;
-}
-
 interface ClientsPageProps {
   searchParams: Promise<SearchParams>;
 }
 
 export default async function ClientsPage({ searchParams }: ClientsPageProps) {
-  const params = await searchParams;
-  const result = await fetchClients(params);
+  const user = await getCurrentUser();
+  if (!user?.orgId) notFound();
 
-  const page = Number(params.page ?? "1");
-  const pageSize = Number(params.pageSize ?? "20");
+  const params = await searchParams;
+
+  const page = Math.max(1, Number(params.page ?? "1") || 1);
+  const pageSize = Math.min(100, Math.max(1, Number(params.pageSize ?? "20") || 20));
+  const skip = (page - 1) * pageSize;
+  const sortBy: SortBy = VALID_SORT_BY.includes(params.sortBy as SortBy)
+    ? (params.sortBy as SortBy)
+    : "createdAt";
+  const sortOrder: SortOrder = VALID_SORT_ORDER.includes(params.sortOrder as SortOrder)
+    ? (params.sortOrder as SortOrder)
+    : "desc";
+  const q = params.q?.trim();
+  const status = ["ACTIVE", "INACTIVE", "PROSPECT"].includes(params.status ?? "")
+    ? (params.status as "ACTIVE" | "INACTIVE" | "PROSPECT")
+    : undefined;
+
+  const where: Prisma.ClientWhereInput = {
+    orgId: user.orgId,
+    ...(status ? { status } : {}),
+    ...(q
+      ? {
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { businessNumber: { contains: q, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
+
+  const [clients, total] = await Promise.all([
+    prisma.client.findMany({
+      where,
+      skip,
+      take: pageSize,
+      orderBy: { [sortBy]: sortOrder },
+      select: {
+        id: true,
+        name: true,
+        ceoName: true,
+        status: true,
+        assignedTo: true,
+        updatedAt: true,
+        industry: true,
+        region: true,
+      },
+    }),
+    prisma.client.count({ where }),
+  ]);
+
+  // Serialize dates for client component
+  const serializedClients = clients.map((c) => ({
+    ...c,
+    status: c.status as "ACTIVE" | "INACTIVE" | "PROSPECT",
+    updatedAt: c.updatedAt.toISOString(),
+  }));
 
   return (
     <div className="space-y-6">
@@ -84,21 +108,22 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
         </Button>
       </div>
 
-      <Suspense fallback={<div className="py-8 text-center text-muted-foreground">불러오는 중...</div>}>
+      <Suspense
+        fallback={
+          <div className="py-8 text-center text-muted-foreground">
+            불러오는 중...
+          </div>
+        }
+      >
         <ClientTable
-          clients={result.data}
-          total={result.total}
+          clients={serializedClients}
+          total={total}
           page={page}
           pageSize={pageSize}
-          currentQ={params.q}
+          currentQ={q}
           currentStatus={params.status}
-          currentSortBy={
-            (params.sortBy as "name" | "createdAt" | "updatedAt" | "status") ??
-            "createdAt"
-          }
-          currentSortOrder={
-            (params.sortOrder as "asc" | "desc") ?? "desc"
-          }
+          currentSortBy={sortBy}
+          currentSortOrder={sortOrder}
         />
       </Suspense>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -82,13 +82,10 @@ export function ClientTable({
     router.push(`${pathname}?${qs}`);
   }
 
-  const handleSearch = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      navigate({ q: searchInput || undefined, page: "1" });
-    },
-    [searchInput]
-  );
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    navigate({ q: searchInput || undefined, page: "1" });
+  }
 
   function handleSort(column: SortBy) {
     const newOrder =
