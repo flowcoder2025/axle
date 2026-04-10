@@ -7,6 +7,8 @@
  * - sendPushNotification                     → Web Push (WI-049)
  * - sendTelegramNotification, sendTelegramToDefault → Telegram Bot (WI-050)
  * - sendDiscordNotification                  → Discord Webhook (WI-051)
+ * - TRIGGER_MAP, getTriggerConfig            → Trigger Map (WI-052)
+ * - dispatch, DispatchPayload                → Event Dispatcher (WI-053)
  */
 
 export const NOTIFICATION_PACKAGE = "@axle/notification" as const;
@@ -22,3 +24,15 @@ export { sendTelegramNotification, sendTelegramToDefault } from "./telegram.js";
 
 export { sendDiscordNotification } from "./discord.js";
 export type { DiscordEmbed, DiscordNotificationOptions } from "./discord.js";
+
+export { TRIGGER_MAP, getTriggerConfig } from "./trigger-map.js";
+export type {
+  BusinessEvent,
+  Channel,
+  RecipientRole,
+  Priority,
+  TriggerConfig,
+} from "./trigger-map.js";
+
+export { dispatch } from "./dispatcher.js";
+export type { DispatchPayload } from "./dispatcher.js";
