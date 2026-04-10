@@ -12,6 +12,7 @@ import {
   BookOpen,
   DollarSign,
   FileSignature,
+  Award,
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,7 +29,8 @@ const NAV_ITEMS = [
   { href: "/clients", label: "고객관리", icon: Users },
   { href: "/projects", label: "프로젝트", icon: FolderKanban },
   { href: "/documents", label: "서류", icon: FileText },
-  { href: "/schedule", label: "일정", icon: Calendar },
+  { href: "/programs", label: "지원사업", icon: Award },
+  { href: "/calendar", label: "일정", icon: Calendar },
   { href: "/meetings", label: "미팅", icon: Video },
   { href: "/journal", label: "연구일지", icon: BookOpen },
   { href: "/finance", label: "재무", icon: DollarSign },
