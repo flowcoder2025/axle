@@ -84,6 +84,7 @@ model Organization {
   memberships Membership[]
   clients     Client[]
   programs    ProgramInfo[]
+  templates   ChecklistTemplate[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -169,6 +170,9 @@ model Client {
   financials        ClientFinancial[]
   achievements      ClientAchievement[]
   certificates      Certificate[]
+  projects          Project[]
+  documents         Document[]
+  journals          ResearchJournal[]
 
   organization      Organization @relation(fields: [orgId], references: [id])
   createdAt         DateTime     @default(now())
@@ -191,6 +195,8 @@ model Contact {
   businessCardUrl   String?
   isResearcher      Boolean       @default(false)
   researchField     String?
+
+  journals          ResearchJournal[]
 
   client            Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
@@ -286,4 +292,213 @@ model MatchingResult {
 
   @@index([clientId])
   @@index([programId])
+}
+
+// ========================================
+// Project/Document Models (WI-006)
+// ========================================
+
+enum ProjectType {
+  BUSINESS_PLAN
+  VENTURE_CERT
+  SOBOOJANG_CERT
+  RESEARCH_INSTITUTE
+  PATENT
+  FINANCIAL_ANALYSIS
+  RESEARCH_TASK
+  BUNDLE
+}
+
+enum ProjectStatus {
+  INTAKE
+  DOC_COLLECTING
+  IN_PROGRESS
+  REVIEW
+  SUBMITTED
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum FeeType {
+  FIXED
+  SUCCESS_RATE
+  MONTHLY
+}
+
+enum ProjectMemberRole {
+  LEAD
+  MEMBER
+  VIEWER
+}
+
+enum DocCategory {
+  INPUT
+  OUTPUT
+  TEMPLATE
+  ISSUED
+}
+
+enum OcrStatus {
+  NONE
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum DocStatus {
+  PENDING
+  REQUESTED
+  UPLOADED
+  VERIFIED
+}
+
+enum JournalStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+}
+
+model Project {
+  id                String        @id @default(cuid())
+  clientId          String
+  programId         String?
+  parentId          String?
+  type              ProjectType
+  title             String
+  status            ProjectStatus @default(INTAKE)
+  priority          Priority      @default(MEDIUM)
+  assignedTo        String?
+  dueDate           DateTime?
+  submissionDate    DateTime?
+  memo              String?
+  metadata          Json?
+
+  feeType           FeeType?
+  feeAmount         Decimal?
+  successRate       Decimal?
+  isPaid            Boolean       @default(false)
+
+  children          Project[]       @relation("ProjectTree")
+  parent            Project?        @relation("ProjectTree", fields: [parentId], references: [id])
+  members           ProjectMember[]
+  checklist         ChecklistItem[]
+  documents         Document[]
+
+  client            Client       @relation(fields: [clientId], references: [id])
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([clientId])
+  @@index([programId])
+}
+
+model ProjectMember {
+  id                String            @id @default(cuid())
+  projectId         String
+  userId            String
+  role              ProjectMemberRole @default(MEMBER)
+
+  project           Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+}
+
+model ChecklistTemplate {
+  id                String      @id @default(cuid())
+  orgId             String
+  projectType       ProjectType
+  name              String
+  description       String?
+  isRequired        Boolean     @default(true)
+  sortOrder         Int         @default(0)
+
+  organization      Organization @relation(fields: [orgId], references: [id])
+
+  @@index([orgId, projectType])
+}
+
+model ChecklistItem {
+  id                String    @id @default(cuid())
+  projectId         String
+  name              String
+  description       String?
+  isRequired        Boolean   @default(true)
+  status            DocStatus @default(PENDING)
+  requestedAt       DateTime?
+  uploadedAt        DateTime?
+  documentId        String?
+
+  project           Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model Document {
+  id                String      @id @default(cuid())
+  clientId          String
+  projectId         String?
+  name              String
+  fileUrl           String
+  fileType          String
+  category          DocCategory
+  ocrStatus         OcrStatus   @default(NONE)
+  ocrResult         Json?
+  uploadToken       String?     @unique
+  tokenExpiresAt    DateTime?
+  expiresAt         DateTime?
+  autoRenew         Boolean     @default(false)
+  version           Int         @default(1)
+  parentDocId       String?
+
+  client            Client   @relation(fields: [clientId], references: [id])
+  project           Project? @relation(fields: [projectId], references: [id])
+  createdAt         DateTime @default(now())
+
+  @@index([clientId])
+  @@index([projectId])
+}
+
+model DocumentEmbedding {
+  id                String @id @default(cuid())
+  sourceType        String
+  sourceId          String
+  content           String
+  embedding         Unsupported("vector(1536)")
+  metadata          Json?
+
+  @@index([sourceType, sourceId])
+}
+
+model ResearchJournal {
+  id                   String        @id @default(cuid())
+  clientId             String
+  researcherContactId  String
+  date                 DateTime
+  title                String
+  content              String
+  objectives           String?
+  results              String?
+  nextSteps            String?
+  hours                Decimal?
+  attachments          Json?
+  status               JournalStatus @default(DRAFT)
+  approvedBy           String?
+  approvedAt           DateTime?
+  aiDraftJobId         String?
+
+  client               Client  @relation(fields: [clientId], references: [id])
+  researcher           Contact @relation(fields: [researcherContactId], references: [id])
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([researcherContactId])
 }
