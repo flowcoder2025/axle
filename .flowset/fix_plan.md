@@ -4,13 +4,13 @@
 
 ### L2: Monorepo 설정 > L3: Turborepo Scaffold
 - [ ] WI-001-chore Turborepo 루트 설정 | L1:Foundation > L2:Monorepo > L3:Scaffold
-- [ ] WI-002-chore 패키지 초기 구조 | L1:Foundation > L2:Monorepo > L3:Scaffold
+- [x] WI-002-chore 패키지 초기 구조 | L1:Foundation > L2:Monorepo > L3:Scaffold
 
 ### L2: 데이터베이스 > L3: Prisma 설정
-- [ ] WI-003-feat Prisma 7 Client Engine + Driver Adapter 설정 | L1:Foundation > L2:DB > L3:Prisma Setup
+- [x] WI-003-feat Prisma 7 Client Engine + Driver Adapter 설정 | L1:Foundation > L2:DB > L3:Prisma Setup
 
 ### L2: 데이터베이스 > L3: Auth/Org 모델
-- [ ] WI-004-feat 인증/조직 스키마 6개 모델 | L1:Foundation > L2:DB > L3:Auth Models
+- [x] WI-004-feat 인증/조직 스키마 6개 모델 | L1:Foundation > L2:DB > L3:Auth Models
 
 ### L2: 데이터베이스 > L3: CRM 모델
 - [ ] WI-005-feat CRM 스키마 7개 모델 | L1:Foundation > L2:DB > L3:CRM Models
