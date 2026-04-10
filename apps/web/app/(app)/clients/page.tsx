@@ -4,6 +4,8 @@ import { getCurrentUser } from "@axle/auth";
 import { prisma } from "@axle/db";
 import { Button } from "@axle/ui";
 import { ClientTable } from "../../../src/components/clients/client-table";
+import { ClientKanban } from "../../../src/components/clients/client-kanban";
+import { ClientViewToggle } from "../../../src/components/clients/client-view-toggle";
 import { Plus } from "lucide-react";
 import { Suspense } from "react";
 import { Prisma } from "@prisma/client";
@@ -25,6 +27,7 @@ interface SearchParams {
   pageSize?: string;
   sortBy?: string;
   sortOrder?: string;
+  view?: string;
 }
 
 interface ClientsPageProps {
@@ -37,6 +40,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
 
   const params = await searchParams;
 
+  const viewMode = params.view === "kanban" ? "kanban" : "table";
   const page = Math.max(1, Number(params.page ?? "1") || 1);
   const pageSize = Math.min(100, Math.max(1, Number(params.pageSize ?? "20") || 20));
   const skip = (page - 1) * pageSize;
@@ -100,12 +104,17 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
             등록된 고객사를 조회하고 관리합니다.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/clients/new">
-            <Plus className="mr-2 h-4 w-4" />
-            고객사 추가
-          </Link>
-        </Button>
+        <div className="flex items-center gap-3">
+          <Suspense>
+            <ClientViewToggle currentView={viewMode} />
+          </Suspense>
+          <Button asChild>
+            <Link href="/clients/new">
+              <Plus className="mr-2 h-4 w-4" />
+              고객사 추가
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Suspense
@@ -115,16 +124,20 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
           </div>
         }
       >
-        <ClientTable
-          clients={serializedClients}
-          total={total}
-          page={page}
-          pageSize={pageSize}
-          currentQ={q}
-          currentStatus={params.status}
-          currentSortBy={sortBy}
-          currentSortOrder={sortOrder}
-        />
+        {viewMode === "kanban" ? (
+          <ClientKanban clients={serializedClients} />
+        ) : (
+          <ClientTable
+            clients={serializedClients}
+            total={total}
+            page={page}
+            pageSize={pageSize}
+            currentQ={q}
+            currentStatus={params.status}
+            currentSortBy={sortBy}
+            currentSortOrder={sortOrder}
+          />
+        )}
       </Suspense>
     </div>
   );
