@@ -46,6 +46,11 @@ vi.mock("@axle/storage", () => ({
   },
 }));
 
+// Stub OCR trigger so it does not interfere with POST document tests
+vi.mock("../../lib/services/document-ocr", () => ({
+  triggerDocumentOcr: vi.fn().mockResolvedValue(undefined),
+}));
+
 // --- Helpers ---
 
 import { getCurrentUser } from "@axle/auth";
@@ -313,6 +318,67 @@ describe("POST /api/documents", () => {
       "file",
       expect.objectContaining({ path: expect.stringContaining("org-1/documents/") })
     );
+  });
+
+  it("increments version when parentDocId is provided", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(authedUser);
+    // prisma.client.findFirst → org boundary check
+    mockClientOps.findFirst.mockResolvedValue({ id: "client-1" });
+    // prisma.document.findFirst → parent doc version lookup
+    mockDocumentOps.findFirst.mockResolvedValue({ id: "doc-1", version: 1 });
+    mockUploadFromFormData.mockResolvedValue({
+      path: "org-1/documents/uuid-v2.pdf",
+      url: "https://example.supabase.co/storage/v1/object/public/documents/org-1/documents/uuid-v2.pdf",
+      size: 512,
+      contentType: "application/pdf",
+    });
+    const createdDoc = {
+      id: "doc-2",
+      clientId: "client-1",
+      name: "test.pdf",
+      version: 2,
+      parentDocId: "doc-1",
+    };
+    mockDocumentOps.create.mockResolvedValue(createdDoc);
+
+    const { POST } = await import("../../app/api/documents/route");
+    const res = await POST(
+      makeFormRequest("http://localhost/api/documents", {
+        clientId: "client-1",
+        category: "INPUT",
+        parentDocId: "doc-1",
+        file: new File(["v2 content"], "test.pdf", { type: "application/pdf" }),
+      }) as never
+    );
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body.data.version).toBe(2);
+    expect(body.data.parentDocId).toBe("doc-1");
+    expect(mockDocumentOps.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ version: 2, parentDocId: "doc-1" }),
+      })
+    );
+  });
+
+  it("returns 404 when parentDocId does not belong to org", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(authedUser);
+    mockClientOps.findFirst.mockResolvedValue({ id: "client-1" });
+    // client check passes but parent doc not found
+    mockDocumentOps.findFirst.mockResolvedValue(null);
+
+    const { POST } = await import("../../app/api/documents/route");
+    const res = await POST(
+      makeFormRequest("http://localhost/api/documents", {
+        clientId: "client-1",
+        category: "INPUT",
+        parentDocId: "nonexistent-doc",
+        file: new File(["content"], "test.pdf", { type: "application/pdf" }),
+      }) as never
+    );
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.error.message).toContain("Parent document not found");
   });
 });
 

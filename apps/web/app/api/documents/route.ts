@@ -13,6 +13,7 @@ import {
   handleInternalError,
   unauthorizedResponse,
 } from "@/lib/api-helpers";
+import { triggerDocumentOcr } from "@/lib/services/document-ocr";
 import { Prisma } from "@prisma/client";
 
 // GET /api/documents — list documents with filtering and pagination
@@ -80,7 +81,8 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/documents — upload a document (multipart/form-data)
-// Body fields: file (File), clientId, projectId?, category, name?
+// Body fields: file (File), clientId, projectId?, category, name?, parentDocId?
+// When parentDocId is provided, creates a new version (version = parent.version + 1)
 export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -102,13 +104,14 @@ export async function POST(req: NextRequest) {
       projectId: formData.get("projectId") ?? undefined,
       category: formData.get("category"),
       name: formData.get("name") ?? undefined,
+      parentDocId: formData.get("parentDocId") ?? undefined,
     };
     const parsed = documentUploadSchema.safeParse(fields);
     if (!parsed.success) {
       return handleZodError(parsed.error);
     }
 
-    const { clientId, projectId, category, name } = parsed.data;
+    const { clientId, projectId, category, name, parentDocId } = parsed.data;
 
     // Org boundary: verify the client belongs to the user's org
     const client = await prisma.client.findFirst({
@@ -120,6 +123,25 @@ export async function POST(req: NextRequest) {
         { error: { code: "NOT_FOUND", message: "Client not found" } },
         { status: 404 }
       );
+    }
+
+    // Resolve version number: if parentDocId provided, auto-increment from parent
+    let version = 1;
+    if (parentDocId) {
+      const parentDoc = await prisma.document.findFirst({
+        where: {
+          id: parentDocId,
+          client: { orgId: user.orgId },
+        },
+        select: { id: true, version: true },
+      });
+      if (!parentDoc) {
+        return NextResponse.json(
+          { error: { code: "NOT_FOUND", message: "Parent document not found" } },
+          { status: 404 }
+        );
+      }
+      version = parentDoc.version + 1;
     }
 
     // Upload file to storage — path: {orgId}/documents/{uuid}-{filename}
@@ -169,8 +191,13 @@ export async function POST(req: NextRequest) {
         fileUrl: uploadResult.url,
         fileType: uploadResult.contentType,
         category,
+        version,
+        parentDocId: parentDocId ?? null,
       },
     });
+
+    // Fire-and-forget: trigger OCR for eligible file types without blocking the 201 response
+    void triggerDocumentOcr(document.id);
 
     return NextResponse.json({ data: document }, { status: 201 });
   } catch (err) {

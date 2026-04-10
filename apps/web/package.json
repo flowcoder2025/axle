@@ -16,6 +16,7 @@
     "@axle/db": "*",
     "@axle/ocr": "*",
     "@axle/ui": "*",
+    "@google/generative-ai": "^0.24.0",
     "lucide-react": "*",
     "next": "^15.0.0",
     "next-auth": "*",
