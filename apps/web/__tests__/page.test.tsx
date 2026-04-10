@@ -1,4 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+// next-auth requires next/server which doesn't resolve in vitest ESM
+// Mock @axle/auth to avoid the transitive dependency chain
+vi.mock("@axle/auth", () => ({
+  AUTH_PACKAGE: "@axle/auth",
+}));
 
 describe("apps/web", () => {
   it("workspace dependencies resolve", async () => {
