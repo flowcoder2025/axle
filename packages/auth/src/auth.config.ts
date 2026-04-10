@@ -9,7 +9,7 @@ import type { NextAuthConfig } from "next-auth";
 /** Routes that require authentication */
 const PROTECTED_PREFIXES = ["/dashboard", "/settings", "/org", "/api/protected"];
 
-export const authConfig = {
+export const authConfig: NextAuthConfig = {
   pages: {
     signIn: "/login",
   },
@@ -42,4 +42,4 @@ export const authConfig = {
     },
   },
   providers: [],
-} satisfies NextAuthConfig;
+};

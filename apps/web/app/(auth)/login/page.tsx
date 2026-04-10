@@ -2,37 +2,18 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { Button } from "@axle/ui";
-import { Input } from "@axle/ui";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@axle/ui";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@axle/ui";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  async function handleCredentials(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-      if (result?.error) {
-        setError("이메일 또는 비밀번호가 올바르지 않습니다.");
-      } else {
-        router.push("/dashboard");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function handleGoogle() {
     setLoading(true);
@@ -47,7 +28,7 @@ export default function LoginPage() {
           컨설팅 자동화 플랫폼에 로그인하세요
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent>
         <Button
           type="button"
           variant="outline"
@@ -56,53 +37,8 @@ export default function LoginPage() {
           disabled={loading}
         >
           <GoogleIcon className="mr-2 h-4 w-4" />
-          Google로 계속하기
+          {loading ? "로그인 중..." : "Google로 계속하기"}
         </Button>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">또는</span>
-          </div>
-        </div>
-
-        <form onSubmit={handleCredentials} className="space-y-3">
-          <div className="space-y-1">
-            <label htmlFor="email" className="text-sm font-medium leading-none">
-              이메일
-            </label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="name@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
-          <div className="space-y-1">
-            <label htmlFor="password" className="text-sm font-medium leading-none">
-              비밀번호
-            </label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "로그인 중..." : "로그인"}
-          </Button>
-        </form>
       </CardContent>
       <CardFooter>
         <p className="text-xs text-center text-muted-foreground w-full">

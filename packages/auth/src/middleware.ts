@@ -8,9 +8,11 @@
  *   export { auth as middleware, config } from "@axle/auth/middleware";
  */
 import NextAuth from "next-auth";
+import type { NextAuthResult } from "next-auth";
 import { authConfig } from "./auth.config.js";
 
-export const { auth } = NextAuth(authConfig);
+const nextAuth: NextAuthResult = NextAuth(authConfig);
+export const auth: typeof nextAuth.auth = nextAuth.auth;
 
 /**
  * Next.js middleware matcher config.

@@ -1,17 +1,20 @@
 /**
  * auth.ts — Node.js runtime Auth.js v5 configuration
  *
- * Uses Prisma adapter and full provider set.
+ * Uses Prisma adapter and Google OAuth only.
  * NOT safe for Edge runtime — import auth.config.ts there instead.
+ *
+ * NOTE: Credentials provider is intentionally omitted in Phase 0.
+ * The User model has no password field yet. Add it in a later phase.
  */
 import NextAuth from "next-auth";
+import type { NextAuthResult } from "next-auth";
 import Google from "next-auth/providers/google";
-import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@axle/db";
 import { authConfig } from "./auth.config.js";
 
-export const { auth, signIn, signOut, handlers } = NextAuth({
+const nextAuth: NextAuthResult = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
   session: {
@@ -21,34 +24,6 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-    }),
-    Credentials({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
-
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        });
-
-        if (!user) return null;
-
-        // Password verification should use bcrypt in production.
-        // The actual password field name depends on your Prisma schema.
-        // Returning user here — add hash comparison once schema confirms field name.
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-        };
-      },
     }),
   ],
   callbacks: {
@@ -89,3 +64,8 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
     },
   },
 });
+
+export const auth: typeof nextAuth.auth = nextAuth.auth;
+export const signIn: typeof nextAuth.signIn = nextAuth.signIn;
+export const signOut: typeof nextAuth.signOut = nextAuth.signOut;
+export const handlers: typeof nextAuth.handlers = nextAuth.handlers;
