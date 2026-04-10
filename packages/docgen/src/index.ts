@@ -46,6 +46,10 @@ export type { EstimateDocInput } from "./generators/estimate.js";
 export { generateContractDocx } from "./generators/contract.js";
 export type { ContractDocInput, ContractParty, ContractTerm } from "./generators/contract.js";
 
+// ── Patent Draft Generator (WI-070) ──────────────────────────────────────────
+export { generatePatentDraftDocx } from "./generators/patent-draft.js";
+export type { PatentDraftInput } from "./generators/patent-draft.js";
+
 // ── Converters (WI-071, WI-072) ───────────────────────────────────────────────
 export { pdfToMarkdown } from "./converters/pdf-to-markdown.js";
 export { markdownToDocx } from "./converters/markdown-to-docx.js";
