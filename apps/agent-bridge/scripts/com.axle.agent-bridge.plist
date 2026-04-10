@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Service label — must match filename without .plist -->
+  <key>Label</key>
+  <string>com.axle.agent-bridge</string>
+
+  <!-- Command to run: node dist/index.js from the package root -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/node</string>
+    <string>/opt/axle/apps/agent-bridge/dist/index.js</string>
+  </array>
+
+  <!-- Working directory -->
+  <key>WorkingDirectory</key>
+  <string>/opt/axle/apps/agent-bridge</string>
+
+  <!-- Environment variables -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>NODE_ENV</key>
+    <string>production</string>
+
+    <key>PORT</key>
+    <string>3100</string>
+
+    <!-- MLX LLM server settings -->
+    <key>MLX_MODEL_PATH</key>
+    <string>/Users/jerome/.cache/huggingface/hub/mlx-community/Qwen2.5-7B-Instruct-4bit</string>
+    <key>MLX_PORT</key>
+    <string>8080</string>
+    <key>MLX_HOST</key>
+    <string>127.0.0.1</string>
+
+    <!-- Claude MQ directories -->
+    <key>CLAUDE_MQ_DIR</key>
+    <string>/opt/axle/.claude-mq</string>
+    <key>CLAUDE_MQ_INBOX</key>
+    <string>/opt/axle/.claude-mq/inbox</string>
+    <key>CLAUDE_MQ_OUTBOX</key>
+    <string>/opt/axle/.claude-mq/outbox</string>
+    <key>CLAUDE_MQ_STATUS_FILE</key>
+    <string>/opt/axle/.claude-mq/status.json</string>
+
+    <!-- Whisper settings -->
+    <key>WHISPER_MODEL</key>
+    <string>large-v3</string>
+    <key>WHISPER_LANGUAGE</key>
+    <string>ko</string>
+    <key>WHISPER_OUTPUT_DIR</key>
+    <string>/tmp/axle-whisper</string>
+
+    <!-- Upload settings -->
+    <key>UPLOAD_DIR</key>
+    <string>/tmp/axle-uploads</string>
+    <key>MAX_UPLOAD_SIZE_MB</key>
+    <string>100</string>
+  </dict>
+
+  <!-- Restart on crash -->
+  <key>KeepAlive</key>
+  <true/>
+
+  <!-- Log output -->
+  <key>StandardOutPath</key>
+  <string>/var/log/axle/agent-bridge.log</string>
+  <key>StandardErrorPath</key>
+  <string>/var/log/axle/agent-bridge.error.log</string>
+
+  <!-- Run at load (system startup) -->
+  <key>RunAtLoad</key>
+  <true/>
+
+  <!-- Throttle restarts to avoid rapid loops (5 seconds) -->
+  <key>ThrottleInterval</key>
+  <integer>5</integer>
+</dict>
+</plist>
