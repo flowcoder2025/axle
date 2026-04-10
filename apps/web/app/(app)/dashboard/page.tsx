@@ -1,5 +1,6 @@
 import { getCurrentUser } from "@axle/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@axle/ui";
+import { ExpiringDocumentsWidget } from "../../../src/components/documents/expiring-documents-widget";
 
 const STAT_CARDS = [
   { title: "활성 프로젝트", value: "-", description: "진행 중인 프로젝트" },
@@ -34,6 +35,10 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ExpiringDocumentsWidget />
       </div>
     </div>
   );
