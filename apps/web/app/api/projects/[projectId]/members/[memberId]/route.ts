@@ -81,15 +81,35 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     const oldRole = result.member.role;
     const { userId } = result.member;
 
-    const updated = await prisma.projectMember.update({
-      where: { id: memberId },
-      data: { role },
-    });
+    let updated: { id: string; projectId: string; userId: string; role: string };
+    try {
+      updated = await prisma.projectMember.update({
+        where: { id: memberId },
+        data: { role },
+      });
+    } catch {
+      return NextResponse.json(
+        { error: { code: "INTERNAL_ERROR", message: "Failed to update project member" } },
+        { status: 500 },
+      );
+    }
 
     // Swap ReBAC tuples only if role actually changed.
     if (role !== oldRole) {
-      await revoke("project", projectId, oldRole.toLowerCase(), "user", userId);
-      await grant("project", projectId, role.toLowerCase(), "user", userId);
+      try {
+        await revoke("project", projectId, oldRole.toLowerCase(), "user", userId);
+        await grant("project", projectId, role.toLowerCase(), "user", userId);
+      } catch {
+        // Compensating transaction: restore previous role in DB
+        await prisma.projectMember.update({
+          where: { id: memberId },
+          data: { role: oldRole as "LEAD" | "MEMBER" | "VIEWER" },
+        }).catch(() => null);
+        return NextResponse.json(
+          { error: { code: "INTERNAL_ERROR", message: "Failed to update project access; role not changed" } },
+          { status: 500 },
+        );
+      }
     }
 
     return NextResponse.json({ data: updated });
@@ -115,8 +135,24 @@ export async function DELETE(_req: NextRequest, { params }: RouteContext) {
 
     const { userId, role } = result.member;
 
-    await prisma.projectMember.delete({ where: { id: memberId } });
-    await revoke("project", projectId, role.toLowerCase(), "user", userId);
+    try {
+      await prisma.projectMember.delete({ where: { id: memberId } });
+    } catch {
+      return NextResponse.json(
+        { error: { code: "INTERNAL_ERROR", message: "Failed to remove project member" } },
+        { status: 500 },
+      );
+    }
+
+    try {
+      await revoke("project", projectId, role.toLowerCase(), "user", userId);
+    } catch {
+      // Log but don't fail — member record is already deleted.
+      // A stale ReBAC tuple is less harmful than a dangling member record.
+      console.error(
+        `Failed to revoke ReBAC tuple for member ${memberId} (project ${projectId}, user ${userId}). Tuple may be stale.`
+      );
+    }
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {

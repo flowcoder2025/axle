@@ -65,8 +65,8 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     dueDate: project.dueDate ? project.dueDate.toISOString() : null,
     memo: project.memo,
     feeType: project.feeType as FeeType | null,
-    feeAmount: project.feeAmount != null ? project.feeAmount.toString() : null,
-    successRate: project.successRate != null ? project.successRate.toString() : null,
+    feeAmount: project.feeAmount != null ? Number(project.feeAmount).toString() : null,
+    successRate: project.successRate != null ? Number(project.successRate).toString() : null,
     isPaid: project.isPaid,
     client: project.client,
     children: project.children.map((c) => ({

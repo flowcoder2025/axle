@@ -9,18 +9,9 @@
 import { prisma } from "@axle/db";
 import { type ProjectType } from "@prisma/client";
 import { Prisma } from "@prisma/client";
+import { PROJECT_TYPE_LABELS } from "@/lib/constants/project";
 
-/** Human-readable labels for each project type used in child titles */
-export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
-  BUSINESS_PLAN: "사업계획서",
-  VENTURE_CERT: "벤처기업확인",
-  SOBOOJANG_CERT: "소부장확인",
-  RESEARCH_INSTITUTE: "기업부설연구소",
-  PATENT: "특허",
-  FINANCIAL_ANALYSIS: "재무분석",
-  RESEARCH_TASK: "연구과제",
-  BUNDLE: "통합",
-};
+export { PROJECT_TYPE_LABELS };
 
 /** Default child project types created for every BUNDLE */
 export const DEFAULT_BUNDLE_CHILD_TYPES: ProjectType[] = [

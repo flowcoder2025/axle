@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@axle/db";
+import { Prisma } from "@prisma/client";
 import { getCurrentUser } from "@axle/auth";
 import {
   handleInternalError,
@@ -63,8 +64,8 @@ export async function POST(_req: NextRequest, ctx: RouteContext) {
         status: "QUEUED",
         input: {
           investigationItems,
-          clientContext,
-        },
+          clientContext: clientContext ?? null,
+        } as unknown as Prisma.InputJsonValue,
       },
       select: { id: true, status: true },
     });
@@ -111,7 +112,6 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
         status: true,
         output: true,
         createdAt: true,
-        updatedAt: true,
       },
     });
 
@@ -132,7 +132,6 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
         output: aiJob.output,
         reportDocumentId,
         createdAt: aiJob.createdAt,
-        updatedAt: aiJob.updatedAt,
       },
     });
   } catch (err) {

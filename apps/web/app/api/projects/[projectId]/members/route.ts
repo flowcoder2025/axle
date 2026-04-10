@@ -6,30 +6,10 @@ import {
   handleZodError,
   handleInternalError,
   unauthorizedResponse,
-  notFoundResponse,
 } from "@/lib/api-helpers";
+import { resolveProject } from "@/lib/utils/resolve-project";
 
 type RouteContext = { params: Promise<{ projectId: string }> };
-
-/**
- * Resolves a project, enforcing org boundary via project.client.orgId.
- * Returns the project id on success.
- */
-async function resolveProject(
-  projectId: string,
-  orgId: string,
-): Promise<{ ok: true } | { ok: false; response: NextResponse }> {
-  const project = await prisma.project.findFirst({
-    where: { id: projectId, client: { orgId } },
-    select: { id: true },
-  });
-
-  if (!project) {
-    return { ok: false, response: notFoundResponse("Project") };
-  }
-
-  return { ok: true };
-}
 
 /**
  * GET /api/projects/[projectId]/members
@@ -127,11 +107,28 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       );
     }
 
-    const member = await prisma.projectMember.create({
-      data: { projectId, userId, role },
-    });
+    let member: { id: string; projectId: string; userId: string; role: string };
+    try {
+      member = await prisma.projectMember.create({
+        data: { projectId, userId, role },
+      });
+    } catch {
+      return NextResponse.json(
+        { error: { code: "INTERNAL_ERROR", message: "Failed to create project member" } },
+        { status: 500 },
+      );
+    }
 
-    await grant("project", projectId, role.toLowerCase(), "user", userId);
+    try {
+      await grant("project", projectId, role.toLowerCase(), "user", userId);
+    } catch {
+      // Compensating transaction: remove member record if grant fails
+      await prisma.projectMember.delete({ where: { id: member.id } }).catch(() => null);
+      return NextResponse.json(
+        { error: { code: "INTERNAL_ERROR", message: "Failed to grant project access; member not added" } },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json({ data: member }, { status: 201 });
   } catch (error) {

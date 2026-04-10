@@ -6,33 +6,10 @@ import {
   handleZodError,
   handleInternalError,
   unauthorizedResponse,
-  notFoundResponse,
 } from "@/lib/api-helpers";
+import { resolveProject } from "@/lib/utils/resolve-project";
 
 type RouteContext = { params: Promise<{ projectId: string }> };
-
-/**
- * Resolves a project and enforces org boundary via project.client.orgId.
- * Returns the project's clientId on success.
- */
-async function resolveProject(
-  projectId: string,
-  orgId: string,
-): Promise<
-  | { ok: true; clientId: string }
-  | { ok: false; response: NextResponse }
-> {
-  const project = await prisma.project.findFirst({
-    where: { id: projectId, client: { orgId } },
-    select: { id: true, clientId: true },
-  });
-
-  if (!project) {
-    return { ok: false, response: notFoundResponse("Project") };
-  }
-
-  return { ok: true, clientId: project.clientId };
-}
 
 /**
  * GET /api/projects/[projectId]/checklist

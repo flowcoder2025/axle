@@ -8,28 +8,10 @@ import {
   unauthorizedResponse,
   notFoundResponse,
 } from "@/lib/api-helpers";
+import { resolveProject } from "@/lib/utils/resolve-project";
 import { Prisma } from "@prisma/client";
 
 type RouteContext = { params: Promise<{ projectId: string }> };
-
-/**
- * Resolves a project scoped to the user's org via client.orgId.
- */
-async function resolveProject(
-  projectId: string,
-  orgId: string
-): Promise<{ ok: true; project: { id: string; clientId: string } } | { ok: false; response: NextResponse }> {
-  const project = await prisma.project.findFirst({
-    where: { id: projectId, client: { orgId } },
-    select: { id: true, clientId: true },
-  });
-
-  if (!project) {
-    return { ok: false, response: notFoundResponse("Project") };
-  }
-
-  return { ok: true, project };
-}
 
 // GET /api/projects/[projectId]
 export async function GET(_req: NextRequest, ctx: RouteContext) {

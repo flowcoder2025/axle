@@ -42,7 +42,9 @@ export function ProjectKanban({ projects: initialProjects }: ProjectKanbanProps)
   const [projects, setProjects] = useState<KanbanProject[]>(initialProjects);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ProjectStatus | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const dragProjectRef = useRef<KanbanProject | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function getColumnProjects(status: ProjectStatus) {
     return projects.filter((p) => p.status === status);
@@ -95,6 +97,12 @@ export function ProjectKanban({ projects: initialProjects }: ProjectKanbanProps)
     setDraggingId(null);
     dragProjectRef.current = null;
 
+    function showError(message: string) {
+      setError(message);
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+      errorTimerRef.current = setTimeout(() => setError(null), 3000);
+    }
+
     try {
       const res = await fetch(`/api/projects/${project.id}/status`, {
         method: "PATCH",
@@ -107,17 +115,24 @@ export function ProjectKanban({ projects: initialProjects }: ProjectKanbanProps)
         setProjects((prev) =>
           prev.map((p) => (p.id === project.id ? { ...p, status: project.status } : p))
         );
+        showError("상태 변경에 실패했습니다");
       }
     } catch {
       // Rollback on network error
       setProjects((prev) =>
         prev.map((p) => (p.id === project.id ? { ...p, status: project.status } : p))
       );
+      showError("상태 변경에 실패했습니다");
     }
   }
 
   return (
     <div className="overflow-x-auto pb-4">
+      {error && (
+        <div className="mb-3 rounded-md bg-destructive/10 px-4 py-2 text-sm text-destructive">
+          {error}
+        </div>
+      )}
       <div className="flex gap-3 min-w-max">
         {COLUMNS.map((col) => {
           const colProjects = getColumnProjects(col.status);

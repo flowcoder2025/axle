@@ -45,15 +45,22 @@ type TabId = (typeof TABS)[number]["id"];
 
 export function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const tablistId = "project-detail-tablist";
 
   return (
     <div className="space-y-4">
       {/* Tab nav */}
       <div className="border-b">
-        <nav className="flex gap-0" aria-label="프로젝트 상세 탭">
+        <nav
+          className="flex gap-0"
+          aria-label="프로젝트 상세 탭"
+          role="tablist"
+          id={tablistId}
+        >
           {TABS.map((tab) => (
             <button
               key={tab.id}
+              id={`tab-${tab.id}`}
               type="button"
               onClick={() => setActiveTab(tab.id)}
               className={[
@@ -63,6 +70,7 @@ export function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                   : "border-transparent text-muted-foreground hover:text-foreground hover:border-border",
               ].join(" ")}
               aria-selected={activeTab === tab.id}
+              aria-controls="project-detail-tabpanel"
               role="tab"
             >
               {tab.label}
@@ -72,7 +80,11 @@ export function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
       </div>
 
       {/* Tab panels */}
-      <div role="tabpanel">
+      <div
+        id="project-detail-tabpanel"
+        role="tabpanel"
+        aria-labelledby={`tab-${activeTab}`}
+      >
         {activeTab === "overview" && (
           <ProjectOverview project={project} />
         )}
@@ -81,17 +93,17 @@ export function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
         )}
         {activeTab === "documents" && (
           <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
-            서류 탭은 Phase 3에서 연동 예정입니다.
+            서류 탭은 추후 연동 예정입니다.
           </div>
         )}
         {activeTab === "meetings" && (
           <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
-            미팅 탭은 Phase 3에서 연동 예정입니다.
+            미팅 탭은 추후 연동 예정입니다.
           </div>
         )}
         {activeTab === "ai_jobs" && (
           <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
-            AI 작업 탭은 Phase 4에서 연동 예정입니다.
+            AI 작업 탭은 추후 연동 예정입니다.
           </div>
         )}
       </div>

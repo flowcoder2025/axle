@@ -402,7 +402,7 @@ model Project {
   title             String
   status            ProjectStatus @default(INTAKE)
   priority          Priority      @default(MEDIUM)
-  assignedTo        String?
+  assignedTo        String?   // Display-only free text. Use ProjectMember LEAD role for actual assignment.
   dueDate           DateTime?
   submissionDate    DateTime?
   memo              String?
@@ -438,6 +438,9 @@ model ProjectMember {
   role              ProjectMemberRole @default(MEMBER)
 
   project           Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
   @@unique([projectId, userId])
 }

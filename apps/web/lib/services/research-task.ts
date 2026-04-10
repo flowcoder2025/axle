@@ -108,7 +108,7 @@ export async function executeResearchTask(aiJobId: string): Promise<void> {
   }
 
   try {
-    const input = aiJob.input as ResearchInput;
+    const input = aiJob.input as unknown as ResearchInput;
     const investigationItems: InvestigationItem[] = Array.isArray(input.investigationItems)
       ? input.investigationItems
       : [];

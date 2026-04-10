@@ -87,6 +87,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const orgId = user.orgId;
     const body = await req.json();
     const parsed = projectCreateSchema.safeParse(body);
     if (!parsed.success) {
@@ -95,7 +96,7 @@ export async function POST(req: NextRequest) {
 
     // Verify client belongs to the user's org
     const client = await prisma.client.findFirst({
-      where: { id: parsed.data.clientId, orgId: user.orgId },
+      where: { id: parsed.data.clientId, orgId },
       select: { id: true },
     });
 
@@ -122,7 +123,7 @@ export async function POST(req: NextRequest) {
 
       // Auto-apply checklist templates for this project type + org
       const templates = await tx.checklistTemplate.findMany({
-        where: { orgId: user.orgId, projectType: created.type },
+        where: { orgId, projectType: created.type },
         orderBy: { sortOrder: "asc" },
       });
 
@@ -144,7 +145,7 @@ export async function POST(req: NextRequest) {
           created.id,
           created.title,
           created.clientId,
-          user.orgId!,
+          orgId,
           childTypes
         );
       }

@@ -71,6 +71,14 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
     : undefined;
   const assignedTo = params.assignedTo?.trim() || undefined;
   const clientId = params.clientId?.trim() || undefined;
+  const q = params.q?.trim() || undefined;
+
+  const VALID_SORT_FIELDS = ["createdAt", "title", "dueDate", "status"] as const;
+  type SortField = (typeof VALID_SORT_FIELDS)[number];
+  const sortBy: SortField = VALID_SORT_FIELDS.includes(params.sortBy as SortField)
+    ? (params.sortBy as SortField)
+    : "createdAt";
+  const sortOrder: "asc" | "desc" = params.sortOrder === "asc" ? "asc" : "desc";
 
   const where = {
     client: { orgId: user.orgId },
@@ -78,6 +86,14 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
     ...(status ? { status } : {}),
     ...(assignedTo ? { assignedTo } : {}),
     ...(clientId ? { clientId } : {}),
+    ...(q
+      ? {
+          OR: [
+            { title: { contains: q, mode: "insensitive" as const } },
+            { client: { name: { contains: q, mode: "insensitive" as const } } },
+          ],
+        }
+      : {}),
   };
 
   const [projects, total] = await Promise.all([
@@ -85,7 +101,7 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
       where,
       skip,
       take: pageSize,
-      orderBy: { createdAt: "desc" },
+      orderBy: { [sortBy]: sortOrder },
       select: {
         id: true,
         title: true,
