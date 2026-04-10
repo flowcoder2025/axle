@@ -82,6 +82,8 @@ model Organization {
   logoUrl String?
 
   memberships Membership[]
+  clients     Client[]
+  programs    ProgramInfo[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -100,4 +102,188 @@ model Membership {
 
   @@unique([userId, organizationId])
   @@index([organizationId])
+}
+
+// ========================================
+// CRM Models (WI-005)
+// ========================================
+
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+  PROSPECT
+}
+
+enum ContactSource {
+  BUSINESS_CARD
+  MANUAL
+  IMPORT
+}
+
+enum AchievementType {
+  PATENT
+  AWARD
+  CONTRACT
+  INVESTMENT
+  CERTIFICATION
+}
+
+enum ProgramCategory {
+  STARTUP
+  VENTURE
+  RND
+  CERTIFICATION
+  EXPORT
+  SMART_FACTORY
+  GENERAL
+}
+
+model Client {
+  id                String       @id @default(cuid())
+  orgId             String
+  name              String
+  businessNumber    String?
+  ceoName           String?
+  industry          String?
+  address           String?
+  phone             String?
+  email             String?
+  website           String?
+  memo              String?
+  status            ClientStatus @default(ACTIVE)
+  assignedTo        String?
+
+  employeeCount     Int?
+  capitalAmount     Decimal?
+  foundedDate       DateTime?
+  region            String?
+  isVenture         Boolean      @default(false)
+  isInnoBiz         Boolean      @default(false)
+  isMainBiz         Boolean      @default(false)
+  isSocial          Boolean      @default(false)
+  ventureValidUntil DateTime?
+  masterProfile     Json?
+  profileBlocks     Json?
+
+  contacts          Contact[]
+  financials        ClientFinancial[]
+  achievements      ClientAchievement[]
+  certificates      Certificate[]
+
+  organization      Organization @relation(fields: [orgId], references: [id])
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([orgId])
+}
+
+model Contact {
+  id                String        @id @default(cuid())
+  clientId          String
+  name              String
+  position          String?
+  department        String?
+  phone             String?
+  email             String?
+  isPrimary         Boolean       @default(false)
+  memo              String?
+  source            ContactSource @default(MANUAL)
+  businessCardUrl   String?
+  isResearcher      Boolean       @default(false)
+  researchField     String?
+
+  client            Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+}
+
+model ClientFinancial {
+  id                String   @id @default(cuid())
+  clientId          String
+  year              Int
+  revenue           Decimal?
+  operatingProfit   Decimal?
+  netProfit         Decimal?
+  totalAssets       Decimal?
+  totalLiabilities  Decimal?
+  totalEquity       Decimal?
+  creditRating      String?
+  source            String?
+
+  client            Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, year])
+}
+
+model ClientAchievement {
+  id                String          @id @default(cuid())
+  clientId          String
+  type              AchievementType
+  title             String
+  date              DateTime?
+  amount            Decimal?
+  description       String?
+  documentId        String?
+
+  client            Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+}
+
+model Certificate {
+  id                String    @id @default(cuid())
+  clientId          String
+  type              String
+  subjectName       String
+  serialNumber      String?
+  validFrom         DateTime?
+  validTo           DateTime?
+  storagePath       String?
+  isActive          Boolean   @default(true)
+
+  client            Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+}
+
+model ProgramInfo {
+  id                String          @id @default(cuid())
+  orgId             String
+  name              String
+  agency            String?
+  category          ProgramCategory
+  announcementUrl   String?
+  announcementDocId String?
+  applicationStart  DateTime?
+  applicationEnd    DateTime?
+  maxFunding        Decimal?
+  requirements      Json?
+  eligibility       Json?
+  region            String?
+  memo              String?
+  isCrawled         Boolean         @default(false)
+  crawledAt         DateTime?
+
+  matchingResults   MatchingResult[]
+
+  organization      Organization @relation(fields: [orgId], references: [id])
+
+  @@index([orgId])
+}
+
+model MatchingResult {
+  id                String   @id @default(cuid())
+  clientId          String
+  programId         String
+  score             Decimal
+  matchReasons      Json?
+  disqualifyReasons Json?
+  isRelevant        Boolean?
+  feedbackNote      String?
+  createdAt         DateTime @default(now())
+
+  program           ProgramInfo @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([programId])
 }
