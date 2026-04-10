@@ -1166,6 +1166,10 @@ wait_for_merge() {
   # 단일 PR의 머지 완료를 대기 (순차 모드용)
   # $1: 워커가 작업한 브랜치명
   local branch="${1:-}"
+  if [[ -z "$branch" ]]; then
+    log "⚠️ wait_for_merge: 브랜치명 없음 — 스킵"
+    return 0
+  fi
 
   # 브랜치에서 PR 번호 조회
   local pr_number
@@ -1178,7 +1182,7 @@ wait_for_merge() {
       log "✅ PR #$pr_number 이미 머지됨"
       return 0
     fi
-    log "⚠️ 브랜치 $branch에 대한 PR 없음"
+    log "⚠️ 브랜치 ${branch:-unknown}에 대한 PR 없음"
     return 2
   fi
 
