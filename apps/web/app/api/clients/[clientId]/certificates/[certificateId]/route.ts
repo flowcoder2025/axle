@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@axle/auth";
 import { prisma } from "@axle/db";
 import { certificateUpdateSchema } from "@/lib/validations/certificate";
+import { handleZodError, handleInternalError, unauthorizedResponse, notFoundResponse } from "@/lib/api-helpers";
 
 type RouteContext = { params: Promise<{ clientId: string; certificateId: string }> };
 
@@ -23,13 +24,7 @@ async function resolveCertificate(
   });
 
   if (!client) {
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Client not found" } },
-        { status: 404 },
-      ),
-    };
+    return { ok: false, response: notFoundResponse("Client") };
   }
 
   const certificate = await prisma.certificate.findFirst({
@@ -37,13 +32,7 @@ async function resolveCertificate(
   });
 
   if (!certificate) {
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Certificate not found" } },
-        { status: 404 },
-      ),
-    };
+    return { ok: false, response: notFoundResponse("Certificate") };
   }
 
   return { ok: true, certificate };
@@ -55,10 +44,7 @@ async function resolveCertificate(
 export async function GET(_req: NextRequest, { params }: RouteContext) {
   const user = await getCurrentUser();
   if (!user?.orgId) {
-    return NextResponse.json(
-      { error: { code: "UNAUTHORIZED", message: "Authentication required" } },
-      { status: 401 },
-    );
+    return unauthorizedResponse();
   }
 
   try {
@@ -68,11 +54,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ data: result.certificate });
   } catch (error) {
-    console.error("Error:", error);
-    return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
-      { status: 500 },
-    );
+    return handleInternalError(error);
   }
 }
 
@@ -83,10 +65,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
   const user = await getCurrentUser();
   if (!user?.orgId) {
-    return NextResponse.json(
-      { error: { code: "UNAUTHORIZED", message: "Authentication required" } },
-      { status: 401 },
-    );
+    return unauthorizedResponse();
   }
 
   try {
@@ -106,15 +85,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
 
     const parsed = certificateUpdateSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "VALIDATION_ERROR",
-            message: parsed.error.issues.map((i) => i.message).join(", "),
-          },
-        },
-        { status: 400 },
-      );
+      return handleZodError(parsed.error);
     }
 
     const { validFrom, validTo, ...rest } = parsed.data;
@@ -130,11 +101,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ data: updated });
   } catch (error) {
-    console.error("Error:", error);
-    return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
-      { status: 500 },
-    );
+    return handleInternalError(error);
   }
 }
 
@@ -145,10 +112,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
 export async function DELETE(_req: NextRequest, { params }: RouteContext) {
   const user = await getCurrentUser();
   if (!user?.orgId) {
-    return NextResponse.json(
-      { error: { code: "UNAUTHORIZED", message: "Authentication required" } },
-      { status: 401 },
-    );
+    return unauthorizedResponse();
   }
 
   try {
@@ -160,10 +124,6 @@ export async function DELETE(_req: NextRequest, { params }: RouteContext) {
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error("Error:", error);
-    return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
-      { status: 500 },
-    );
+    return handleInternalError(error);
   }
 }

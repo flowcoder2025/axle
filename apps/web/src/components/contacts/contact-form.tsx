@@ -11,6 +11,7 @@ import {
   DialogFooter,
   Input,
   Label,
+  cn,
 } from "@axle/ui";
 import { BusinessCardUpload, type BusinessCardData } from "./business-card-upload";
 
@@ -273,10 +274,10 @@ export function ContactForm({
 
           {/* Toggles */}
           <div className="flex flex-col gap-3">
-            <label className="flex items-center gap-3 cursor-pointer">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
               <input
                 type="checkbox"
-                className="h-4 w-4 rounded border-gray-300 accent-primary"
+                className={cn("h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer")}
                 checked={values.isPrimary ?? false}
                 onChange={(e) => set("isPrimary", e.target.checked)}
               />
@@ -286,10 +287,10 @@ export function ContactForm({
               </span>
             </label>
 
-            <label className="flex items-center gap-3 cursor-pointer">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
               <input
                 type="checkbox"
-                className="h-4 w-4 rounded border-gray-300 accent-primary"
+                className={cn("h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer")}
                 checked={values.isResearcher ?? false}
                 onChange={(e) => set("isResearcher", e.target.checked)}
               />
@@ -316,7 +317,11 @@ export function ContactForm({
             <textarea
               id="memo"
               rows={3}
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className={cn(
+                "flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm",
+                "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                "disabled:cursor-not-allowed disabled:opacity-50"
+              )}
               value={values.memo ?? ""}
               onChange={(e) => set("memo", e.target.value)}
               placeholder="추가 메모"

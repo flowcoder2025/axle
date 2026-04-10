@@ -2,21 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@axle/db";
 import { getCurrentUser } from "@axle/auth";
 import { clientUpdateSchema } from "@/lib/validations/client";
-import type { ZodError } from "zod";
+import { handleZodError, handleInternalError, unauthorizedResponse, notFoundResponse } from "@/lib/api-helpers";
 import { Prisma } from "@prisma/client";
-
-function handleZodError(err: ZodError) {
-  const issues = err.issues ?? [];
-  return NextResponse.json(
-    {
-      error: {
-        code: "VALIDATION_ERROR",
-        message: issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; "),
-      },
-    },
-    { status: 400 }
-  );
-}
 
 type RouteContext = { params: Promise<{ clientId: string }> };
 
@@ -25,10 +12,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Authentication required" } },
-        { status: 401 }
-      );
+      return unauthorizedResponse();
     }
     if (!user.orgId) {
       return NextResponse.json(
@@ -62,19 +46,12 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
     });
 
     if (!client) {
-      return NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Client not found" } },
-        { status: 404 }
-      );
+      return notFoundResponse("Client");
     }
 
     return NextResponse.json({ data: client });
   } catch (err) {
-    console.error("[GET /api/clients/[clientId]]", err);
-    return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
-      { status: 500 }
-    );
+    return handleInternalError(err);
   }
 }
 
@@ -83,10 +60,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Authentication required" } },
-        { status: 401 }
-      );
+      return unauthorizedResponse();
     }
     if (!user.orgId) {
       return NextResponse.json(
@@ -103,10 +77,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Client not found" } },
-        { status: 404 }
-      );
+      return notFoundResponse("Client");
     }
 
     const body = await req.json();
@@ -154,11 +125,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
 
     return NextResponse.json({ data: client });
   } catch (err) {
-    console.error("[PATCH /api/clients/[clientId]]", err);
-    return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
-      { status: 500 }
-    );
+    return handleInternalError(err);
   }
 }
 
@@ -168,10 +135,7 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Authentication required" } },
-        { status: 401 }
-      );
+      return unauthorizedResponse();
     }
     if (!user.orgId) {
       return NextResponse.json(
@@ -189,10 +153,7 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Client not found" } },
-        { status: 404 }
-      );
+      return notFoundResponse("Client");
     }
 
     if (hardDelete) {
@@ -207,10 +168,6 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
 
     return NextResponse.json({ data: client });
   } catch (err) {
-    console.error("[DELETE /api/clients/[clientId]]", err);
-    return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
-      { status: 500 }
-    );
+    return handleInternalError(err);
   }
 }

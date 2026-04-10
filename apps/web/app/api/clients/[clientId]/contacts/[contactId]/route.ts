@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@axle/auth";
 import { prisma } from "@axle/db";
 import { contactUpdateSchema } from "@/lib/validations/contact";
+import { handleZodError, handleInternalError, unauthorizedResponse, notFoundResponse } from "@/lib/api-helpers";
 
 type RouteContext = { params: Promise<{ clientId: string; contactId: string }> };
 
@@ -23,13 +24,7 @@ async function resolveContact(
   });
 
   if (!client) {
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Client not found" } },
-        { status: 404 },
-      ),
-    };
+    return { ok: false, response: notFoundResponse("Client") };
   }
 
   const contact = await prisma.contact.findFirst({
@@ -37,13 +32,7 @@ async function resolveContact(
   });
 
   if (!contact) {
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Contact not found" } },
-        { status: 404 },
-      ),
-    };
+    return { ok: false, response: notFoundResponse("Contact") };
   }
 
   return { ok: true, contact };
@@ -55,10 +44,7 @@ async function resolveContact(
 export async function GET(_req: NextRequest, { params }: RouteContext) {
   const user = await getCurrentUser();
   if (!user?.orgId) {
-    return NextResponse.json(
-      { error: { code: "UNAUTHORIZED", message: "Authentication required" } },
-      { status: 401 },
-    );
+    return unauthorizedResponse();
   }
 
   try {
@@ -68,11 +54,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ data: result.contact });
   } catch (error) {
-    console.error("Error:", error);
-    return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
-      { status: 500 },
-    );
+    return handleInternalError(error);
   }
 }
 
@@ -82,10 +64,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
   const user = await getCurrentUser();
   if (!user?.orgId) {
-    return NextResponse.json(
-      { error: { code: "UNAUTHORIZED", message: "Authentication required" } },
-      { status: 401 },
-    );
+    return unauthorizedResponse();
   }
 
   try {
@@ -105,15 +84,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
 
     const parsed = contactUpdateSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "VALIDATION_ERROR",
-            message: parsed.error.issues.map((i) => i.message).join(", "),
-          },
-        },
-        { status: 400 },
-      );
+      return handleZodError(parsed.error);
     }
 
     const input = parsed.data;
@@ -133,11 +104,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ data: updated });
   } catch (error) {
-    console.error("Error:", error);
-    return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
-      { status: 500 },
-    );
+    return handleInternalError(error);
   }
 }
 
@@ -147,10 +114,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
 export async function DELETE(_req: NextRequest, { params }: RouteContext) {
   const user = await getCurrentUser();
   if (!user?.orgId) {
-    return NextResponse.json(
-      { error: { code: "UNAUTHORIZED", message: "Authentication required" } },
-      { status: 401 },
-    );
+    return unauthorizedResponse();
   }
 
   try {
@@ -162,10 +126,6 @@ export async function DELETE(_req: NextRequest, { params }: RouteContext) {
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error("Error:", error);
-    return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
-      { status: 500 },
-    );
+    return handleInternalError(error);
   }
 }

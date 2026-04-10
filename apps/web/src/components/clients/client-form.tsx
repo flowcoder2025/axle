@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Input, Label, Card, CardContent, CardFooter, CardHeader, CardTitle } from "@axle/ui";
+import { Button, Input, Label, Card, CardContent, CardFooter, CardHeader, CardTitle, cn } from "@axle/ui";
 
 type ClientStatus = "ACTIVE" | "INACTIVE" | "PROSPECT";
 
@@ -19,6 +19,14 @@ export interface ClientFormData {
   status: ClientStatus;
   assignedTo: string;
   region: string;
+  employeeCount?: number;
+  capitalAmount?: number;
+  foundedDate: string;
+  isVenture: boolean;
+  isInnoBiz: boolean;
+  isMainBiz: boolean;
+  isSocial: boolean;
+  ventureValidUntil: string;
 }
 
 interface ClientFormProps {
@@ -40,6 +48,14 @@ const EMPTY_FORM: ClientFormData = {
   status: "ACTIVE",
   assignedTo: "",
   region: "",
+  employeeCount: undefined,
+  capitalAmount: undefined,
+  foundedDate: "",
+  isVenture: false,
+  isInnoBiz: false,
+  isMainBiz: false,
+  isSocial: false,
+  ventureValidUntil: "",
 };
 
 const STATUS_OPTIONS: { value: ClientStatus; label: string }[] = [
@@ -47,6 +63,22 @@ const STATUS_OPTIONS: { value: ClientStatus; label: string }[] = [
   { value: "INACTIVE", label: "비활성" },
   { value: "PROSPECT", label: "잠재" },
 ];
+
+// Shared className for native form controls styled to match @axle/ui Input
+const selectCn = cn(
+  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm",
+  "transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+  "disabled:cursor-not-allowed disabled:opacity-50"
+);
+
+const textareaCn = cn(
+  "flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm",
+  "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+  "disabled:cursor-not-allowed disabled:opacity-50"
+);
+
+const checkboxLabelCn = "flex items-center gap-2 cursor-pointer select-none";
+const checkboxCn = "h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer";
 
 export function ClientForm({ initialData, clientId, mode }: ClientFormProps) {
   const router = useRouter();
@@ -61,8 +93,21 @@ export function ClientForm({ initialData, clientId, mode }: ClientFormProps) {
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) {
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+    setErrors((prev) => ({ ...prev, [name]: undefined }));
+  }
+
+  function handleNumberChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({
+      ...prev,
+      [name]: value === "" ? undefined : Number(value),
+    }));
     setErrors((prev) => ({ ...prev, [name]: undefined }));
   }
 
@@ -87,10 +132,20 @@ export function ClientForm({ initialData, clientId, mode }: ClientFormProps) {
     setSubmitting(true);
     setServerError(null);
 
-    const payload: Record<string, string | undefined> = {};
+    // Build payload, stripping empty strings to undefined
+    const payload: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(form)) {
-      payload[key] = value === "" ? undefined : value;
+      if (typeof value === "boolean") {
+        payload[key] = value;
+      } else if (typeof value === "number") {
+        payload[key] = value;
+      } else if (value === "" || value === undefined) {
+        payload[key] = undefined;
+      } else {
+        payload[key] = value;
+      }
     }
+    // Always include required fields
     payload.name = form.name;
     payload.status = form.status;
 
@@ -127,6 +182,7 @@ export function ClientForm({ initialData, clientId, mode }: ClientFormProps) {
   return (
     <form onSubmit={handleSubmit} noValidate>
       <div className="space-y-6">
+        {/* Basic Info */}
         <Card>
           <CardHeader>
             <CardTitle>기본 정보</CardTitle>
@@ -206,7 +262,7 @@ export function ClientForm({ initialData, clientId, mode }: ClientFormProps) {
                   value={form.status}
                   onChange={handleChange}
                   disabled={submitting}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  className={selectCn}
                 >
                   {STATUS_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -214,6 +270,46 @@ export function ClientForm({ initialData, clientId, mode }: ClientFormProps) {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="foundedDate">설립일</Label>
+                <Input
+                  id="foundedDate"
+                  name="foundedDate"
+                  type="date"
+                  value={form.foundedDate}
+                  onChange={handleChange}
+                  disabled={submitting}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="employeeCount">직원 수</Label>
+                <Input
+                  id="employeeCount"
+                  name="employeeCount"
+                  type="number"
+                  min={0}
+                  value={form.employeeCount ?? ""}
+                  onChange={handleNumberChange}
+                  placeholder="예: 50"
+                  disabled={submitting}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="capitalAmount">자본금 (원)</Label>
+                <Input
+                  id="capitalAmount"
+                  name="capitalAmount"
+                  type="number"
+                  min={0}
+                  value={form.capitalAmount ?? ""}
+                  onChange={handleNumberChange}
+                  placeholder="예: 100000000"
+                  disabled={submitting}
+                />
               </div>
             </div>
 
@@ -231,6 +327,7 @@ export function ClientForm({ initialData, clientId, mode }: ClientFormProps) {
           </CardContent>
         </Card>
 
+        {/* Contact Info */}
         <Card>
           <CardHeader>
             <CardTitle>연락처 정보</CardTitle>
@@ -285,6 +382,79 @@ export function ClientForm({ initialData, clientId, mode }: ClientFormProps) {
           </CardContent>
         </Card>
 
+        {/* Certification Status */}
+        <Card>
+          <CardHeader>
+            <CardTitle>인증 현황</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <label className={checkboxLabelCn}>
+                <input
+                  type="checkbox"
+                  name="isVenture"
+                  className={checkboxCn}
+                  checked={form.isVenture}
+                  onChange={handleChange}
+                  disabled={submitting}
+                />
+                <span className="text-sm font-medium">벤처기업</span>
+              </label>
+
+              <label className={checkboxLabelCn}>
+                <input
+                  type="checkbox"
+                  name="isInnoBiz"
+                  className={checkboxCn}
+                  checked={form.isInnoBiz}
+                  onChange={handleChange}
+                  disabled={submitting}
+                />
+                <span className="text-sm font-medium">이노비즈</span>
+              </label>
+
+              <label className={checkboxLabelCn}>
+                <input
+                  type="checkbox"
+                  name="isMainBiz"
+                  className={checkboxCn}
+                  checked={form.isMainBiz}
+                  onChange={handleChange}
+                  disabled={submitting}
+                />
+                <span className="text-sm font-medium">메인비즈</span>
+              </label>
+
+              <label className={checkboxLabelCn}>
+                <input
+                  type="checkbox"
+                  name="isSocial"
+                  className={checkboxCn}
+                  checked={form.isSocial}
+                  onChange={handleChange}
+                  disabled={submitting}
+                />
+                <span className="text-sm font-medium">사회적기업</span>
+              </label>
+            </div>
+
+            {form.isVenture && (
+              <div className="space-y-2">
+                <Label htmlFor="ventureValidUntil">벤처 유효기간</Label>
+                <Input
+                  id="ventureValidUntil"
+                  name="ventureValidUntil"
+                  type="date"
+                  value={form.ventureValidUntil}
+                  onChange={handleChange}
+                  disabled={submitting}
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Assignment & Memo */}
         <Card>
           <CardHeader>
             <CardTitle>담당 및 메모</CardTitle>
@@ -312,7 +482,7 @@ export function ClientForm({ initialData, clientId, mode }: ClientFormProps) {
                 rows={4}
                 placeholder="고객사 관련 메모를 입력하세요."
                 disabled={submitting}
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                className={textareaCn}
               />
             </div>
           </CardContent>

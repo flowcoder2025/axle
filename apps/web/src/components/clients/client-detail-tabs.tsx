@@ -46,7 +46,7 @@ type TabId = (typeof TABS)[number]["id"];
 // Component
 // ---------------------------------------------------------------------------
 export function ClientDetailTabs({ clientId, client }: ClientDetailTabsProps) {
-  const [activeTab, setActiveTab] = useState<TabId>("contacts");
+  const [activeTab, setActiveTab] = useState<TabId>("info");
 
   return (
     <div className="space-y-4">

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@axle/auth";
 import { prisma } from "@axle/db";
 import { certificateCreateSchema } from "@/lib/validations/certificate";
+import { handleZodError, handleInternalError, unauthorizedResponse, notFoundResponse } from "@/lib/api-helpers";
 
 type RouteContext = { params: Promise<{ clientId: string }> };
 
@@ -13,10 +14,7 @@ type RouteContext = { params: Promise<{ clientId: string }> };
 export async function GET(req: NextRequest, { params }: RouteContext) {
   const user = await getCurrentUser();
   if (!user?.orgId) {
-    return NextResponse.json(
-      { error: { code: "UNAUTHORIZED", message: "Authentication required" } },
-      { status: 401 },
-    );
+    return unauthorizedResponse();
   }
 
   try {
@@ -28,10 +26,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     });
 
     if (!client) {
-      return NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Client not found" } },
-        { status: 404 },
-      );
+      return notFoundResponse("Client");
     }
 
     const { searchParams } = new URL(req.url);
@@ -65,11 +60,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ data, total, page, pageSize });
   } catch (error) {
-    console.error("Error:", error);
-    return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
-      { status: 500 },
-    );
+    return handleInternalError(error);
   }
 }
 
@@ -80,10 +71,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 export async function POST(req: NextRequest, { params }: RouteContext) {
   const user = await getCurrentUser();
   if (!user?.orgId) {
-    return NextResponse.json(
-      { error: { code: "UNAUTHORIZED", message: "Authentication required" } },
-      { status: 401 },
-    );
+    return unauthorizedResponse();
   }
 
   try {
@@ -95,10 +83,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     });
 
     if (!client) {
-      return NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Client not found" } },
-        { status: 404 },
-      );
+      return notFoundResponse("Client");
     }
 
     let body: unknown;
@@ -113,15 +98,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 
     const parsed = certificateCreateSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "VALIDATION_ERROR",
-            message: parsed.error.issues.map((i) => i.message).join(", "),
-          },
-        },
-        { status: 400 },
-      );
+      return handleZodError(parsed.error);
     }
 
     const { validFrom, validTo, ...rest } = parsed.data;
@@ -137,10 +114,6 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ data: certificate }, { status: 201 });
   } catch (error) {
-    console.error("Error:", error);
-    return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
-      { status: 500 },
-    );
+    return handleInternalError(error);
   }
 }

@@ -35,6 +35,14 @@ export default async function EditClientPage({ params }: PageProps) {
       status: true,
       assignedTo: true,
       region: true,
+      employeeCount: true,
+      capitalAmount: true,
+      foundedDate: true,
+      isVenture: true,
+      isInnoBiz: true,
+      isMainBiz: true,
+      isSocial: true,
+      ventureValidUntil: true,
     },
   });
 
@@ -67,6 +75,16 @@ export default async function EditClientPage({ params }: PageProps) {
           status: (client.status as "ACTIVE" | "INACTIVE" | "PROSPECT") ?? "ACTIVE",
           assignedTo: client.assignedTo ?? "",
           region: client.region ?? "",
+          employeeCount: client.employeeCount ?? undefined,
+          capitalAmount: client.capitalAmount != null ? Number(client.capitalAmount) : undefined,
+          foundedDate: client.foundedDate ? client.foundedDate.toISOString().slice(0, 10) : "",
+          isVenture: client.isVenture,
+          isInnoBiz: client.isInnoBiz,
+          isMainBiz: client.isMainBiz,
+          isSocial: client.isSocial,
+          ventureValidUntil: client.ventureValidUntil
+            ? client.ventureValidUntil.toISOString().slice(0, 10)
+            : "",
         }}
       />
     </div>

@@ -4,31 +4,15 @@ import { getCurrentUser } from "@axle/auth";
 import { clientCreateSchema, clientSearchSchema } from "@/lib/validations/client";
 import { sendOnboardingChecklist } from "@/lib/services/client-onboarding";
 import { generateMasterProfile } from "@/lib/services/client-profile";
-import type { ZodError } from "zod";
+import { handleZodError, handleInternalError, unauthorizedResponse } from "@/lib/api-helpers";
 import { Prisma } from "@prisma/client";
-
-function handleZodError(err: ZodError) {
-  const issues = err.issues ?? [];
-  return NextResponse.json(
-    {
-      error: {
-        code: "VALIDATION_ERROR",
-        message: issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; "),
-      },
-    },
-    { status: 400 }
-  );
-}
 
 // GET /api/clients — list clients with search, filter, pagination, sorting
 export async function GET(req: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Authentication required" } },
-        { status: 401 }
-      );
+      return unauthorizedResponse();
     }
     if (!user.orgId) {
       return NextResponse.json(
@@ -89,11 +73,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ data: clients, total, page, pageSize });
   } catch (err) {
-    console.error("[GET /api/clients]", err);
-    return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
-      { status: 500 }
-    );
+    return handleInternalError(err);
   }
 }
 
@@ -102,10 +82,7 @@ export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Authentication required" } },
-        { status: 401 }
-      );
+      return unauthorizedResponse();
     }
     if (!user.orgId) {
       return NextResponse.json(
@@ -152,10 +129,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ data: client }, { status: 201 });
   } catch (err) {
-    console.error("[POST /api/clients]", err);
-    return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
-      { status: 500 }
-    );
+    return handleInternalError(err);
   }
 }
