@@ -14,6 +14,7 @@ import {
   FileSignature,
   Award,
   Sparkles,
+  BarChart3,
 } from "lucide-react";
 import {
   Sidebar,
@@ -34,8 +35,9 @@ const NAV_ITEMS = [
   { href: "/matching", label: "매칭 분석", icon: Sparkles },
   { href: "/calendar", label: "일정", icon: Calendar },
   { href: "/meetings", label: "미팅", icon: Video },
-  { href: "/journal", label: "연구일지", icon: BookOpen },
+  { href: "/journals", label: "연구일지", icon: BookOpen },
   { href: "/finance", label: "재무", icon: DollarSign },
+  { href: "/analytics", label: "분석", icon: BarChart3 },
   { href: "/contracts", label: "견적/계약", icon: FileSignature },
 ];
 
