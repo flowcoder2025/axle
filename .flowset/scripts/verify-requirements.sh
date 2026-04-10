@@ -12,8 +12,14 @@ export LC_ALL=en_US.UTF-8
 [[ -f ".flowset/requirements.md" ]] || exit 0
 
 # 소스 파일 변경 확인 (변경 없으면 스킵)
-CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --cached --name-only 2>/dev/null || true)
-SRC_CHANGED=$(echo "$CHANGED" | grep -cE '\.(ts|tsx|js|jsx|py|go|rs)$' 2>/dev/null || echo "0")
+CHANGED=""
+if git rev-parse HEAD~1 &>/dev/null; then
+  CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || true)
+else
+  CHANGED=$(git diff --cached --name-only 2>/dev/null || true)
+fi
+SRC_CHANGED=$(echo "$CHANGED" | grep -cE '\.(ts|tsx|js|jsx|py|go|rs)$' 2>/dev/null || true)
+SRC_CHANGED=${SRC_CHANGED:-0}
 [[ "$SRC_CHANGED" -lt 1 ]] && exit 0
 
 RESULT_FILE=".flowset/verify-result.md"

@@ -1674,8 +1674,8 @@ execute_claude() {
     --output-format json \
     --append-system-prompt "$context" \
     --allowedTools "$ALLOWED_TOOLS" \
-    "${max_turns_args[@]}" \
-    "${session_args[@]}" \
+    ${max_turns_args[@]+"${max_turns_args[@]}"} \
+    ${session_args[@]+"${session_args[@]}"} \
     > "$logfile" 2>&1 &
   local pid=$!
 
