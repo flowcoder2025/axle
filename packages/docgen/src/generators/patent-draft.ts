@@ -10,6 +10,7 @@ import {
   buildSectionProperties,
   FONT_KOREAN,
 } from "../utils/docx-styles.js";
+import { run, para } from "../utils/docx-helpers.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -25,45 +26,6 @@ export interface PatentDraftInput {
   detailedDescription: string;  // 발명을 실시하기 위한 구체적인 내용
   claims: string[];             // 청구항 (1항, 2항, ...)
   abstractText: string;         // 요약서
-}
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-function run(
-  text: string,
-  opts: { bold?: boolean; size?: number; color?: string } = {}
-): TextRun {
-  return new TextRun({
-    text,
-    font: { name: FONT_KOREAN, eastAsia: FONT_KOREAN },
-    size: opts.size ?? 22,
-    bold: opts.bold ?? false,
-    color: opts.color,
-  });
-}
-
-function para(
-  text: string,
-  opts: {
-    bold?: boolean;
-    size?: number;
-    align?: (typeof AlignmentType)[keyof typeof AlignmentType];
-    color?: string;
-    spacingBefore?: number;
-    spacingAfter?: number;
-    indent?: number;
-  } = {}
-): Paragraph {
-  return new Paragraph({
-    children: [run(text, { bold: opts.bold, size: opts.size, color: opts.color })],
-    alignment: opts.align ?? AlignmentType.LEFT,
-    spacing: {
-      before: opts.spacingBefore ?? 0,
-      after: opts.spacingAfter ?? 120,
-      line: 360,
-    },
-    indent: opts.indent ? { left: opts.indent } : undefined,
-  });
 }
 
 /** Korean patent section header in 【】 brackets */

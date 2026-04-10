@@ -7,15 +7,14 @@ import {
   Table,
   TableCell,
   TableRow,
-  TextRun,
   VerticalAlign,
   WidthType,
 } from "docx";
 import {
   buildDocxStyles,
   buildSectionProperties,
-  FONT_KOREAN,
 } from "../utils/docx-styles.js";
+import { krw, fmtDate, todayKorean, run, para } from "../utils/docx-helpers.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -37,54 +36,7 @@ export interface EstimateDocInput {
   issuerCompany: string;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-function krw(amount: number): string {
-  return new Intl.NumberFormat("ko-KR").format(amount) + "원";
-}
-
-function fmtDate(dateStr?: string): string {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  return `${d.getFullYear()}년 ${String(d.getMonth() + 1).padStart(2, "0")}월 ${String(d.getDate()).padStart(2, "0")}일`;
-}
-
-function todayKorean(): string {
-  return fmtDate(new Date().toISOString().slice(0, 10));
-}
-
-// ── Paragraph / cell builders ──────────────────────────────────────────────────
-
-function run(
-  text: string,
-  opts: { bold?: boolean; size?: number; color?: string } = {}
-): TextRun {
-  return new TextRun({
-    text,
-    font: { name: FONT_KOREAN, eastAsia: FONT_KOREAN },
-    size: opts.size ?? 22,
-    bold: opts.bold ?? false,
-    color: opts.color,
-  });
-}
-
-function para(
-  text: string,
-  opts: {
-    bold?: boolean;
-    size?: number;
-    align?: (typeof AlignmentType)[keyof typeof AlignmentType];
-    color?: string;
-    spacingAfter?: number;
-  } = {}
-): Paragraph {
-  return new Paragraph({
-    children: [run(text, { bold: opts.bold, size: opts.size, color: opts.color })],
-    alignment: opts.align ?? AlignmentType.LEFT,
-    spacing: { after: opts.spacingAfter ?? 0, line: 360 },
-  });
-}
+// ── Table cell builder ────────────────────────────────────────────────────────
 
 const THIN_BORDER = { style: BorderStyle.SINGLE, size: 4, color: "AAAAAA" };
 const HEADER_FILL = { type: "solid" as const, fill: "2F5496", color: "2F5496" };
@@ -215,38 +167,65 @@ function buildItemsTable(input: EstimateDocInput): Table {
   const subtotal = input.totalAmount - (input.taxAmount ?? 0);
   const subtotalRow = new TableRow({
     children: [
-      cell("소계", { bold: true, shade: TOTAL_FILL, widthPct: 58, align: AlignmentType.RIGHT }),
-      cell("", { widthPct: 0 }), // merged via colSpan not available simply; use colspan workaround
-      cell(krw(subtotal), { bold: true, shade: TOTAL_FILL, align: AlignmentType.RIGHT, widthPct: 42 }),
+      new TableCell({
+        children: [
+          new Paragraph({
+            children: [run("소계", { bold: true, size: 20 })],
+            alignment: AlignmentType.RIGHT,
+            spacing: { before: 60, after: 60 },
+          }),
+        ],
+        borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
+        shading: TOTAL_FILL,
+        verticalAlign: VerticalAlign.CENTER,
+        columnSpan: 4,
+      }),
+      cell(krw(subtotal), { bold: true, shade: TOTAL_FILL, align: AlignmentType.RIGHT, widthPct: 21 }),
     ],
   });
 
   const taxRow = input.taxAmount
     ? new TableRow({
         children: [
-          cell("부가세 (10%)", { bold: true, shade: TOTAL_FILL, align: AlignmentType.RIGHT, widthPct: 58 }),
-          cell("", { widthPct: 0 }),
-          cell(krw(input.taxAmount), { bold: true, shade: TOTAL_FILL, align: AlignmentType.RIGHT, widthPct: 42 }),
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [run("부가세 (10%)", { bold: true, size: 20 })],
+                alignment: AlignmentType.RIGHT,
+                spacing: { before: 60, after: 60 },
+              }),
+            ],
+            borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
+            shading: TOTAL_FILL,
+            verticalAlign: VerticalAlign.CENTER,
+            columnSpan: 4,
+          }),
+          cell(krw(input.taxAmount), { bold: true, shade: TOTAL_FILL, align: AlignmentType.RIGHT, widthPct: 21 }),
         ],
       })
     : null;
 
   const totalRow = new TableRow({
     children: [
-      cell("합 계", {
-        bold: true,
-        shade: { type: "solid", fill: "2F5496", color: "2F5496" },
-        textColor: "FFFFFF",
-        align: AlignmentType.RIGHT,
-        widthPct: 58,
+      new TableCell({
+        children: [
+          new Paragraph({
+            children: [run("합 계", { bold: true, size: 20, color: "FFFFFF" })],
+            alignment: AlignmentType.RIGHT,
+            spacing: { before: 60, after: 60 },
+          }),
+        ],
+        borders: { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER },
+        shading: { type: "solid", fill: "2F5496", color: "2F5496" },
+        verticalAlign: VerticalAlign.CENTER,
+        columnSpan: 4,
       }),
-      cell("", { widthPct: 0 }),
       cell(krw(input.totalAmount), {
         bold: true,
         shade: { type: "solid", fill: "2F5496", color: "2F5496" },
         textColor: "FFFFFF",
         align: AlignmentType.RIGHT,
-        widthPct: 42,
+        widthPct: 21,
       }),
     ],
   });

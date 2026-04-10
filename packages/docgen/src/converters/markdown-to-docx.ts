@@ -13,7 +13,6 @@ import {
   BorderStyle,
   LevelFormat,
   convertMillimetersToTwip,
-  PageOrientation,
 } from "docx";
 import {
   buildDocxStyles,
@@ -303,7 +302,7 @@ function makeOrderedParagraphs(
   font: string
 ): Paragraph[] {
   return node.items.map(
-    (runs, idx) =>
+    (runs) =>
       new Paragraph({
         numbering: { reference: "docgen-numbering", level: 0 },
         spacing: { after: 80 },

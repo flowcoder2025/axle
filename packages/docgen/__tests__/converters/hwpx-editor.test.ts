@@ -143,4 +143,21 @@ describe("editHwpx", () => {
     expect(result).toBeInstanceOf(Buffer);
     expect(result.length).toBeGreaterThan(0);
   });
+
+  it("set_cell: changes the content of the specified table cell", async () => {
+    const edits: HwpxEdit[] = [
+      { type: "set_cell", table: 0, row: 0, col: 0, value: "새 값" },
+    ];
+    const result = await editHwpx({ templateBuffer: tableHwpx }, edits);
+
+    const zip = await JSZip.loadAsync(result);
+    const sectionFile = zip.file("Contents/section0.xml");
+    expect(sectionFile).not.toBeNull();
+    const xml = await sectionFile!.async("string");
+
+    // The new value must appear in the output
+    expect(xml).toContain("새 값");
+    // The original cell content should be replaced
+    expect(xml).not.toContain("셀A1");
+  });
 });

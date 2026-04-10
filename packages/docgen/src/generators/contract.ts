@@ -7,15 +7,14 @@ import {
   Table,
   TableCell,
   TableRow,
-  TextRun,
   VerticalAlign,
   WidthType,
 } from "docx";
 import {
   buildDocxStyles,
   buildSectionProperties,
-  FONT_KOREAN,
 } from "../utils/docx-styles.js";
+import { krw, fmtDate, todayKorean, run, para } from "../utils/docx-helpers.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -44,62 +43,7 @@ export interface ContractDocInput {
   signatureDate?: string;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-function krw(amount: number): string {
-  return new Intl.NumberFormat("ko-KR").format(amount) + "원";
-}
-
-function fmtDate(dateStr?: string): string {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  return `${d.getFullYear()}년 ${String(d.getMonth() + 1).padStart(2, "0")}월 ${String(d.getDate()).padStart(2, "0")}일`;
-}
-
-function todayKorean(): string {
-  return fmtDate(new Date().toISOString().slice(0, 10));
-}
-
-// ── Paragraph / cell builders ──────────────────────────────────────────────────
-
-function run(
-  text: string,
-  opts: { bold?: boolean; size?: number; color?: string; italics?: boolean } = {}
-): TextRun {
-  return new TextRun({
-    text,
-    font: { name: FONT_KOREAN, eastAsia: FONT_KOREAN },
-    size: opts.size ?? 22,
-    bold: opts.bold ?? false,
-    color: opts.color,
-    italics: opts.italics ?? false,
-  });
-}
-
-function para(
-  text: string,
-  opts: {
-    bold?: boolean;
-    size?: number;
-    align?: (typeof AlignmentType)[keyof typeof AlignmentType];
-    color?: string;
-    spacingBefore?: number;
-    spacingAfter?: number;
-    indent?: number;
-  } = {}
-): Paragraph {
-  return new Paragraph({
-    children: [run(text, { bold: opts.bold, size: opts.size, color: opts.color })],
-    alignment: opts.align ?? AlignmentType.LEFT,
-    spacing: {
-      before: opts.spacingBefore ?? 0,
-      after: opts.spacingAfter ?? 0,
-      line: 360,
-    },
-    indent: opts.indent ? { left: opts.indent } : undefined,
-  });
-}
+// ── Table cell builders ────────────────────────────────────────────────────────
 
 const THIN_BORDER = { style: BorderStyle.SINGLE, size: 4, color: "AAAAAA" };
 const PARTY_LABEL_FILL = { type: "solid" as const, fill: "2F5496", color: "2F5496" };

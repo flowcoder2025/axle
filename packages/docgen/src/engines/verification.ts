@@ -62,7 +62,15 @@ function extractSectionHeadings(content: string): string[] {
       continue;
     }
     // Plain heading heuristic: short line (≤30 chars), no period at end
-    if (trimmed.length > 0 && trimmed.length <= 30 && !trimmed.endsWith(".")) {
+    // Exclude bullet list items, numbered list items, and table rows
+    if (
+      trimmed.length > 0 &&
+      trimmed.length <= 30 &&
+      !trimmed.endsWith(".") &&
+      !/^[-*•]\s/.test(trimmed) &&
+      !/^\d+\.\s/.test(trimmed) &&
+      !trimmed.includes("|")
+    ) {
       headings.push(trimmed);
     }
   }
@@ -83,7 +91,12 @@ function getSectionContentLength(content: string, sectionTitle: string): number 
     const trimmed = line.trim();
     const isHeading =
       /^#{1,3}\s+/.test(trimmed) ||
-      (trimmed.length > 0 && trimmed.length <= 30 && !trimmed.endsWith("."));
+      (trimmed.length > 0 &&
+        trimmed.length <= 30 &&
+        !trimmed.endsWith(".") &&
+        !/^[-*•]\s/.test(trimmed) &&
+        !/^\d+\.\s/.test(trimmed) &&
+        !trimmed.includes("|"));
 
     if (isHeading) {
       const heading = trimmed.replace(/^#{1,3}\s+/, "").trim();

@@ -7,15 +7,14 @@ import {
   Table,
   TableCell,
   TableRow,
-  TextRun,
   VerticalAlign,
   WidthType,
 } from "docx";
 import {
   buildDocxStyles,
   buildSectionProperties,
-  FONT_KOREAN,
 } from "../utils/docx-styles.js";
+import { run, para } from "../utils/docx-helpers.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -65,44 +64,7 @@ const HEADER_FILL = { type: "solid" as const, fill: "1F3864", color: "1F3864" };
 const LABEL_FILL = { type: "solid" as const, fill: "EBF3FB", color: "EBF3FB" };
 const SECTION_FILL = { type: "solid" as const, fill: "F5F5F5", color: "F5F5F5" };
 
-// ── Run & paragraph builders ──────────────────────────────────────────────────
-
-function run(
-  text: string,
-  opts: { bold?: boolean; size?: number; color?: string } = {}
-): TextRun {
-  return new TextRun({
-    text,
-    font: { name: FONT_KOREAN, eastAsia: FONT_KOREAN },
-    size: opts.size ?? 22,
-    bold: opts.bold ?? false,
-    color: opts.color,
-  });
-}
-
-function para(
-  text: string,
-  opts: {
-    bold?: boolean;
-    size?: number;
-    align?: (typeof AlignmentType)[keyof typeof AlignmentType];
-    color?: string;
-    spacingBefore?: number;
-    spacingAfter?: number;
-  } = {}
-): Paragraph {
-  return new Paragraph({
-    children: [
-      run(text, { bold: opts.bold, size: opts.size, color: opts.color }),
-    ],
-    alignment: opts.align ?? AlignmentType.LEFT,
-    spacing: {
-      before: opts.spacingBefore ?? 0,
-      after: opts.spacingAfter ?? 0,
-      line: 360,
-    },
-  });
-}
+// ── Cell builder ──────────────────────────────────────────────────────────────
 
 function cell(
   text: string,
