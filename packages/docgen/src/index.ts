@@ -54,3 +54,17 @@ export type { PatentDraftInput } from "./generators/patent-draft.js";
 export { pdfToMarkdown } from "./converters/pdf-to-markdown.js";
 export { markdownToDocx } from "./converters/markdown-to-docx.js";
 export type { MarkdownToDocxOptions } from "./converters/markdown-to-docx.js";
+
+// ── HWPX Editor (WI-068) ─────────────────────────────────────────────────────
+export { editHwpx } from "./converters/hwpx-editor.js";
+export type {
+  HwpxEditOptions,
+  HwpxFieldEdit,
+  HwpxCheckboxEdit,
+  HwpxTextReplace,
+  HwpxEdit,
+} from "./converters/hwpx-editor.js";
+
+// ── Journal Report Generator (WI-069) ────────────────────────────────────────
+export { generateJournalReportDocx } from "./generators/journal-report.js";
+export type { JournalReportInput, JournalEntry } from "./generators/journal-report.js";

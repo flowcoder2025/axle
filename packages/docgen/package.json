@@ -20,6 +20,7 @@
     "@axle/ai": "*",
     "@axle/db": "*",
     "docx": "^9.0.0",
+    "fast-xml-parser": "^5.5.11",
     "pdf-parse": "^1.1.4"
   },
   "devDependencies": {
