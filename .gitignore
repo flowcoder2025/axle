@@ -22,6 +22,8 @@ build/
 out/
 *.o
 *.exe
+.next/
+.turbo/
 
 # IDE
 .idea/
