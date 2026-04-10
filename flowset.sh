@@ -43,6 +43,7 @@ sedi() {
 }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTS_DIR="$SCRIPT_DIR/.flowset/scripts"
 cd "$SCRIPT_DIR"
 
 # Load config (preflight에서 존재 확인하므로 여기서는 soft fail)
