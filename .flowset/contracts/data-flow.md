@@ -1,32 +1,42 @@
-# Data Flow Contract
+# Data Flow Contract — AXLE
 
-데이터의 흐름과 SSOT(Single Source of Truth) 엔드포인트 합의.
-이 파일은 `/wi:start`에서 프로젝트 구조에 맞게 자동 채워집니다.
+## SSOT 엔드포인트
 
-## SSOT 원칙
-- 각 데이터 엔티티는 하나의 API 엔드포인트에서만 생성/수정
-- 다른 팀은 해당 엔드포인트를 통해서만 데이터 접근
-- 직접 DB 쿼리로 다른 팀 데이터에 접근 금지
+| 모델 | SSOT API | HTTP |
+|------|----------|------|
+| Client | /api/clients | GET, POST, PATCH, DELETE |
+| Contact | /api/clients/[clientId]/contacts | GET, POST, PATCH, DELETE |
+| Certificate | /api/clients/[clientId]/certificates | GET, POST, DELETE |
+| ClientFinancial | /api/clients/[clientId]/financials | GET, POST, PATCH |
+| ClientAchievement | /api/clients/[clientId]/achievements | GET, POST, DELETE |
+| Document | /api/documents | GET, POST, DELETE |
+| ChecklistTemplate | /api/checklist-templates | GET, POST, PATCH, DELETE |
+| Project | /api/projects | GET, POST, PATCH, DELETE |
+| ProjectMember | /api/projects/[id]/members | GET, POST, PATCH, DELETE |
+| Schedule | /api/schedules | GET, POST, PATCH, DELETE |
+| ProgramInfo | /api/programs | GET, POST, PATCH |
+| MatchingResult | /api/matching | POST (실행), GET (결과) |
+| Meeting | /api/meetings | GET, POST, PATCH, DELETE |
+| ActionItem | /api/meetings/[id]/actions | GET, POST, PATCH |
+| ResearchJournal | /api/journals | GET, POST, PATCH |
+| AiJob | /api/ai/jobs | GET, POST |
+| Notification | /api/notifications | GET, PATCH |
+| EmailLog | /api/email-logs | GET |
+| AutomationLog | /api/automation-logs | GET |
+| Estimate | /api/estimates | GET, POST, PATCH |
+| Contract | /api/contracts | GET, POST, PATCH |
+| FinancialReport | /api/clients/[id]/financial-reports | GET, POST |
 
-## 데이터 흐름
-```
-사용자 입력 → 프론트엔드 → API 요청 → 백엔드 → DB
-                                              ↓
-프론트엔드 ← API 응답 ← 백엔드 ← DB 결과
-```
+## SSOT 규칙
+1. 각 모델은 **하나의 SSOT API**만 가짐
+2. 다른 페이지에서도 같은 API 호출 (중복 엔드포인트 금지)
+3. 역할별 필터링은 API 내부에서 session.role 기반 처리
+4. 프론트에서 데이터 복사/로컬 캐시 금지 — 항상 서버 조회
 
-## 엔티티별 SSOT
-<!-- /wi:start에서 prisma/schema.prisma 분석 후 자동 채워짐 -->
-| 엔티티 | SSOT 엔드포인트 | 소유 팀 |
-|--------|----------------|---------|
-| (예시) User | /api/users | backend |
-| (예시) Auth | /api/auth | backend |
-
-## 팀 간 데이터 공유
-- 프론트엔드는 API 응답의 `data` 필드만 사용
-- 백엔드는 prisma 모델을 통해서만 DB 접근
-- QA는 seed 스크립트로 테스트 데이터 생성
-
-## 변경 규칙
-- 이 파일 수정 시 관련 팀 전원 확인 필수
-- SSOT 엔드포인트 변경은 사용하는 모든 팀에 영향
+## 역할별 접근
+| 역할 | 읽기 | 쓰기 |
+|------|------|------|
+| OWNER | 전체 | 전체 |
+| ADMIN | 전체 | 전체 (Organization 설정 제외) |
+| MEMBER | 배정된 프로젝트/고객사만 | 배정된 범위만 |
+| Portal (토큰) | 해당 프로젝트만 | 서류 업로드 + 연구일지만 |

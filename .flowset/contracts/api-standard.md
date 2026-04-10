@@ -1,50 +1,38 @@
-# API Standard Contract
-
-프론트엔드 ↔ 백엔드 간 API 응답 형식 합의.
-이 파일은 `/wi:start`에서 프로젝트 타입에 맞게 자동 채워집니다.
+# API Standard Contract — AXLE
 
 ## 응답 형식
+
+### 성공 (단건)
 ```json
-{
-  "success": true,
-  "data": {},
-  "error": null,
-  "meta": {
-    "page": 1,
-    "limit": 20,
-    "total": 100
-  }
-}
+{ "data": T }
 ```
 
-## 에러 형식
+### 성공 (목록)
 ```json
-{
-  "success": false,
-  "data": null,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "입력값이 올바르지 않습니다",
-    "details": []
-  }
-}
+{ "data": T[], "total": number, "page": number, "pageSize": number }
 ```
 
-## HTTP 상태 코드
-| 코드 | 용도 |
+### 에러
+```json
+{ "error": { "code": "VALIDATION_ERROR", "message": "필드명 is required" } }
+```
+
+## HTTP Status
+| Code | 용도 |
 |------|------|
-| 200 | 성공 (조회, 수정) |
+| 200 | 조회/수정 성공 |
 | 201 | 생성 성공 |
-| 400 | 클라이언트 에러 (유효성 검증 실패) |
-| 401 | 인증 필요 |
-| 403 | 권한 없음 |
+| 400 | 입력 검증 실패 (Zod) |
+| 401 | 미인증 |
+| 403 | 권한 없음 (ReBAC) |
 | 404 | 리소스 없음 |
 | 500 | 서버 에러 |
 
-## 엔드포인트 네이밍
-- RESTful: `GET /api/{resource}`, `POST /api/{resource}`, `PATCH /api/{resource}/:id`
-- 목록 조회는 페이지네이션 필수 (`?page=1&limit=20`)
-
-## 변경 규칙
-- 이 파일 수정 시 프론트엔드 + 백엔드 팀 모두 확인 필수
-- 기존 필드 삭제/변경은 deprecation 기간 (1 sprint) 후 제거
+## 공통 규칙
+- 모든 API Route는 try-catch로 감싸고 500 시 에러 로그
+- 날짜는 ISO 8601 (UTC)
+- 페이지네이션: `?page=1&pageSize=20` (기본값 page=1, pageSize=20)
+- 인증: `auth()` → 미인증 시 401
+- 권한: `check(namespace, objectId, relation, 'user', userId)` → 실패 시 403
+- 입력 검증: Zod schema `.parse(body)` → 실패 시 400
+- orgId 필터: 모든 목록 API에 `orgId` 필수 (세션에서 추출)

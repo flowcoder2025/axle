@@ -1,0 +1,117 @@
+{
+  "step": 6,
+  "project_name": "AXLE",
+  "overview": {
+    "name": "AXLE",
+    "goal": "컨설팅 업무 자동화 플랫폼 — 정부 지원사업, 벤처/연구소 인증, 특허, 재무 컨설팅",
+    "users": "FlowCoder + 여유솔루션 컨설팅 팀 (2~5명), 고객사 담당자",
+    "criteria": "사업계획서 작성 시간 50% 단축, 서류 수집 자동화율 80%, 지원사업 매칭 자동 추천"
+  },
+  "tech_stack": {
+    "language": "TypeScript 5",
+    "framework": "Next.js 16 (Turborepo monorepo)",
+    "db": "Supabase PostgreSQL + pgvector (Prisma 7)",
+    "infra": "Vercel + Mac Mini (agent-bridge) + OCI VM",
+    "reason": "기존 FlowVue/FlowMate 스택 계승, 75% 코드 재사용"
+  },
+  "L1": [
+    {"name": "Foundation", "phase": 0, "confirmed": true},
+    {"name": "CRM", "phase": 1, "confirmed": true},
+    {"name": "Documents", "phase": 2, "confirmed": true},
+    {"name": "Projects", "phase": 3, "confirmed": true},
+    {"name": "Communication", "phase": 4, "confirmed": true},
+    {"name": "AI Engine", "phase": 5, "confirmed": true},
+    {"name": "DocGen", "phase": 6, "confirmed": true},
+    {"name": "Calendar", "phase": 7, "confirmed": true},
+    {"name": "Matching", "phase": 8, "confirmed": true},
+    {"name": "Meetings", "phase": 9, "confirmed": true},
+    {"name": "Journal", "phase": 10, "confirmed": true},
+    {"name": "Finance", "phase": 11, "confirmed": true},
+    {"name": "Collaboration", "phase": 12, "confirmed": true},
+    {"name": "Estimates", "phase": 13, "confirmed": true},
+    {"name": "Agent Bridge", "phase": 14, "confirmed": true},
+    {"name": "Desktop", "phase": 15, "confirmed": true},
+    {"name": "Cron", "phase": 16, "confirmed": true}
+  ],
+  "decisions": [
+    {
+      "topic": "기술 스택",
+      "chosen": "TypeScript + Next.js 16 + Prisma 7 + Supabase",
+      "rejected": null,
+      "reason": "기존 프로젝트 스택 계승, 75% 코드 재사용 가능",
+      "turn": 1
+    },
+    {
+      "topic": "레포지토리",
+      "chosen": "flowcoder2025/axle (org, private)",
+      "rejected": "개인 계정",
+      "reason": "Merge Queue 지원, FlowSet 자동 머지 최적",
+      "turn": 1
+    },
+    {
+      "topic": "AI 라우팅",
+      "chosen": "3-Tier (LOCAL_MLX → API_HAIKU → API_OPUS/CLI_CLAUDE)",
+      "rejected": "단일 API",
+      "reason": "비용 최적화, 단순 작업은 로컬 MLX로 무료 처리",
+      "turn": 1
+    },
+    {
+      "topic": "사업계획서 생성",
+      "chosen": "이중 엔진 (RAG 초안 + 정밀 편집)",
+      "rejected": "단일 엔진",
+      "reason": "RAG로 내용 품질 확보, 정밀 편집으로 양식 맞춤",
+      "turn": 1
+    },
+    {
+      "topic": "PRD 구조",
+      "chosen": "기존 디자인 스펙 + Phase 계획서 기반 자동 생성",
+      "rejected": "대화형 추출",
+      "reason": "이미 상세 디자인 문서 17개 존재, 사용자 요청",
+      "turn": 1
+    },
+    {
+      "topic": "PRD 리뷰 반영 (v2)",
+      "chosen": "Critical 4 + Important 8 + Suggestions 전체 반영",
+      "rejected": null,
+      "reason": "디자인 스펙 대비 gap analysis 결과 반영 — packages/storage 추가, Prisma 스키마 분할, RESEARCH_TASK/Onboarding/Certificate/DART/Settings/Discord/Email unsubscribe 추가, NotificationType 16개로 수정, Event Bus 분할, Meeting-Client relation 수정, ActionItem→Project 자동 생성",
+      "turn": 2
+    }
+  ],
+  "user_constraints": [
+    "Turborepo monorepo 구조",
+    "기존 프로젝트 코드 75% 재사용",
+    "Desktop 포털 자동화는 선택적",
+    "Mac Mini agent-bridge 상시 가동"
+  ],
+  "review_changes_v2": {
+    "critical": [
+      "packages/storage 패키지 추가 (Phase 2)",
+      "Prisma 스키마 1개 → 4개 그룹으로 분할 (Phase 0)",
+      "RESEARCH_TASK 워크플로우 추가 (Phase 3)",
+      "NotificationType 14 → 16개 수정 (+ACTION_ITEM_DUE, ESTIMATE_SENT, BUNDLE_COMPLETE)"
+    ],
+    "important": [
+      "Client Onboarding 워크플로우 (masterProfile + 온보딩 체크리스트, Phase 1)",
+      "Settings 페이지 스캐폴드 (Phase 0)",
+      "Certificate CRUD (Phase 1)",
+      "DART OpenAPI 연동 (Phase 11)",
+      "Event Bus 3개 태스크로 분할 (Phase 4)",
+      "Meeting ↔ Client Prisma relation 수정 (Phase 0)",
+      "masterProfile/profileBlocks AI 생성 (Phase 1)",
+      "ActionItem → Project 자동 생성 (Phase 9)"
+    ],
+    "suggestions": [
+      "Discord 알림 추가 (Phase 4)",
+      "EmailLog/AutomationLog 조회 API (Phase 4, 15)",
+      "SkillPattern 모니터링 UI (Phase 5)",
+      "Email unsubscribe (Phase 4)",
+      "Google Calendar OAuth 설정 UI (Phase 7)",
+      "DocGen 변환기 (PDF→MD, MD→DOCX, Phase 6)",
+      "매칭 피드백 UI (Phase 8)"
+    ]
+  },
+  "wireframe_confirmed": false,
+  "draft_ready": true,
+  "confirmed": true,
+  "updated_at": "2026-04-10T09:45:00"
+}

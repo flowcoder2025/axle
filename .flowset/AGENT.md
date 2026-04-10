@@ -38,13 +38,29 @@ npx turbo lint --filter=web
 ```
 
 ## 인프라 환경
-<!-- /wi:env에서 자동 채워짐. 비어있으면 DB 미설정 상태 — mock 허용 -->
+- **DB**: Supabase PostgreSQL (Seoul, ap-northeast-2) — pgbouncer transaction mode
+- **Storage**: Supabase Storage (같은 프로젝트)
+- **Cache**: Upstash Redis (REST API)
+- **Queue**: Upstash QStash (Job Chaining)
+- **Auth**: Google OAuth (GCP 프로젝트)
+- **AI**: Anthropic + OpenAI + Google Gemini
+- **Email**: Resend (from: flow-coder.com)
+- **SMS**: Solapi
+- **공공데이터**: 국세청 사업자등록 상태조회 (data.go.kr)
+- **DART**: 상장사 재무 데이터 (opendart.fss.or.kr)
+- **Telegram**: Bot API
+- **Discord**: Webhook
+- **환경변수**: `.env.local` (28개 변수 설정 완료)
 
 ## 아키텍처 계약
-<!-- /wi:start Phase 4.6에서 자동 채워짐. 비어있으면 계약 미생성 -->
+- API 표준: `.flowset/contracts/api-standard.md`
+- 데이터 흐름: `.flowset/contracts/data-flow.md`
+- 모든 API는 api-standard.md 형식 준수 필수
+- 데이터 접근은 data-flow.md의 SSOT 엔드포인트 사용 필수
 
 ## 와이어프레임
-<!-- /wi:start Phase 4에서 자동 채워짐. 비어있으면 와이어프레임 미생성 -->
+- 미생성 (PRD wireframe_confirmed: false)
+- UI 구현 시 PRD L4 태스크의 수용 기준 참조
 
 ## 프로젝트 구조
 ```
