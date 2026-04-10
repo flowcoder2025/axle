@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@axle/db";
 import { getCurrentUser } from "@axle/auth";
 import { clientCreateSchema, clientSearchSchema } from "@/lib/validations/client";
+import { sendOnboardingChecklist } from "@/lib/services/client-onboarding";
+import { generateMasterProfile } from "@/lib/services/client-profile";
 import type { ZodError } from "zod";
 import { Prisma } from "@prisma/client";
 
@@ -142,6 +144,9 @@ export async function POST(req: NextRequest) {
           : undefined,
       },
     });
+
+    // Fire-and-forget: prepare onboarding checklist without blocking the 201 response
+    void sendOnboardingChecklist(client.id, client.orgId);
 
     return NextResponse.json({ data: client }, { status: 201 });
   } catch (err) {
