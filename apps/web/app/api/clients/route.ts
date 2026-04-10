@@ -147,6 +147,8 @@ export async function POST(req: NextRequest) {
 
     // Fire-and-forget: prepare onboarding checklist without blocking the 201 response
     void sendOnboardingChecklist(client.id, client.orgId);
+    // Fire-and-forget: generate AI master profile without blocking the 201 response
+    void generateMasterProfile(client.id);
 
     return NextResponse.json({ data: client }, { status: 201 });
   } catch (err) {

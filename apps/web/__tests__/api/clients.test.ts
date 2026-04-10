@@ -6,6 +6,7 @@ const mockPrismaClient = {
   findMany: vi.fn(),
   count: vi.fn(),
   findFirst: vi.fn(),
+  findUnique: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
   delete: vi.fn(),
@@ -21,6 +22,12 @@ vi.mock("@axle/db", () => ({
 vi.mock("@axle/auth", () => ({
   AUTH_PACKAGE: "@axle/auth",
   getCurrentUser: vi.fn(),
+}));
+
+// Stub out the profile-generation side effect so it does not interfere with
+// route tests. The service is tested separately in client-profile.test.ts.
+vi.mock("../../lib/services/client-profile", () => ({
+  generateMasterProfile: vi.fn().mockResolvedValue(undefined),
 }));
 
 // --- Helpers ---
