@@ -50,12 +50,12 @@ async function fetchSessionFromDb(
 
   const membership = await prisma.membership.findFirst({
     where: { userId },
-    select: { orgId: true },
+    select: { organizationId: true },
   });
 
   return {
     userId: user.id,
-    orgId: membership?.orgId ?? null,
+    orgId: membership?.organizationId ?? null,
     email: user.email,
     name: user.name,
     image: user.image,

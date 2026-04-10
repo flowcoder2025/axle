@@ -8,6 +8,8 @@
  * - getCachedSession, invalidateCachedSession → 3-tier session cache
  */
 
+export const AUTH_PACKAGE = "@axle/auth" as const;
+
 // Node.js runtime exports
 export { auth, signIn, signOut, handlers } from "./auth.js";
 

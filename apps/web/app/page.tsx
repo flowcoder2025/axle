@@ -1,7 +1,11 @@
-export default function HomePage() {
-  return (
-    <main>
-      <h1>AXLE</h1>
-    </main>
-  );
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@axle/auth";
+
+export default async function HomePage() {
+  const user = await getCurrentUser();
+  if (user) {
+    redirect("/dashboard");
+  } else {
+    redirect("/login");
+  }
 }

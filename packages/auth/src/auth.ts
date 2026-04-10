@@ -68,9 +68,9 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
       if (account && token.userId) {
         const membership = await prisma.membership.findFirst({
           where: { userId: token.userId as string },
-          select: { orgId: true },
+          select: { organizationId: true },
         });
-        token.orgId = membership?.orgId ?? null;
+        token.orgId = membership?.organizationId ?? null;
       }
 
       return token;
