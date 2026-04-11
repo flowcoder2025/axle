@@ -7,4 +7,5 @@ export {
   listPermissions,
   hasOrgAccess,
 } from "./permissions.js";
+export { checkProjectAccess } from "./project-access.js";
 export const DB_PACKAGE = "@axle/db" as const;
