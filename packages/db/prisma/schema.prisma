@@ -33,8 +33,29 @@ model User {
   memberships   Membership[]
   notifications Notification[]
 
+  oauthTokens      OAuthToken[]
+  assignedClients  Client[]  @relation("ClientAssignee")
+  assignedProjects Project[] @relation("ProjectAssignee")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model OAuthToken {
+  id           String   @id @default(cuid())
+  userId       String
+  provider     String   // e.g. "GOOGLE"
+  accessToken  String   @db.Text // AES-256-GCM encrypted
+  refreshToken String?  @db.Text // AES-256-GCM encrypted
+  expiresAt    DateTime?
+  scope        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@index([userId])
 }
 
 model Account {
@@ -173,7 +194,8 @@ model Client {
   website           String?
   memo              String?
   status            ClientStatus @default(ACTIVE)
-  assignedTo        String?
+  assignedToId      String?
+  assignedToUser    User?    @relation("ClientAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
 
   employeeCount     Int?
   capitalAmount     Decimal?
@@ -206,6 +228,7 @@ model Client {
   updatedAt         DateTime     @updatedAt
 
   @@index([orgId])
+  @@index([assignedToId])
 }
 
 model Contact {
@@ -405,7 +428,8 @@ model Project {
   title             String
   status            ProjectStatus @default(INTAKE)
   priority          Priority      @default(MEDIUM)
-  assignedTo        String?   // Display-only free text. Use ProjectMember LEAD role for actual assignment.
+  assignedToId      String?
+  assignedToUser    User?    @relation("ProjectAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   dueDate           DateTime?
   submissionDate    DateTime?
   memo              String?
@@ -435,6 +459,7 @@ model Project {
 
   @@index([clientId])
   @@index([programId])
+  @@index([assignedToId])
 }
 
 model ProjectMember {
