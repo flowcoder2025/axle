@@ -44,75 +44,99 @@ export default function LoginPage() {
   }
 
   return (
-    <Card>
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">AXLE</CardTitle>
-        <CardDescription className="text-center">
-          컨설팅 자동화 플랫폼에 로그인하세요
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <form onSubmit={handleCredentials} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">이메일</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">비밀번호</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="비밀번호를 입력하세요"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
-          {error && (
-            <p className="text-sm text-destructive text-center">{error}</p>
-          )}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "로그인 중..." : "로그인"}
-          </Button>
-        </form>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              또는
-            </span>
-          </div>
+    <div className="flex flex-col items-center gap-8">
+      {/* Logo & Branding */}
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-xl">
+          A
         </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={handleGoogle}
-          disabled={loading}
-        >
-          <GoogleIcon className="mr-2 h-4 w-4" />
-          Google로 계속하기
-        </Button>
-      </CardContent>
-      <CardFooter>
-        <p className="text-xs text-center text-muted-foreground w-full">
-          로그인함으로써 서비스 이용약관 및 개인정보처리방침에 동의합니다.
+        <h1 className="text-2xl font-bold tracking-tight">AXLE</h1>
+        <p className="text-sm text-muted-foreground">
+          컨설팅 자동화 플랫폼
         </p>
-      </CardFooter>
-    </Card>
+      </div>
+
+      <Card className="w-full shadow-lg">
+        <CardHeader className="space-y-1 pb-4">
+          <CardTitle className="text-lg text-center">로그인</CardTitle>
+          <CardDescription className="text-center">
+            계정 정보를 입력하여 시작하세요
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Google OAuth */}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-11 gap-3 font-medium"
+            onClick={handleGoogle}
+            disabled={loading}
+          >
+            <GoogleIcon className="h-5 w-5" />
+            Google로 계속하기
+          </Button>
+
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">
+                또는 이메일로 로그인
+              </span>
+            </div>
+          </div>
+
+          {/* Credentials Form */}
+          <form onSubmit={handleCredentials} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-xs font-medium">이메일</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="name@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={loading}
+                className="h-10"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-xs font-medium">비밀번호</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+                className="h-10"
+              />
+            </div>
+            {error && (
+              <div className="rounded-md bg-destructive/10 px-3 py-2">
+                <p className="text-sm text-destructive text-center">{error}</p>
+              </div>
+            )}
+            <Button type="submit" className="w-full h-10 mt-1" disabled={loading}>
+              {loading ? "로그인 중..." : "로그인"}
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="flex flex-col gap-2 pt-0">
+          <p className="text-[11px] text-center text-muted-foreground leading-relaxed">
+            로그인함으로써{" "}
+            <span className="underline underline-offset-2 cursor-pointer hover:text-foreground">서비스 이용약관</span>
+            {" "}및{" "}
+            <span className="underline underline-offset-2 cursor-pointer hover:text-foreground">개인정보처리방침</span>
+            에 동의합니다.
+          </p>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
 
