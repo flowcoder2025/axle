@@ -52,3 +52,4 @@ desktop.ini
 coverage/
 .nyc_output/
 htmlcov/
+.vercel

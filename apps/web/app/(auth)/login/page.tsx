@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { Button } from "@axle/ui";
+import { Button, Input, Label } from "@axle/ui";
 import {
   Card,
   CardContent,
@@ -14,6 +14,29 @@ import {
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  async function handleCredentials(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    const result = await signIn("credentials", {
+      email,
+      password,
+      callbackUrl: "/dashboard",
+      redirect: false,
+    });
+
+    if (result?.error) {
+      setError("이메일 또는 비밀번호가 올바르지 않습니다.");
+      setLoading(false);
+    } else if (result?.url) {
+      window.location.href = result.url;
+    }
+  }
 
   async function handleGoogle() {
     setLoading(true);
@@ -28,7 +51,51 @@ export default function LoginPage() {
           컨설팅 자동화 플랫폼에 로그인하세요
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        <form onSubmit={handleCredentials} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">이메일</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="name@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={loading}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">비밀번호</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="비밀번호를 입력하세요"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={loading}
+            />
+          </div>
+          {error && (
+            <p className="text-sm text-destructive text-center">{error}</p>
+          )}
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "로그인 중..." : "로그인"}
+          </Button>
+        </form>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              또는
+            </span>
+          </div>
+        </div>
+
         <Button
           type="button"
           variant="outline"
@@ -37,7 +104,7 @@ export default function LoginPage() {
           disabled={loading}
         >
           <GoogleIcon className="mr-2 h-4 w-4" />
-          {loading ? "로그인 중..." : "Google로 계속하기"}
+          Google로 계속하기
         </Button>
       </CardContent>
       <CardFooter>

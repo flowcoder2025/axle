@@ -1,15 +1,14 @@
 /**
  * auth.ts — Node.js runtime Auth.js v5 configuration
  *
- * Uses Prisma adapter and Google OAuth only.
+ * Uses Prisma adapter with Google OAuth + Credentials (email/password).
  * NOT safe for Edge runtime — import auth.config.ts there instead.
- *
- * NOTE: Credentials provider is intentionally omitted in Phase 0.
- * The User model has no password field yet. Add it in a later phase.
  */
 import NextAuth from "next-auth";
 import type { NextAuthResult } from "next-auth";
 import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@axle/db";
 import { authConfig } from "./auth.config.js";
@@ -24,6 +23,34 @@ const nextAuth: NextAuthResult = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+    }),
+    Credentials({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null;
+
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email as string },
+        });
+        if (!user?.password) return null;
+
+        const valid = await bcrypt.compare(
+          credentials.password as string,
+          user.password,
+        );
+        if (!valid) return null;
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+        };
+      },
     }),
   ],
   callbacks: {
