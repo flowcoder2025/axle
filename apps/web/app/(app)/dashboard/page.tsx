@@ -49,22 +49,24 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
           안녕하세요{user?.name ? `, ${user.name}님` : ""}
         </h1>
         <p className="text-muted-foreground mt-1">
-          AXLE 컨설팅 자동화 플랫폼에 오신 것을 환영합니다.
+          오늘의 현황을 확인하세요.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {STAT_CARDS.map((card) => (
-          <Card key={card.title}>
+          <Card key={card.title} className="border bg-card">
             <CardHeader className="pb-2">
-              <CardDescription>{card.title}</CardDescription>
-              <CardTitle className="text-3xl">{card.value}</CardTitle>
+              <CardDescription className="text-xs font-medium uppercase tracking-wider">
+                {card.title}
+              </CardDescription>
+              <CardTitle className="text-3xl font-bold">{card.value}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">{card.description}</p>
