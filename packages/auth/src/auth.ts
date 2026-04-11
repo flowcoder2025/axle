@@ -8,7 +8,6 @@ import NextAuth from "next-auth";
 import type { NextAuthResult } from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@axle/db";
 import { authConfig } from "./auth.config.js";
@@ -38,6 +37,7 @@ const nextAuth: NextAuthResult = NextAuth({
         });
         if (!user?.password) return null;
 
+        const bcrypt = await import("bcryptjs");
         const valid = await bcrypt.compare(
           credentials.password as string,
           user.password,
