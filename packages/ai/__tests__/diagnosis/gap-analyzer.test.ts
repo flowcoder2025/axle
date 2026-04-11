@@ -58,8 +58,8 @@ function baseClient() {
         creditRating: null,
       },
     ],
-    certificates: [],
-    documents: [],
+    certificates: [] as Array<{ type: string; validTo: Date | null; isActive: boolean }>,
+    documents: [] as Array<{ category: string; name: string }>,
   };
 }
 
