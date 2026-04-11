@@ -189,6 +189,7 @@ export function ProgramTable({
       </div>
 
       {/* Table */}
+      <div className="overflow-x-auto">
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -305,6 +306,7 @@ export function ProgramTable({
             )}
           </TableBody>
         </Table>
+      </div>
       </div>
 
       {/* Pagination */}

@@ -6,7 +6,7 @@ import { Button } from "@axle/ui";
 import { ClientTable } from "../../../src/components/clients/client-table";
 import { ClientKanban } from "../../../src/components/clients/client-kanban";
 import { ClientViewToggle } from "../../../src/components/clients/client-view-toggle";
-import { Plus } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import { Suspense } from "react";
 import { Prisma } from "@prisma/client";
 
@@ -117,28 +117,46 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
         </div>
       </div>
 
-      <Suspense
-        fallback={
-          <div className="py-8 text-center text-muted-foreground">
-            불러오는 중...
+      {total === 0 && !q && !status ? (
+        <div className="flex flex-col items-center justify-center py-24 space-y-4 text-center">
+          <Users className="h-12 w-12 text-muted-foreground" />
+          <div className="space-y-1">
+            <p className="text-lg font-medium">아직 고객사가 없습니다</p>
+            <p className="text-sm text-muted-foreground">
+              첫 번째 고객사를 등록하고 관리를 시작하세요.
+            </p>
           </div>
-        }
-      >
-        {viewMode === "kanban" ? (
-          <ClientKanban clients={serializedClients} />
-        ) : (
-          <ClientTable
-            clients={serializedClients}
-            total={total}
-            page={page}
-            pageSize={pageSize}
-            currentQ={q}
-            currentStatus={params.status}
-            currentSortBy={sortBy}
-            currentSortOrder={sortOrder}
-          />
-        )}
-      </Suspense>
+          <Button asChild>
+            <Link href="/clients/new">
+              <Plus className="mr-2 h-4 w-4" />
+              고객사 추가
+            </Link>
+          </Button>
+        </div>
+      ) : (
+        <Suspense
+          fallback={
+            <div className="py-8 text-center text-muted-foreground">
+              불러오는 중...
+            </div>
+          }
+        >
+          {viewMode === "kanban" ? (
+            <ClientKanban clients={serializedClients} />
+          ) : (
+            <ClientTable
+              clients={serializedClients}
+              total={total}
+              page={page}
+              pageSize={pageSize}
+              currentQ={q}
+              currentStatus={params.status}
+              currentSortBy={sortBy}
+              currentSortOrder={sortOrder}
+            />
+          )}
+        </Suspense>
+      )}
     </div>
   );
 }

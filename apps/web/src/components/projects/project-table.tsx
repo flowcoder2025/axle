@@ -165,6 +165,7 @@ export function ProjectTable({
       </div>
 
       {/* Table */}
+      <div className="overflow-x-auto">
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -231,6 +232,7 @@ export function ProjectTable({
             )}
           </TableBody>
         </Table>
+      </div>
       </div>
 
       {/* Pagination */}

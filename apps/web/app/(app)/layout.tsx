@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@axle/auth";
+import { Toaster } from "@axle/ui";
 import { AppSidebar } from "../../src/components/app-sidebar";
 import { UserMenu } from "../../src/components/user-menu";
 import { NotificationBell } from "../../src/components/notifications/notification-bell";
@@ -33,6 +34,7 @@ export default async function AppLayout({
           <div className="container mx-auto px-6 py-8">{children}</div>
         </main>
       </div>
+      <Toaster />
     </div>
   );
 }

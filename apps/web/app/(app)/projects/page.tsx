@@ -6,7 +6,7 @@ import { Button } from "@axle/ui";
 import { ProjectTable } from "../../../src/components/projects/project-table";
 import { ProjectKanban } from "../../../src/components/projects/project-kanban";
 import { ProjectViewToggle } from "../../../src/components/projects/project-view-toggle";
-import { Plus } from "lucide-react";
+import { FolderKanban, Plus } from "lucide-react";
 import { Suspense } from "react";
 import type { ProjectType, ProjectStatus } from "@prisma/client";
 
@@ -143,28 +143,46 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
         </div>
       </div>
 
-      <Suspense
-        fallback={
-          <div className="py-8 text-center text-muted-foreground">
-            불러오는 중...
+      {total === 0 && !q && !type && !status ? (
+        <div className="flex flex-col items-center justify-center py-24 space-y-4 text-center">
+          <FolderKanban className="h-12 w-12 text-muted-foreground" />
+          <div className="space-y-1">
+            <p className="text-lg font-medium">아직 프로젝트가 없습니다</p>
+            <p className="text-sm text-muted-foreground">
+              첫 번째 프로젝트를 생성하고 관리를 시작하세요.
+            </p>
           </div>
-        }
-      >
-        {viewMode === "kanban" ? (
-          <ProjectKanban projects={serializedProjects} />
-        ) : (
-          <ProjectTable
-            projects={serializedProjects}
-            total={total}
-            page={page}
-            pageSize={pageSize}
-            currentType={params.type}
-            currentStatus={params.status}
-            currentSortBy={params.sortBy}
-            currentSortOrder={params.sortOrder}
-          />
-        )}
-      </Suspense>
+          <Button asChild>
+            <Link href="/projects/new">
+              <Plus className="mr-2 h-4 w-4" />
+              프로젝트 추가
+            </Link>
+          </Button>
+        </div>
+      ) : (
+        <Suspense
+          fallback={
+            <div className="py-8 text-center text-muted-foreground">
+              불러오는 중...
+            </div>
+          }
+        >
+          {viewMode === "kanban" ? (
+            <ProjectKanban projects={serializedProjects} />
+          ) : (
+            <ProjectTable
+              projects={serializedProjects}
+              total={total}
+              page={page}
+              pageSize={pageSize}
+              currentType={params.type}
+              currentStatus={params.status}
+              currentSortBy={params.sortBy}
+              currentSortOrder={params.sortOrder}
+            />
+          )}
+        </Suspense>
+      )}
     </div>
   );
 }

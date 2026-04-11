@@ -200,9 +200,11 @@ export function ClientForm({ initialData, clientId, mode }: ClientFormProps) {
                   onChange={handleChange}
                   placeholder="예: (주)테크스타트"
                   disabled={submitting}
+                  aria-invalid={!!errors.name}
+                  aria-describedby={errors.name ? "name-error" : undefined}
                 />
                 {errors.name && (
-                  <p className="text-xs text-destructive">{errors.name}</p>
+                  <p id="name-error" role="alert" className="text-xs text-destructive">{errors.name}</p>
                 )}
               </div>
 
@@ -357,9 +359,11 @@ export function ClientForm({ initialData, clientId, mode }: ClientFormProps) {
                   onChange={handleChange}
                   placeholder="예: contact@company.com"
                   disabled={submitting}
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? "email-error" : undefined}
                 />
                 {errors.email && (
-                  <p className="text-xs text-destructive">{errors.email}</p>
+                  <p id="email-error" role="alert" className="text-xs text-destructive">{errors.email}</p>
                 )}
               </div>
 
@@ -373,9 +377,11 @@ export function ClientForm({ initialData, clientId, mode }: ClientFormProps) {
                   onChange={handleChange}
                   placeholder="예: https://www.company.com"
                   disabled={submitting}
+                  aria-invalid={!!errors.website}
+                  aria-describedby={errors.website ? "website-error" : undefined}
                 />
                 {errors.website && (
-                  <p className="text-xs text-destructive">{errors.website}</p>
+                  <p id="website-error" role="alert" className="text-xs text-destructive">{errors.website}</p>
                 )}
               </div>
             </div>
@@ -488,7 +494,7 @@ export function ClientForm({ initialData, clientId, mode }: ClientFormProps) {
           </CardContent>
           <CardFooter className="flex items-center gap-3">
             {serverError && (
-              <p className="flex-1 text-sm text-destructive">{serverError}</p>
+              <p role="alert" className="flex-1 text-sm text-destructive">{serverError}</p>
             )}
             <div className="ml-auto flex gap-2">
               <Button

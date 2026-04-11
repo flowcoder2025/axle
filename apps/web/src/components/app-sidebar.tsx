@@ -38,7 +38,7 @@ const NAV_ITEMS = [
   { href: "/journals", label: "연구일지", icon: BookOpen },
   { href: "/finance", label: "재무", icon: DollarSign },
   { href: "/analytics", label: "분석", icon: BarChart3 },
-  { href: "/contracts", label: "견적/계약", icon: FileSignature },
+  { href: "/estimates", label: "견적/계약", icon: FileSignature },
 ];
 
 interface AppSidebarProps {

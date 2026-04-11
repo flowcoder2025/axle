@@ -20,6 +20,7 @@ import {
 } from "@axle/ui";
 import { ClientStatusBadge } from "./client-status-badge";
 import { ChevronUp, ChevronDown, Search, MoreHorizontal } from "lucide-react";
+import { toast } from "@axle/ui";
 
 type ClientStatus = "ACTIVE" | "INACTIVE" | "PROSPECT";
 type SortBy = "name" | "createdAt" | "updatedAt" | "status";
@@ -62,8 +63,30 @@ export function ClientTable({
   const searchParams = useSearchParams();
 
   const [searchInput, setSearchInput] = useState(currentQ);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const totalPages = Math.ceil(total / pageSize);
+
+  async function handleDelete(clientId: string, clientName: string) {
+    if (!window.confirm(`"${clientName}" 고객사를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
+      return;
+    }
+    setDeletingId(clientId);
+    try {
+      const res = await fetch(`/api/clients/${clientId}`, { method: "DELETE" });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        toast.error(json?.error?.message ?? "삭제 중 오류가 발생했습니다.");
+      } else {
+        toast.success("고객사가 삭제되었습니다.");
+        router.refresh();
+      }
+    } catch {
+      toast.error("네트워크 오류가 발생했습니다. 다시 시도해 주세요.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   function buildParams(overrides: Record<string, string | undefined>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -151,6 +174,7 @@ export function ClientTable({
       </div>
 
       {/* Table */}
+      <div className="overflow-x-auto">
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -226,8 +250,12 @@ export function ClientTable({
                           <Link href={`/clients/${client.id}/edit`}>수정</Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
-                          삭제
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          disabled={deletingId === client.id}
+                          onClick={() => handleDelete(client.id, client.name)}
+                        >
+                          {deletingId === client.id ? "삭제 중..." : "삭제"}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -237,6 +265,7 @@ export function ClientTable({
             )}
           </TableBody>
         </Table>
+      </div>
       </div>
 
       {/* Pagination */}

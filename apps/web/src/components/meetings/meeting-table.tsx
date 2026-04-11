@@ -148,6 +148,7 @@ export function MeetingTable({
       </div>
 
       {/* Table */}
+      <div className="overflow-x-auto">
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -216,6 +217,7 @@ export function MeetingTable({
             )}
           </TableBody>
         </Table>
+      </div>
       </div>
 
       {/* Pagination */}

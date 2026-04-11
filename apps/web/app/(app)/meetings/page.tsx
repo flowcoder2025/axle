@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@axle/auth";
 import { prisma } from "@axle/db";
 import { Button } from "@axle/ui";
-import { Plus } from "lucide-react";
+import { Plus, Video } from "lucide-react";
 import { Suspense } from "react";
 import { MeetingTable } from "../../../src/components/meetings/meeting-table";
 import { Prisma } from "@prisma/client";
@@ -99,24 +99,42 @@ export default async function MeetingsPage({ searchParams }: MeetingsPageProps) 
         </Button>
       </div>
 
-      <Suspense
-        fallback={
-          <div className="py-8 text-center text-muted-foreground">
-            불러오는 중...
+      {total === 0 && !clientId && !projectId && !dateFrom && !dateTo ? (
+        <div className="flex flex-col items-center justify-center py-24 space-y-4 text-center">
+          <Video className="h-12 w-12 text-muted-foreground" />
+          <div className="space-y-1">
+            <p className="text-lg font-medium">아직 미팅이 없습니다</p>
+            <p className="text-sm text-muted-foreground">
+              첫 번째 미팅을 등록하고 관리를 시작하세요.
+            </p>
           </div>
-        }
-      >
-        <MeetingTable
-          meetings={serializedMeetings}
-          total={total}
-          page={page}
-          pageSize={pageSize}
-          currentClientId={params.clientId}
-          currentProjectId={params.projectId}
-          currentDateFrom={params.dateFrom}
-          currentDateTo={params.dateTo}
-        />
-      </Suspense>
+          <Button asChild>
+            <Link href="/meetings/new">
+              <Plus className="mr-2 h-4 w-4" />
+              미팅 추가
+            </Link>
+          </Button>
+        </div>
+      ) : (
+        <Suspense
+          fallback={
+            <div className="py-8 text-center text-muted-foreground">
+              불러오는 중...
+            </div>
+          }
+        >
+          <MeetingTable
+            meetings={serializedMeetings}
+            total={total}
+            page={page}
+            pageSize={pageSize}
+            currentClientId={params.clientId}
+            currentProjectId={params.projectId}
+            currentDateFrom={params.dateFrom}
+            currentDateTo={params.dateTo}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

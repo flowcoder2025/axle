@@ -187,6 +187,7 @@ export function DocumentTable({
       </div>
 
       {/* Table */}
+      <div className="overflow-x-auto">
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -267,6 +268,7 @@ export function DocumentTable({
             )}
           </TableBody>
         </Table>
+      </div>
       </div>
 
       {/* Pagination */}
