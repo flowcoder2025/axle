@@ -21,8 +21,8 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-3 w-full rounded-md px-2 py-2 hover:bg-sidebar-accent transition-colors">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground overflow-hidden">
+        <button className="flex items-center gap-3 w-full rounded-md px-2 py-2 hover:bg-[hsl(var(--sidebar-accent))] transition-colors">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--sidebar-primary))] text-[hsl(var(--sidebar-primary-foreground))] overflow-hidden">
             {image ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={image} alt={name ?? "User"} className="h-full w-full object-cover" />
@@ -31,11 +31,11 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
             )}
           </div>
           <div className="flex flex-col text-left overflow-hidden">
-            <span className="text-sm font-medium leading-tight truncate text-sidebar-foreground">
+            <span className="text-sm font-medium leading-tight truncate text-[hsl(var(--sidebar-foreground))]">
               {name ?? "사용자"}
             </span>
             {email && (
-              <span className="text-xs text-sidebar-foreground/60 truncate">
+              <span className="text-xs text-[hsl(var(--sidebar-foreground)/0.6)] truncate">
                 {email}
               </span>
             )}

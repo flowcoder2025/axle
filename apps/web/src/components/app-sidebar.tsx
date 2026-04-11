@@ -52,10 +52,10 @@ export function AppSidebar({ userMenu }: AppSidebarProps) {
     <Sidebar>
       <SidebarHeader>
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg border-[1.5px] border-sidebar-primary">
-            <span className="text-sidebar-primary text-sm font-extrabold">A</span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg border-[1.5px] border-[hsl(var(--sidebar-primary))]">
+            <span className="text-[hsl(var(--sidebar-primary))] text-sm font-extrabold">A</span>
           </div>
-          <span className="text-sidebar-primary text-sm font-bold tracking-widest">AXLE</span>
+          <span className="text-[hsl(var(--sidebar-primary))] text-sm font-bold tracking-widest">AXLE</span>
         </Link>
       </SidebarHeader>
 
