@@ -1,16 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getCurrentUser } from "@axle/auth";
 import { syncCalendar } from "@/lib/services/google-calendar";
+import { getDecryptedTokens } from "@/lib/services/oauth-tokens";
 import { unauthorizedResponse, handleInternalError } from "@/lib/api-helpers";
-import { z } from "zod";
-
-const syncRequestSchema = z.object({
-  accessToken: z.string().min(1, "accessToken is required"),
-  refreshToken: z.string().min(1, "refreshToken is required"),
-});
 
 // POST /api/google-calendar/sync — trigger manual bidirectional sync
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -23,25 +18,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
-    const parsed = syncRequestSchema.safeParse(body);
-    if (!parsed.success) {
+    const tokens = await getDecryptedTokens(user.id, "GOOGLE");
+    if (!tokens) {
       return NextResponse.json(
-        {
-          error: {
-            code: "VALIDATION_ERROR",
-            message: parsed.error.issues
-              .map((e) => `${e.path.join(".")}: ${e.message}`)
-              .join("; "),
-          },
-        },
+        { error: { code: "NOT_CONNECTED", message: "Google Calendar is not connected. Please connect first." } },
         { status: 400 }
       );
     }
 
     const result = await syncCalendar(user.orgId, {
-      accessToken: parsed.data.accessToken,
-      refreshToken: parsed.data.refreshToken,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken ?? "",
     });
 
     return NextResponse.json({ data: result });
