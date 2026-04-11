@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback, useReducer } from "react";
 import { useRouter } from "next/navigation";
+import { useNotificationStream } from "../../hooks/use-notification-stream";
 import {
   Bell,
   FileText,
@@ -135,8 +136,6 @@ function timeAgo(dateStr: string): string {
   return `${days}일 전`;
 }
 
-const POLL_INTERVAL_MS = 30_000;
-
 export function NotificationBell() {
   const router = useRouter();
   const [state, dispatch] = useReducer(reducer, {
@@ -164,9 +163,9 @@ export function NotificationBell() {
 
   useEffect(() => {
     fetchNotifications();
-    const timer = setInterval(fetchNotifications, POLL_INTERVAL_MS);
-    return () => clearInterval(timer);
   }, [fetchNotifications]);
+
+  useNotificationStream(fetchNotifications);
 
   const handleClickNotification = useCallback(
     async (notification: Notification) => {
