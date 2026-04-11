@@ -364,15 +364,41 @@ export async function analyzeGaps(input: GapAnalysisInput): Promise<GapResult> {
   const requirements = toObject(program.requirements);
   const eligibility = toObject(program.eligibility);
 
-  // TODO(Phase 14): integrate RAG-powered deep analysis via agent-bridge.
-  // Semantic search will enrich gap analysis with learned program context.
-
   const gaps: GapItem[] = [
     ...detectDocumentGaps(client.documents, requirements),
     ...detectCertificationGaps(client.certificates, eligibility, now),
     ...detectFinancialGaps(client.financials[0], eligibility),
     ...detectTechnicalGaps(client, eligibility),
   ];
+
+  // Claude AI deep analysis for enriched gap recommendations
+  if (process.env.ANTHROPIC_API_KEY && gaps.length > 0) {
+    try {
+      const { complete } = await import("../claude.js");
+      const aiResponse = await complete({
+        system: "You are an expert Korean government subsidy eligibility advisor. Respond in JSON format only.",
+        prompt: `A client "${client.name}" is applying for "${program.name}".
+
+Detected gaps:
+${gaps.map((g) => `- [${g.severity}] ${g.category}: ${g.item} — ${g.description}`).join("\n")}
+
+For each gap, provide a specific actionable recommendation in Korean.
+Respond as JSON:
+{ "recommendations": { "<item>": "recommendation in Korean", ... } }`,
+        maxTokens: 1024,
+      });
+
+      const parsed = JSON.parse(aiResponse);
+      if (parsed.recommendations) {
+        for (const gap of gaps) {
+          const rec = parsed.recommendations[gap.item];
+          if (rec) gap.recommendation = rec;
+        }
+      }
+    } catch {
+      // Non-fatal: AI enrichment is optional
+    }
+  }
 
   const readiness = calculateReadiness(gaps);
 
