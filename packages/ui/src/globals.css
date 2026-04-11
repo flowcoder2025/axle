@@ -75,4 +75,8 @@
     --sidebar-ring: 39 41% 61%;
     --sidebar-muted: 215 20% 65%;
   }
+
+  * {
+    font-family: var(--font-pretendard), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  }
 }
