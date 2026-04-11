@@ -1,0 +1,13 @@
+{
+  "crons": [
+    { "path": "/api/cron/doc-reminder", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/deadline-alert", "schedule": "0 8 * * *" },
+    { "path": "/api/cron/journal-remind", "schedule": "0 9 25 * *" },
+    { "path": "/api/cron/doc-expiry", "schedule": "0 7 * * 1" },
+    { "path": "/api/cron/schedule-sync", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/crawler-execute", "schedule": "0 6 * * *" },
+    { "path": "/api/cron/matching-refresh", "schedule": "0 3 * * 1" },
+    { "path": "/api/cron/embedding-generate", "schedule": "0 2 * * *" },
+    { "path": "/api/cron/daily-digest", "schedule": "0 8 * * 1-5" }
+  ]
+}
