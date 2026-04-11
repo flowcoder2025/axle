@@ -18,7 +18,8 @@ interface ProjectSummary {
   type: ProjectType;
   status: ProjectStatus;
   priority: Priority;
-  assignedTo: string | null;
+  assignedToId: string | null;
+  assignedToUser?: { id: string; name: string | null; email: string } | null;
   dueDate: string | null;
   memo: string | null;
   feeType: FeeType | null;

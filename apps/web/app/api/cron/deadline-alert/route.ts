@@ -56,15 +56,15 @@ export async function POST(request: Request): Promise<Response> {
       );
       const deadline = program.applicationEnd.toLocaleDateString("ko-KR");
 
-      // Find the client to get consultant (assignedTo)
+      // Find the client to get consultant (assignedToId)
       const client = await prisma.client.findFirst({
         where: { id: result.clientId },
-        select: { id: true, name: true, email: true, assignedTo: true },
+        select: { id: true, name: true, email: true, assignedToId: true },
       });
 
       if (!client) continue;
 
-      const consultantId = client.assignedTo;
+      const consultantId = client.assignedToId;
 
       if (consultantId) {
         await create({

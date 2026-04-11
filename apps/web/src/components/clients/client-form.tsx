@@ -17,7 +17,7 @@ export interface ClientFormData {
   website: string;
   memo: string;
   status: ClientStatus;
-  assignedTo: string;
+  assignedToId: string;
   region: string;
   employeeCount?: number;
   capitalAmount?: number;
@@ -46,7 +46,7 @@ const EMPTY_FORM: ClientFormData = {
   website: "",
   memo: "",
   status: "ACTIVE",
-  assignedTo: "",
+  assignedToId: "",
   region: "",
   employeeCount: undefined,
   capitalAmount: undefined,
@@ -467,13 +467,13 @@ export function ClientForm({ initialData, clientId, mode }: ClientFormProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="assignedTo">담당자</Label>
+              <Label htmlFor="assignedToId">담당자 ID</Label>
               <Input
-                id="assignedTo"
-                name="assignedTo"
-                value={form.assignedTo}
+                id="assignedToId"
+                name="assignedToId"
+                value={form.assignedToId}
                 onChange={handleChange}
-                placeholder="담당자 이름"
+                placeholder="담당자 ID"
                 disabled={submitting}
               />
             </div>

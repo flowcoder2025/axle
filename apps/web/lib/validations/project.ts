@@ -33,7 +33,7 @@ export const projectCreateSchema = z.object({
   type: projectTypeSchema,
   title: z.string().min(1, "title is required"),
   priority: prioritySchema.optional().default("MEDIUM"),
-  assignedTo: z.string().optional(),
+  assignedToId: z.string().optional(),
   dueDate: z.string().datetime().optional().nullable(),
   memo: z.string().optional(),
   metadata: z.record(z.string(), z.unknown()).optional().nullable(),
@@ -48,7 +48,7 @@ export const projectCreateSchema = z.object({
 export const projectUpdateSchema = z.object({
   title: z.string().min(1, "title is required").optional(),
   priority: prioritySchema.optional(),
-  assignedTo: z.string().optional().nullable(),
+  assignedToId: z.string().optional().nullable(),
   dueDate: z.string().datetime().optional().nullable(),
   memo: z.string().optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).optional().nullable(),
@@ -62,7 +62,7 @@ export const projectSearchSchema = z.object({
   clientId: z.string().optional(),
   type: projectTypeSchema.optional(),
   status: projectStatusSchema.optional(),
-  assignedTo: z.string().optional(),
+  assignedToId: z.string().optional(),
   page: z.coerce.number().int().positive().optional().default(1),
   pageSize: z.coerce.number().int().positive().max(100).optional().default(20),
 });

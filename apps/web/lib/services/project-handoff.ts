@@ -2,7 +2,7 @@
  * project-handoff.ts — Handoff workflow service
  *
  * Handles reassigning a project to a new user:
- * 1. Updates project.assignedTo
+ * 1. Updates project.assignedToId
  * 2. Creates a HANDOFF notification for the new assignee
  * 3. Sends a handoff email to the new assignee
  *
@@ -61,10 +61,10 @@ export async function executeHandoff(input: HandoffInput): Promise<HandoffResult
     select: { name: true, email: true },
   });
 
-  // 4. Update project.assignedTo
+  // 4. Update project.assignedToId
   await prisma.project.update({
     where: { id: projectId },
-    data: { assignedTo: newAssignee.name ?? newAssignee.email },
+    data: { assignedToId: newAssignee.id },
   });
 
   // 5. Promote new assignee to LEAD in ProjectMember (upsert)

@@ -40,7 +40,7 @@ interface SearchParams {
   q?: string;
   type?: string;
   status?: string;
-  assignedTo?: string;
+  assignedToId?: string;
   clientId?: string;
   page?: string;
   pageSize?: string;
@@ -69,7 +69,7 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
   const status = VALID_STATUSES.includes(params.status as ProjectStatus)
     ? (params.status as ProjectStatus)
     : undefined;
-  const assignedTo = params.assignedTo?.trim() || undefined;
+  const assignedToId = params.assignedToId?.trim() || undefined;
   const clientId = params.clientId?.trim() || undefined;
   const q = params.q?.trim() || undefined;
 
@@ -84,7 +84,7 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
     client: { orgId: user.orgId },
     ...(type ? { type } : {}),
     ...(status ? { status } : {}),
-    ...(assignedTo ? { assignedTo } : {}),
+    ...(assignedToId ? { assignedToId } : {}),
     ...(clientId ? { clientId } : {}),
     ...(q
       ? {
@@ -107,7 +107,8 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
         title: true,
         type: true,
         status: true,
-        assignedTo: true,
+        assignedToId: true,
+        assignedToUser: { select: { id: true, name: true, email: true } },
         dueDate: true,
         client: { select: { name: true } },
       },
@@ -118,6 +119,7 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
   // Serialize dates for client component
   const serializedProjects = projects.map((p) => ({
     ...p,
+    assignedToUser: p.assignedToUser ?? undefined,
     dueDate: p.dueDate ? p.dueDate.toISOString() : null,
   }));
 

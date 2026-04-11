@@ -52,25 +52,40 @@ export default async function AnalyticsPage() {
 
   // ── 3. Consultant performance ──────────────────────────────────────────────
   const consultantGroups = await prisma.project.groupBy({
-    by: ["assignedTo", "status"],
-    where: { client: { orgId }, assignedTo: { not: null } },
+    by: ["assignedToId", "status"],
+    where: { client: { orgId }, assignedToId: { not: null } },
     _count: { status: true },
   });
 
   const consultantMap: Record<string, { projectCount: number; completedCount: number }> = {};
   for (const g of consultantGroups) {
-    if (!g.assignedTo) continue;
-    if (!consultantMap[g.assignedTo]) {
-      consultantMap[g.assignedTo] = { projectCount: 0, completedCount: 0 };
+    if (!g.assignedToId) continue;
+    if (!consultantMap[g.assignedToId]) {
+      consultantMap[g.assignedToId] = { projectCount: 0, completedCount: 0 };
     }
-    consultantMap[g.assignedTo].projectCount += g._count.status;
+    consultantMap[g.assignedToId].projectCount += g._count.status;
     if (g.status === "COMPLETED" || g.status === "APPROVED") {
-      consultantMap[g.assignedTo].completedCount += g._count.status;
+      consultantMap[g.assignedToId].completedCount += g._count.status;
     }
   }
 
+  // Resolve user names for display
+  const consultantIds = Object.keys(consultantMap);
+  const consultantUsers = consultantIds.length > 0
+    ? await prisma.user.findMany({
+        where: { id: { in: consultantIds } },
+        select: { id: true, name: true, email: true },
+      })
+    : [];
+  const userNameMap = new Map(
+    consultantUsers.map((u) => [u.id, u.name ?? u.email])
+  );
+
   const consultantData = Object.entries(consultantMap)
-    .map(([assignedTo, stats]) => ({ assignedTo, ...stats }))
+    .map(([id, stats]) => ({
+      assignedTo: userNameMap.get(id) ?? id,
+      ...stats,
+    }))
     .sort((a, b) => b.projectCount - a.projectCount)
     .slice(0, 10);
 

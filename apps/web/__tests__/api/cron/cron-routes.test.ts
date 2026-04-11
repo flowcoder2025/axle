@@ -154,7 +154,7 @@ describe("POST /api/cron/doc-reminder", () => {
       name: "사업계획서",
       projectId: "proj-1",
       project: {
-        assignedTo: "user-1",
+        assignedToId: "user-1",
         client: { id: "client-1", name: "테스트기업", email: "test@example.com" },
       },
     };
@@ -183,7 +183,7 @@ describe("POST /api/cron/doc-reminder", () => {
       name: "사업계획서",
       projectId: "proj-2",
       project: {
-        assignedTo: "user-1",
+        assignedToId: "user-1",
         client: { id: "client-2", name: "테스트기업", email: null },
       },
     };
@@ -242,7 +242,7 @@ describe("POST /api/cron/deadline-alert", () => {
       id: "client-1",
       name: "테스트기업",
       email: "test@example.com",
-      assignedTo: "user-1",
+      assignedToId: "user-1",
     });
     mockCreate.mockResolvedValue({});
     mockSendEmail.mockResolvedValue(undefined);
@@ -278,7 +278,7 @@ describe("POST /api/cron/deadline-alert", () => {
       id: "client-2",
       name: "스타트업A",
       email: null,
-      assignedTo: "user-2",
+      assignedToId: "user-2",
     });
     mockCreate.mockResolvedValue({});
     mockSendTelegramToDefault.mockResolvedValue(undefined);
@@ -379,7 +379,7 @@ describe("POST /api/cron/doc-expiry", () => {
         name: "법인등기부등본",
         clientId: "client-1",
         expiresAt,
-        client: { id: "client-1", name: "테스트기업", assignedTo: "user-1" },
+        client: { id: "client-1", name: "테스트기업", assignedToId: "user-1" },
       },
     ]);
     mockCreate.mockResolvedValue({});
@@ -405,7 +405,7 @@ describe("POST /api/cron/doc-expiry", () => {
         name: "사업자등록증",
         clientId: "client-2",
         expiresAt,
-        client: { id: "client-2", name: "기업B", assignedTo: null },
+        client: { id: "client-2", name: "기업B", assignedToId: null },
       },
     ]);
 

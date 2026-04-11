@@ -36,6 +36,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   const project = await prisma.project.findFirst({
     where: { id: projectId, client: { orgId: user.orgId } },
     include: {
+      assignedToUser: { select: { id: true, name: true, email: true } },
       client: { select: { id: true, name: true } },
       _count: { select: { checklist: true, documents: true, members: true } },
       children: {
@@ -61,7 +62,8 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     type: project.type as ProjectType,
     status: project.status as ProjectStatus,
     priority: project.priority as Priority,
-    assignedTo: project.assignedTo,
+    assignedToId: project.assignedToId,
+    assignedToUser: project.assignedToUser ?? undefined,
     dueDate: project.dueDate ? project.dueDate.toISOString() : null,
     memo: project.memo,
     feeType: project.feeType as FeeType | null,
@@ -101,7 +103,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
             <span>고객사: {project.client.name}</span>
-            {project.assignedTo && <span>담당자: {project.assignedTo}</span>}
+            {project.assignedToUser && <span>담당자: {project.assignedToUser.name ?? project.assignedToUser.email}</span>}
             <span>체크리스트 {project._count.checklist}건</span>
             <span>서류 {project._count.documents}건</span>
             <span>멤버 {project._count.members}명</span>

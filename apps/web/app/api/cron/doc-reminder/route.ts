@@ -60,8 +60,8 @@ export async function POST(request: Request): Promise<Response> {
         });
       }
 
-      // Determine the consultant userId to notify (assignedTo on project or client)
-      const consultantId = item.project.assignedTo ?? null;
+      // Determine the consultant userId to notify (assignedToId on project or client)
+      const consultantId = item.project.assignedToId ?? null;
       if (consultantId) {
         await create({
           userId: consultantId,

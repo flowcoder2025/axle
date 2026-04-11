@@ -12,7 +12,8 @@ export interface KanbanProject {
   title: string;
   type: ProjectType;
   status: ProjectStatus;
-  assignedTo: string | null;
+  assignedToId: string | null;
+  assignedToUser?: { id: string; name: string | null; email: string } | null;
   client: { name: string };
 }
 
@@ -192,7 +193,7 @@ export function ProjectKanban({ projects: initialProjects }: ProjectKanbanProps)
                         <div className="mt-1.5 space-y-1 text-xs text-muted-foreground">
                           <p>{project.client.name}</p>
                           <ProjectTypeBadge type={project.type} />
-                          {project.assignedTo && <p>담당: {project.assignedTo}</p>}
+                          {project.assignedToUser && <p>담당: {project.assignedToUser.name ?? project.assignedToUser.email}</p>}
                         </div>
                       </Card>
                     </div>

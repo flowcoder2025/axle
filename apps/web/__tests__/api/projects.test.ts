@@ -169,7 +169,7 @@ describe("GET /api/projects", () => {
     expect(body).toMatchObject({ data: fakeProjects, total: 1, page: 1, pageSize: 20 });
   });
 
-  it("filters by clientId, type, status, assignedTo", async () => {
+  it("filters by clientId, type, status, assignedToId", async () => {
     vi.mocked(getCurrentUser).mockResolvedValue(authedUser);
     mockPrismaProject.findMany.mockResolvedValue([]);
     mockPrismaProject.count.mockResolvedValue(0);
@@ -178,7 +178,7 @@ describe("GET /api/projects", () => {
     const res = await GET(
       makeRequest(
         "GET",
-        "http://localhost/api/projects?clientId=c-1&type=BUSINESS_PLAN&status=IN_PROGRESS&assignedTo=user-2"
+        "http://localhost/api/projects?clientId=c-1&type=BUSINESS_PLAN&status=IN_PROGRESS&assignedToId=user-2"
       ) as never
     );
     expect(res.status).toBe(200);
@@ -188,7 +188,7 @@ describe("GET /api/projects", () => {
           clientId: "c-1",
           type: "BUSINESS_PLAN",
           status: "IN_PROGRESS",
-          assignedTo: "user-2",
+          assignedToId: "user-2",
         }),
       })
     );
