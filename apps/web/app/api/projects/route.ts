@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
       return handleZodError(parsed.error);
     }
 
-    const { clientId, type, status, assignedTo, page, pageSize } = parsed.data;
+    const { clientId, type, status, assignedToId, page, pageSize } = parsed.data;
     const skip = (page - 1) * pageSize;
 
     const where: Prisma.ProjectWhereInput = {
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
       ...(clientId ? { clientId } : {}),
       ...(type ? { type } : {}),
       ...(status ? { status } : {}),
-      ...(assignedTo ? { assignedTo } : {}),
+      ...(assignedToId ? { assignedToId } : {}),
     };
 
     const [projects, total] = await Promise.all([
@@ -52,7 +52,8 @@ export async function GET(req: NextRequest) {
           title: true,
           status: true,
           priority: true,
-          assignedTo: true,
+          assignedToId: true,
+          assignedToUser: { select: { id: true, name: true, email: true } },
           dueDate: true,
           submissionDate: true,
           feeType: true,

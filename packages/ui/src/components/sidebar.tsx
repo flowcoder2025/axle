@@ -8,14 +8,20 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
-  ({ className, collapsed = false, ...props }, ref) => (
+  ({ className, collapsed = false, style, ...props }, ref) => (
     <div
       ref={ref}
       className={cn(
-        "flex flex-col h-full bg-sidebar border-r border-sidebar-border transition-all duration-300",
+        "flex flex-col h-full transition-all duration-300",
         collapsed ? "w-14" : "w-64",
         className,
       )}
+      style={{
+        backgroundColor: "hsl(var(--sidebar-background))",
+        borderRight: "1px solid hsl(var(--sidebar-border))",
+        color: "hsl(var(--sidebar-foreground))",
+        ...style,
+      }}
       {...props}
     />
   ),
@@ -28,7 +34,7 @@ const SidebarHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex items-center px-4 py-3 border-b border-sidebar-border", className)}
+    className={cn("flex items-center px-4 py-3 border-b border-[hsl(var(--sidebar-border))]", className)}
     {...props}
   />
 ));
@@ -52,7 +58,7 @@ const SidebarFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("px-4 py-3 border-t border-sidebar-border", className)}
+    className={cn("px-4 py-3 border-t border-[hsl(var(--sidebar-border))]", className)}
     {...props}
   />
 ));
@@ -72,8 +78,8 @@ const SidebarItem = React.forwardRef<HTMLDivElement, SidebarItemProps>(
       className={cn(
         "flex items-center gap-3 px-3 py-2 mx-1 rounded-md cursor-pointer transition-colors",
         active
-          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+          ? "bg-[hsl(var(--sidebar-accent))] text-[hsl(var(--sidebar-accent-foreground))] font-semibold"
+          : "text-[hsl(var(--sidebar-foreground)/0.7)] hover:bg-[hsl(var(--sidebar-accent)/0.5)] hover:text-[hsl(var(--sidebar-foreground))]",
         className,
       )}
       {...props}
@@ -102,7 +108,7 @@ const SidebarGroupLabel = React.forwardRef<
   <p
     ref={ref}
     className={cn(
-      "px-4 py-1 text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider",
+      "px-4 py-1 text-xs font-semibold text-[hsl(var(--sidebar-foreground)/0.6)] uppercase tracking-wider",
       className,
     )}
     {...props}

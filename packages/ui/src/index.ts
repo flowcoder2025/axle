@@ -76,5 +76,17 @@ export {
   SidebarGroupLabel,
 } from "./components/sidebar.js";
 
+export {
+  Sheet,
+  SheetPortal,
+  SheetOverlay,
+  SheetTrigger,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "./components/sheet.js";
+
 export { toast, Toaster } from "./components/toast.js";
 export type { ToasterProps } from "./components/toast.js";

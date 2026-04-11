@@ -217,8 +217,40 @@ export async function evaluate(
     .sort((a, b) => b.weight - a.weight) // highest weight first
     .map((c) => c.feedback);
 
-  // Suppress unused variable warning (will be used in Phase 14 prompt)
-  void programContext;
+  // Claude AI deep analysis — enhances rule-based results when API key is available
+  if (process.env.ANTHROPIC_API_KEY) {
+    try {
+      const { complete } = await import("../claude.js");
+      const aiResponse = await complete({
+        system: "You are an expert Korean government subsidy proposal reviewer. Respond in JSON format only.",
+        prompt: `Analyze this business plan and provide specific improvement suggestions.
+${programContext ? `Target program: ${programContext}` : ""}
+
+Document (first 3000 chars):
+${documentContent.slice(0, 3000)}
+
+Rule-based scores:
+${criteria.map((c) => `- ${c.name}: ${c.score}/10`).join("\n")}
+
+Respond as JSON:
+{
+  "improvements": ["specific suggestion 1", "specific suggestion 2"],
+  "detailedFeedback": "one paragraph of overall feedback in Korean"
+}`,
+        maxTokens: 1024,
+      });
+
+      const parsed = JSON.parse(aiResponse);
+      if (Array.isArray(parsed.improvements)) {
+        improvements.push(...parsed.improvements);
+      }
+      if (parsed.detailedFeedback) {
+        improvements.unshift(`[AI 분석] ${parsed.detailedFeedback}`);
+      }
+    } catch {
+      // Non-fatal: AI enhancement is optional
+    }
+  }
 
   return {
     criteria,

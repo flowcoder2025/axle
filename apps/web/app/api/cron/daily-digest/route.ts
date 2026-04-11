@@ -40,7 +40,7 @@ export async function POST(request: Request): Promise<Response> {
       // 1. Today's deadlines: active clients assigned to this consultant
       //    with programs whose applicationEnd is within 7 days
       const assignedClients = await prisma.client.findMany({
-        where: { assignedTo: consultant.id, status: "ACTIVE" },
+        where: { assignedToId: consultant.id, status: "ACTIVE" },
         select: { id: true, name: true },
       });
       const clientIds = assignedClients.map((c) => c.id);

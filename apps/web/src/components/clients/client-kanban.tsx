@@ -11,7 +11,8 @@ export interface KanbanClient {
   name: string;
   ceoName?: string | null;
   status: ClientStatus;
-  assignedTo?: string | null;
+  assignedToId?: string | null;
+  assignedToUser?: { id: string; name: string | null; email: string } | null;
   industry?: string | null;
 }
 
@@ -171,7 +172,7 @@ export function ClientKanban({ clients: initialClients }: ClientKanbanProps) {
                       <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
                         {client.ceoName && <p>대표: {client.ceoName}</p>}
                         {client.industry && <p>업종: {client.industry}</p>}
-                        {client.assignedTo && <p>담당: {client.assignedTo}</p>}
+                        {client.assignedToUser && <p>담당: {client.assignedToUser.name ?? client.assignedToUser.email}</p>}
                       </div>
                     </Card>
                   </div>

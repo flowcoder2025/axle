@@ -13,7 +13,7 @@ export const clientCreateSchema = z.object({
   website: z.string().url("invalid URL format").optional().or(z.literal("")),
   memo: z.string().optional(),
   status: clientStatusSchema.optional().default("ACTIVE"),
-  assignedTo: z.string().optional(),
+  assignedToId: z.string().optional(),
   employeeCount: z.number().int().nonnegative().optional(),
   capitalAmount: z.number().nonnegative().optional(),
   foundedDate: z.string().datetime().optional().nullable(),

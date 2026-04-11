@@ -1,7 +1,9 @@
-import { authMiddleware } from "@axle/auth";
+import NextAuth from "next-auth";
 import type { NextMiddleware } from "next/server";
+import { authConfig } from "@axle/auth/edge";
 
-export const middleware: NextMiddleware = authMiddleware as NextMiddleware;
+const { auth } = NextAuth(authConfig);
+export const middleware: NextMiddleware = auth as NextMiddleware;
 
 /**
  * Next.js requires `config` to be a static literal — cannot be imported.

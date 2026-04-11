@@ -19,7 +19,7 @@ export interface ProjectFormData {
   title: string;
   type: ProjectType;
   priority: Priority;
-  assignedTo: string;
+  assignedToId: string;
   dueDate: string;
   memo: string;
   feeType: FeeType | "";
@@ -39,7 +39,7 @@ const EMPTY_FORM: ProjectFormData = {
   title: "",
   type: "BUSINESS_PLAN",
   priority: "MEDIUM",
-  assignedTo: "",
+  assignedToId: "",
   dueDate: "",
   memo: "",
   feeType: "",
@@ -142,7 +142,7 @@ export function ProjectForm({ clients, initialClientId }: ProjectFormProps) {
       isPaid: form.isPaid,
     };
 
-    if (form.assignedTo.trim()) payload.assignedTo = form.assignedTo.trim();
+    if (form.assignedToId.trim()) payload.assignedToId = form.assignedToId.trim();
     if (form.dueDate) payload.dueDate = new Date(form.dueDate).toISOString();
     if (form.memo.trim()) payload.memo = form.memo.trim();
     if (form.feeType) payload.feeType = form.feeType;
@@ -268,13 +268,13 @@ export function ProjectForm({ clients, initialClientId }: ProjectFormProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="assignedTo">담당자</Label>
+                <Label htmlFor="assignedToId">담당자 ID</Label>
                 <Input
-                  id="assignedTo"
-                  name="assignedTo"
-                  value={form.assignedTo}
+                  id="assignedToId"
+                  name="assignedToId"
+                  value={form.assignedToId}
                   onChange={handleChange}
-                  placeholder="담당자 이름"
+                  placeholder="담당자 ID"
                   disabled={submitting}
                 />
               </div>

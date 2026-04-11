@@ -2,18 +2,33 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { Button } from "@axle/ui";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@axle/ui";
+import { Button, Input, Label } from "@axle/ui";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  async function handleCredentials(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    const result = await signIn("credentials", {
+      email,
+      password,
+      callbackUrl: "/dashboard",
+      redirect: false,
+    });
+
+    if (result?.error) {
+      setError("이메일 또는 비밀번호가 올바르지 않습니다.");
+      setLoading(false);
+    } else if (result?.url) {
+      window.location.href = result.url;
+    }
+  }
 
   async function handleGoogle() {
     setLoading(true);
@@ -21,31 +36,90 @@ export default function LoginPage() {
   }
 
   return (
-    <Card>
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">AXLE</CardTitle>
-        <CardDescription className="text-center">
-          컨설팅 자동화 플랫폼에 로그인하세요
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={handleGoogle}
-          disabled={loading}
-        >
-          <GoogleIcon className="mr-2 h-4 w-4" />
-          {loading ? "로그인 중..." : "Google로 계속하기"}
+    <div>
+      {/* Mobile-only logo */}
+      <div className="flex flex-col items-center gap-2 mb-8 lg:hidden">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg border-2 border-accent">
+          <span className="text-accent text-lg font-extrabold">A</span>
+        </div>
+        <span className="text-lg font-bold tracking-widest">AXLE</span>
+      </div>
+
+      <div className="space-y-1 mb-6">
+        <h1 className="text-xl font-bold text-foreground">로그인</h1>
+        <p className="text-sm text-muted-foreground">계정에 로그인하세요</p>
+      </div>
+
+      {/* Google OAuth */}
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full h-11 gap-3 font-medium mb-4"
+        onClick={handleGoogle}
+        disabled={loading}
+      >
+        <GoogleIcon className="h-5 w-5" />
+        Google로 계속하기
+      </Button>
+
+      {/* Divider */}
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="bg-background px-3 text-muted-foreground">또는</span>
+        </div>
+      </div>
+
+      {/* Credentials Form */}
+      <form onSubmit={handleCredentials} className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="email" className="text-xs font-medium">이메일</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="name@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={loading}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-center">
+            <Label htmlFor="password" className="text-xs font-medium">비밀번호</Label>
+            <button type="button" className="text-xs text-accent hover:underline">
+              비밀번호 찾기
+            </button>
+          </div>
+          <Input
+            id="password"
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={loading}
+          />
+        </div>
+        {error && (
+          <div className="rounded-md bg-destructive/10 px-3 py-2">
+            <p className="text-sm text-destructive text-center">{error}</p>
+          </div>
+        )}
+        <Button type="submit" className="w-full h-10" disabled={loading}>
+          {loading ? "로그인 중..." : "로그인"}
         </Button>
-      </CardContent>
-      <CardFooter>
-        <p className="text-xs text-center text-muted-foreground w-full">
-          로그인함으로써 서비스 이용약관 및 개인정보처리방침에 동의합니다.
-        </p>
-      </CardFooter>
-    </Card>
+      </form>
+
+      <p className="text-center text-sm text-muted-foreground mt-6">
+        계정이 없으신가요?{" "}
+        <a href="/signup" className="text-accent font-semibold hover:underline">
+          회원가입
+        </a>
+      </p>
+    </div>
   );
 }
 

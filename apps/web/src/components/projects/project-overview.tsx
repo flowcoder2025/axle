@@ -31,7 +31,8 @@ interface ProjectOverviewProps {
     type: ProjectType;
     status: ProjectStatus;
     priority: Priority;
-    assignedTo: string | null;
+    assignedToId: string | null;
+    assignedToUser?: { id: string; name: string | null; email: string } | null;
     dueDate: string | null;
     memo: string | null;
     feeType: FeeType | null;
@@ -65,7 +66,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
     )},
     { label: "유형", value: <ProjectTypeBadge type={project.type} /> },
     { label: "우선순위", value: PRIORITY_LABELS[project.priority] },
-    { label: "담당자", value: project.assignedTo ?? "-" },
+    { label: "담당자", value: project.assignedToUser?.name ?? project.assignedToUser?.email ?? "-" },
     { label: "마감일", value: formatDate(project.dueDate) },
     { label: "메모", value: project.memo ?? "-" },
   ];

@@ -23,7 +23,7 @@ export async function POST(request: Request): Promise<Response> {
       },
       include: {
         client: {
-          select: { id: true, name: true, assignedTo: true },
+          select: { id: true, name: true, assignedToId: true },
         },
       },
     });
@@ -31,7 +31,7 @@ export async function POST(request: Request): Promise<Response> {
     let processed = 0;
 
     for (const doc of documents) {
-      const consultantId = doc.client.assignedTo;
+      const consultantId = doc.client.assignedToId;
       if (!consultantId) continue;
 
       const daysRemaining = Math.ceil(

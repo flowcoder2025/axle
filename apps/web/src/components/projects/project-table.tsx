@@ -23,7 +23,8 @@ export interface ProjectRow {
   title: string;
   type: ProjectType;
   status: ProjectStatus;
-  assignedTo: string | null;
+  assignedToId: string | null;
+  assignedToUser?: { id: string; name: string | null; email: string } | null;
   dueDate: string | null;
   client: { name: string };
 }
@@ -223,7 +224,7 @@ export function ProjectTable({
                   <TableCell>
                     <ProjectStatusBadge status={project.status} />
                   </TableCell>
-                  <TableCell>{project.assignedTo ?? "-"}</TableCell>
+                  <TableCell>{project.assignedToUser?.name ?? project.assignedToUser?.email ?? "-"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {formatDate(project.dueDate)}
                   </TableCell>

@@ -79,7 +79,8 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
         name: true,
         ceoName: true,
         status: true,
-        assignedTo: true,
+        assignedToId: true,
+        assignedToUser: { select: { id: true, name: true, email: true } },
         updatedAt: true,
         industry: true,
         region: true,
@@ -91,6 +92,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
   // Serialize dates for client component
   const serializedClients = clients.map((c) => ({
     ...c,
+    assignedToUser: c.assignedToUser ?? undefined,
     status: c.status as "ACTIVE" | "INACTIVE" | "PROSPECT",
     updatedAt: c.updatedAt.toISOString(),
   }));

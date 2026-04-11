@@ -31,7 +31,8 @@ export interface ClientRow {
   name: string;
   ceoName?: string | null;
   status: ClientStatus;
-  assignedTo?: string | null;
+  assignedToId?: string | null;
+  assignedToUser?: { id: string; name: string | null; email: string } | null;
   updatedAt: string;
   industry?: string | null;
   region?: string | null;
@@ -230,7 +231,7 @@ export function ClientTable({
                   <TableCell>
                     <ClientStatusBadge status={client.status} />
                   </TableCell>
-                  <TableCell>{client.assignedTo ?? "-"}</TableCell>
+                  <TableCell>{client.assignedToUser?.name ?? client.assignedToUser?.email ?? "-"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {formatDate(client.updatedAt)}
                   </TableCell>
