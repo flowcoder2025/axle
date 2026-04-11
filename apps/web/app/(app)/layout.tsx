@@ -28,7 +28,7 @@ export default async function AppLayout({
       </div>
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-12 shrink-0 items-center justify-between border-b bg-background px-4">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
           {/* Mobile hamburger — visible only on mobile */}
           <div className="md:hidden">
             <MobileSidebar userMenu={userMenu} />
@@ -38,7 +38,7 @@ export default async function AppLayout({
           <NotificationBell />
         </header>
         <main className="flex-1 overflow-y-auto bg-background">
-          <div className="container mx-auto px-4 py-6 md:px-6 md:py-8">
+          <div className="mx-auto max-w-7xl px-6 py-8">
             {children}
           </div>
         </main>

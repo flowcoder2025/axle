@@ -22,7 +22,7 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="flex items-center gap-3 w-full rounded-md px-2 py-2 hover:bg-sidebar-accent transition-colors">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground overflow-hidden">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground overflow-hidden">
             {image ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={image} alt={name ?? "User"} className="h-full w-full object-cover" />
