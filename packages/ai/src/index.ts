@@ -1,3 +1,6 @@
+export { complete } from "./claude.js";
+export type { ClaudeCompletionInput } from "./claude.js";
+
 export { resolveAiTier } from "./router.js";
 export type { RouterConfig } from "./router.js";
 
