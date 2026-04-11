@@ -1,0 +1,4 @@
+- [x] WI-001-chore Turborepo 루트 설정 | no-commit
+- [x] WI-002-chore 패키지 초기 구조 | .gitignore,apps/web/__tests__/page.test.tsx,apps/web/app/layout.tsx,apps/web/app/page.tsx,apps/web/eslint.config.mjs,apps/web/next-env.d.ts,apps/web/next.config.ts,apps/web/package.json,apps/web/tsconfig.json,apps/web/vitest.config.ts
+- [x] WI-003-feat Prisma 7 Client Engine + Driver Adapter 설정 | package-lock.json,packages/db/__tests__/prisma-setup.test.ts,packages/db/package.json,packages/db/prisma/schema.prisma,packages/db/src/client.ts,packages/db/src/index.ts,packages/db/vitest.config.ts
+- [x] WI-004-feat 인증/조직 스키마 6개 모델 | packages/db/__tests__/auth-org-schema.test.ts,packages/db/prisma/schema.prisma

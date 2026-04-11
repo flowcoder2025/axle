@@ -65,10 +65,18 @@ export function normalizeFunding(raw: string | undefined | null): number | null 
   const eok = cleaned.match(/(\d+(?:\.\d+)?)억/);
   if (eok) {
     const base = parseFloat(eok[1]) * 100_000_000;
-    // may also have a 만 suffix: "1억5천만원"
+    // may also have a 만 suffix after 억: "1억5000만원" or "1억5천만원"
+    // Handle 천만 (thousands of 만 = 천만): "5천만" = 5000만 = 50,000,000
+    const cheonMan = cleaned.match(/억(\d+(?:\.\d+)?)천만/);
+    if (cheonMan) return base + parseFloat(cheonMan[1]) * 10_000_000;
+    // Handle direct 만: "1억5000만원"
     const man = cleaned.match(/억(\d+(?:\.\d+)?)만/);
     return man ? base + parseFloat(man[1]) * 10_000 : base;
   }
+
+  // 천만 unit without 억 prefix: "5천만원" = 50,000,000
+  const cheonMan = cleaned.match(/(\d+(?:\.\d+)?)천만/);
+  if (cheonMan) return parseFloat(cheonMan[1]) * 10_000_000;
 
   // 만 unit (10,000)
   const man = cleaned.match(/(\d+(?:\.\d+)?)만/);

@@ -89,6 +89,18 @@ describe("normalizeFunding", () => {
   it("parses plain number as-is", () => {
     expect(normalizeFunding("500000")).toBe(500_000);
   });
+
+  it("parses 억 + 천만 combined (e.g. 1억5천만원)", () => {
+    expect(normalizeFunding("1억5천만원")).toBe(150_000_000);
+  });
+
+  it("parses 억 + 천만 with larger digit (e.g. 2억3천만원)", () => {
+    expect(normalizeFunding("2억3천만원")).toBe(230_000_000);
+  });
+
+  it("parses standalone 천만 (e.g. 5천만원)", () => {
+    expect(normalizeFunding("5천만원")).toBe(50_000_000);
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -116,9 +116,8 @@ export function MatchingResults({ results, onFeedbackSaved }: MatchingResultsPro
             const rowClass = r.isDisqualified ? "opacity-50" : "";
 
             return (
-              <>
+              <Fragment key={rowKey}>
                 <TableRow
-                  key={rowKey}
                   className={`cursor-pointer ${rowClass} hover:bg-muted/50`}
                   onClick={() => toggleExpand(rowKey)}
                 >
@@ -204,7 +203,7 @@ export function MatchingResults({ results, onFeedbackSaved }: MatchingResultsPro
                     </TableCell>
                   </TableRow>
                 )}
-              </>
+              </Fragment>
             );
           })}
         </TableBody>

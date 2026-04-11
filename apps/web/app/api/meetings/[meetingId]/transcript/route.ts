@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@axle/db";
+import { Prisma } from "@prisma/client";
 import { getCurrentUser } from "@axle/auth";
 import { generateSummary } from "@/lib/services/meeting-summary";
 import {
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         rawTranscript: rawTranscript.trim(),
         // Reset summary fields when transcript is updated
         summary: null,
-        keyDecisions: undefined,
+        keyDecisions: Prisma.DbNull,
         aiJobId: null,
       },
     });

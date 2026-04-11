@@ -5,7 +5,7 @@
   "main": "dist/main/index.js",
   "scripts": {
     "dev": "electron .",
-    "build": "tsc && electron-builder",
+    "build": "tsc",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

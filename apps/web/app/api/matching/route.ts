@@ -92,9 +92,12 @@ export async function POST(req: NextRequest) {
     // Run 3-stage pipeline
     const matchResults = matchClientToPrograms(clientProfile, programProfiles);
 
-    // Persist: replace all results for this client
+    // Persist: replace results only for the matched programs (not all client results)
+    const matchedProgramIds = matchResults.map((r) => r.programId);
     await prisma.$transaction([
-      prisma.matchingResult.deleteMany({ where: { clientId } }),
+      prisma.matchingResult.deleteMany({
+        where: { clientId, programId: { in: matchedProgramIds } },
+      }),
       prisma.matchingResult.createMany({
         data: matchResults.map((r) => ({
           clientId,

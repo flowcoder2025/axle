@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@axle/auth";
 import { prisma } from "@axle/db";
-import { Button } from "@axle/ui";
 import { ProgramTable } from "../../../src/components/programs/program-table";
 import { ProgramCreateButton } from "../../../src/components/programs/program-create-button";
-import { Plus } from "lucide-react";
 import { Suspense } from "react";
 import type { ProgramCategory } from "@prisma/client";
 

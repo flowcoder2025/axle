@@ -191,12 +191,13 @@ describe("pullFromGoogle", () => {
         ],
       },
     });
-    mockPrismaSchedule.findFirst.mockResolvedValue(null);
+    mockPrismaSchedule.findMany.mockResolvedValue([]);
     mockPrismaSchedule.create.mockResolvedValue({ id: "s-new" });
 
     const { pullFromGoogle } = await import("../../lib/services/google-calendar");
-    await pullFromGoogle("primary", tokens, "org-1");
+    const result = await pullFromGoogle("primary", tokens, "org-1");
 
+    expect(result).toEqual({ created: 1, updated: 0 });
     expect(mockPrismaSchedule.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -223,12 +224,15 @@ describe("pullFromGoogle", () => {
         ],
       },
     });
-    mockPrismaSchedule.findFirst.mockResolvedValue({ id: "s-existing" });
+    mockPrismaSchedule.findMany.mockResolvedValue([
+      { id: "s-existing", googleCalendarId: "gcal-existing" },
+    ]);
     mockPrismaSchedule.update.mockResolvedValue({ id: "s-existing" });
 
     const { pullFromGoogle } = await import("../../lib/services/google-calendar");
-    await pullFromGoogle("primary", tokens, "org-1");
+    const result = await pullFromGoogle("primary", tokens, "org-1");
 
+    expect(result).toEqual({ created: 0, updated: 1 });
     expect(mockPrismaSchedule.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: "s-existing" },
@@ -249,9 +253,10 @@ describe("pullFromGoogle", () => {
     });
 
     const { pullFromGoogle } = await import("../../lib/services/google-calendar");
-    await pullFromGoogle("primary", tokens, "org-1");
+    const result = await pullFromGoogle("primary", tokens, "org-1");
 
-    expect(mockPrismaSchedule.findFirst).not.toHaveBeenCalled();
+    expect(result).toEqual({ created: 0, updated: 0 });
+    expect(mockPrismaSchedule.findMany).not.toHaveBeenCalled();
     expect(mockPrismaSchedule.create).not.toHaveBeenCalled();
   });
 });
@@ -259,8 +264,8 @@ describe("pullFromGoogle", () => {
 describe("syncCalendar", () => {
   beforeEach(() => vi.resetAllMocks());
 
-  it("returns pushed and pulled counts", async () => {
-    const fakeSchedules = [
+  it("pushes only unsynced schedules and returns pulled counts", async () => {
+    const unsyncedSchedules = [
       {
         id: "s-1",
         title: "Deadline",
@@ -269,22 +274,44 @@ describe("syncCalendar", () => {
         endDate: null,
         isAllDay: false,
         googleCalendarId: null,
+        createdAt: new Date(),
       },
     ];
-    mockPrismaSchedule.findMany.mockResolvedValue(fakeSchedules);
+
+    // First findMany call: unsynced schedules for push
+    // Second findMany call: batch lookup for pull (no existing)
+    mockPrismaSchedule.findMany
+      .mockResolvedValueOnce(unsyncedSchedules) // push: unsynced only
+      .mockResolvedValueOnce([]); // pull: batch lookup
+
     mockInsert.mockResolvedValue({ data: { id: "gcal-new" } });
     mockPrismaSchedule.update.mockResolvedValue({});
 
-    // Before pull count = 1, after pull count = 2 (one new event imported)
-    mockPrismaSchedule.count
-      .mockResolvedValueOnce(1) // before pull
-      .mockResolvedValueOnce(2); // after pull
-    mockList.mockResolvedValue({ data: { items: [] } });
+    // Pull returns one new event
+    mockList.mockResolvedValue({
+      data: {
+        items: [
+          {
+            id: "gcal-imported",
+            summary: "Imported",
+            start: { dateTime: "2024-09-05T10:00:00Z" },
+            end: { dateTime: "2024-09-05T11:00:00Z" },
+          },
+        ],
+      },
+    });
+    mockPrismaSchedule.create.mockResolvedValue({ id: "s-new" });
 
     const { syncCalendar } = await import("../../lib/services/google-calendar");
     const result = await syncCalendar("org-1", tokens);
 
     expect(result.pushed).toBe(1);
-    expect(result.pulled).toBe(1);
+    expect(result.pulled).toBe(1); // 1 created + 0 updated
+    // Verify only unsynced schedules were fetched for push
+    expect(mockPrismaSchedule.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ googleCalendarId: null }),
+      })
+    );
   });
 });

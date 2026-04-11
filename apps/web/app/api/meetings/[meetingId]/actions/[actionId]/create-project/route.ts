@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@axle/db";
 import { getCurrentUser } from "@axle/auth";
 import { handleInternalError, unauthorizedResponse, notFoundResponse } from "@/lib/api-helpers";
-import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 type RouteContext = { params: Promise<{ meetingId: string; actionId: string }> };
@@ -93,8 +92,9 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
       });
 
       // Auto-apply checklist templates for this project type + org
+      // user.orgId is guaranteed non-null by the guard at the top of POST
       const templates = await tx.checklistTemplate.findMany({
-        where: { orgId: user.orgId, projectType: created.type },
+        where: { orgId: user.orgId!, projectType: created.type },
         orderBy: { sortOrder: "asc" },
       });
 
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
       if (templates.length > 0) {
         const firstItem = await tx.checklistItem.findFirst({
           where: { projectId: created.id },
-          orderBy: { createdAt: "asc" },
+          orderBy: { id: "asc" },
           select: { id: true },
         });
         linkedChecklistId = firstItem?.id ?? null;

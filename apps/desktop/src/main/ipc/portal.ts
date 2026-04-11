@@ -79,7 +79,7 @@ export function registerPortalHandlers(): void {
       credentials: Record<string, string>
     ): Promise<PortalSession> => {
       const pageObject = createPageObject(portal);
-      await pageObject.login(credentials);
+      await pageObject.login(credentials as never);
 
       const sessionId = randomUUID();
       const meta: PortalSession = {

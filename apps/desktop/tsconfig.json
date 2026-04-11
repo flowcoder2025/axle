@@ -12,6 +12,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "declaration": false,
+    "declarationMap": false,
     "composite": false,
     "incremental": false
   },

@@ -128,7 +128,7 @@ export async function pullFromGoogle(
   calendarId: string,
   tokens: OAuthTokens,
   orgId: string
-): Promise<void> {
+): Promise<{ created: number; updated: number }> {
   const auth = getOAuthClient(tokens);
   const calendar = google.calendar({ version: "v3", auth });
 
@@ -145,9 +145,30 @@ export async function pullFromGoogle(
 
   const events = res.data.items ?? [];
 
-  for (const event of events) {
-    if (!event.id || !event.summary) continue;
+  // Collect valid Google event IDs to batch-lookup existing schedules
+  const validEvents = events.filter(
+    (e): e is typeof e & { id: string; summary: string } =>
+      !!e.id && !!e.summary
+  );
 
+  if (validEvents.length === 0) {
+    return { created: 0, updated: 0 };
+  }
+
+  // Batch lookup: fetch all existing schedules linked to these Google events
+  const googleIds = validEvents.map((e) => e.id);
+  const existingSchedules = await prisma.schedule.findMany({
+    where: { orgId, googleCalendarId: { in: googleIds } },
+    select: { id: true, googleCalendarId: true },
+  });
+  const existingMap = new Map(
+    existingSchedules.map((s) => [s.googleCalendarId!, s.id])
+  );
+
+  let created = 0;
+  let updated = 0;
+
+  for (const event of validEvents) {
     const startDate = event.start?.dateTime
       ? new Date(event.start.dateTime)
       : event.start?.date
@@ -163,16 +184,11 @@ export async function pullFromGoogle(
     if (!startDate) continue;
 
     const isAllDay = !event.start?.dateTime;
+    const existingId = existingMap.get(event.id);
 
-    // Check if this event already has an AXLE schedule
-    const existing = await prisma.schedule.findFirst({
-      where: { googleCalendarId: event.id, orgId },
-      select: { id: true },
-    });
-
-    if (existing) {
+    if (existingId) {
       await prisma.schedule.update({
-        where: { id: existing.id },
+        where: { id: existingId },
         data: {
           title: event.summary,
           description: event.description ?? null,
@@ -181,6 +197,7 @@ export async function pullFromGoogle(
           isAllDay,
         },
       });
+      updated++;
     } else {
       await prisma.schedule.create({
         data: {
@@ -195,24 +212,27 @@ export async function pullFromGoogle(
           reminderDays: [],
         },
       });
+      created++;
     }
   }
+
+  return { created, updated };
 }
 
-/** Bidirectional sync: push local AXLE schedules, then pull Google events. */
+/** Bidirectional sync: push unsynced local AXLE schedules, then pull Google events. */
 export async function syncCalendar(
   orgId: string,
   tokens: OAuthTokens
 ): Promise<{ pushed: number; pulled: number }> {
-  // Push: find schedules without googleCalendarId or recently updated
-  const localSchedules = await prisma.schedule.findMany({
-    where: { orgId },
+  // Push: only schedules without a googleCalendarId (not yet synced to Google)
+  const unsyncedSchedules = await prisma.schedule.findMany({
+    where: { orgId, googleCalendarId: null },
     orderBy: { createdAt: "desc" },
     take: 250,
   });
 
   let pushed = 0;
-  for (const schedule of localSchedules) {
+  for (const schedule of unsyncedSchedules) {
     try {
       await pushToGoogle(schedule, tokens);
       pushed++;
@@ -222,11 +242,8 @@ export async function syncCalendar(
     }
   }
 
-  // Pull: fetch from Google's primary calendar
-  const beforeCount = await prisma.schedule.count({ where: { orgId } });
-  await pullFromGoogle("primary", tokens, orgId);
-  const afterCount = await prisma.schedule.count({ where: { orgId } });
-  const pulled = Math.max(0, afterCount - beforeCount);
+  // Pull: fetch from Google's primary calendar and track created/updated counts
+  const result = await pullFromGoogle("primary", tokens, orgId);
 
-  return { pushed, pulled };
+  return { pushed, pulled: result.created + result.updated };
 }

@@ -168,8 +168,8 @@ export function TranscriptPanel({ meetingId, transcript: initial, onChanged }: T
         </div>
       )}
 
-      {/* Paste form */}
-      {showPasteForm || !transcript ? (
+      {/* Paste form: shown when explicitly opened or when no transcript exists */}
+      {(showPasteForm || !transcript) && (
         <div className="space-y-3">
           <h3 className="text-sm font-semibold">
             {transcript ? "전사 수정" : "전사 붙여넣기"}
@@ -205,16 +205,6 @@ export function TranscriptPanel({ meetingId, transcript: initial, onChanged }: T
             </div>
           </form>
         </div>
-      ) : (
-        !transcript && (
-          <Button
-            variant="outline"
-            onClick={() => setShowPasteForm(true)}
-          >
-            <FileText className="mr-2 h-4 w-4" />
-            전사 붙여넣기
-          </Button>
-        )
       )}
     </div>
   );

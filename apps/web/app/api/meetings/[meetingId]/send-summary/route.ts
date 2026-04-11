@@ -82,7 +82,10 @@ export async function POST(_req: NextRequest, ctx: RouteContext) {
       recipientEmails.push(u.email);
     }
 
-    if (recipientEmails.length === 0) {
+    // Deduplicate emails to avoid sending multiple copies
+    const uniqueEmails = [...new Set(recipientEmails)];
+
+    if (uniqueEmails.length === 0) {
       return NextResponse.json(
         { error: { code: "NO_RECIPIENTS", message: "No attendee emails found" } },
         { status: 422 }
@@ -111,7 +114,7 @@ export async function POST(_req: NextRequest, ctx: RouteContext) {
     // Send emails and create EmailLog records
     let sent = 0;
     const sendResults = await Promise.allSettled(
-      recipientEmails.map(async (email) => {
+      uniqueEmails.map(async (email) => {
         const result = await sendEmail({ to: email, subject, html });
         return { email, resendMessageId: result.id };
       })
