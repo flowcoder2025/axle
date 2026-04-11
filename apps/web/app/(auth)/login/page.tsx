@@ -3,14 +3,6 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { Button, Input, Label } from "@axle/ui";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@axle/ui";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -44,98 +36,89 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-8">
-      {/* Logo & Branding */}
-      <div className="flex flex-col items-center gap-2">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-xl">
-          A
+    <div>
+      {/* Mobile-only logo */}
+      <div className="flex flex-col items-center gap-2 mb-8 lg:hidden">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg border-2 border-accent">
+          <span className="text-accent text-lg font-extrabold">A</span>
         </div>
-        <h1 className="text-2xl font-bold tracking-tight">AXLE</h1>
-        <p className="text-sm text-muted-foreground">
-          컨설팅 자동화 플랫폼
-        </p>
+        <span className="text-lg font-bold tracking-widest">AXLE</span>
       </div>
 
-      <Card className="w-full shadow-lg">
-        <CardHeader className="space-y-1 pb-4">
-          <CardTitle className="text-lg text-center">로그인</CardTitle>
-          <CardDescription className="text-center">
-            계정 정보를 입력하여 시작하세요
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Google OAuth */}
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full h-11 gap-3 font-medium"
-            onClick={handleGoogle}
+      <div className="space-y-1 mb-6">
+        <h1 className="text-xl font-bold text-foreground">로그인</h1>
+        <p className="text-sm text-muted-foreground">계정에 로그인하세요</p>
+      </div>
+
+      {/* Google OAuth */}
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full h-11 gap-3 font-medium mb-4"
+        onClick={handleGoogle}
+        disabled={loading}
+      >
+        <GoogleIcon className="h-5 w-5" />
+        Google로 계속하기
+      </Button>
+
+      {/* Divider */}
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="bg-background px-3 text-muted-foreground">또는</span>
+        </div>
+      </div>
+
+      {/* Credentials Form */}
+      <form onSubmit={handleCredentials} className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="email" className="text-xs font-medium">이메일</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="name@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
             disabled={loading}
-          >
-            <GoogleIcon className="h-5 w-5" />
-            Google로 계속하기
-          </Button>
-
-          {/* Divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
-                또는 이메일로 로그인
-              </span>
-            </div>
+          />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-center">
+            <Label htmlFor="password" className="text-xs font-medium">비밀번호</Label>
+            <button type="button" className="text-xs text-accent hover:underline">
+              비밀번호 찾기
+            </button>
           </div>
+          <Input
+            id="password"
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={loading}
+          />
+        </div>
+        {error && (
+          <div className="rounded-md bg-destructive/10 px-3 py-2">
+            <p className="text-sm text-destructive text-center">{error}</p>
+          </div>
+        )}
+        <Button type="submit" className="w-full h-10" disabled={loading}>
+          {loading ? "로그인 중..." : "로그인"}
+        </Button>
+      </form>
 
-          {/* Credentials Form */}
-          <form onSubmit={handleCredentials} className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs font-medium">이메일</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={loading}
-                className="h-10"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs font-medium">비밀번호</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-                className="h-10"
-              />
-            </div>
-            {error && (
-              <div className="rounded-md bg-destructive/10 px-3 py-2">
-                <p className="text-sm text-destructive text-center">{error}</p>
-              </div>
-            )}
-            <Button type="submit" className="w-full h-10 mt-1" disabled={loading}>
-              {loading ? "로그인 중..." : "로그인"}
-            </Button>
-          </form>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-2 pt-0">
-          <p className="text-[11px] text-center text-muted-foreground leading-relaxed">
-            로그인함으로써{" "}
-            <span className="underline underline-offset-2 cursor-pointer hover:text-foreground">서비스 이용약관</span>
-            {" "}및{" "}
-            <span className="underline underline-offset-2 cursor-pointer hover:text-foreground">개인정보처리방침</span>
-            에 동의합니다.
-          </p>
-        </CardFooter>
-      </Card>
+      <p className="text-center text-sm text-muted-foreground mt-6">
+        계정이 없으신가요?{" "}
+        <a href="/signup" className="text-accent font-semibold hover:underline">
+          회원가입
+        </a>
+      </p>
     </div>
   );
 }
