@@ -72,3 +72,7 @@ export type { JournalReportInput, JournalEntry } from "./generators/journal-repo
 // ── Financial Report Generator (WI-101) ──────────────────────────────────────
 export { generateFinancialReportDocx } from "./generators/financial-report.js";
 export type { FinancialReportInput } from "./generators/financial-report.js";
+
+// ── Text Parser (WI-005) ────────────────────────────────────────────────────
+export { extractText } from "./converters/text-parser.js";
+export type { ParseResult } from "./converters/text-parser.js";
