@@ -72,3 +72,15 @@ export type { JournalReportInput, JournalEntry } from "./generators/journal-repo
 // ── Financial Report Generator (WI-101) ──────────────────────────────────────
 export { generateFinancialReportDocx } from "./generators/financial-report.js";
 export type { FinancialReportInput } from "./generators/financial-report.js";
+
+// ── Text Parser (WI-005) ────────────────────────────────────────────────────
+export { extractText } from "./converters/text-parser.js";
+export type { ParseResult } from "./converters/text-parser.js";
+
+// ── Image Generator (WI-006) ────────────────────────────────────────────────
+export { generateImage } from "./generators/image-generator.js";
+export type { ImageGenerateOptions } from "./generators/image-generator.js";
+
+// ── Mermaid to PNG Converter (WI-006) ───────────────────────────────────────
+export { convertMermaid } from "./converters/mermaid-to-png.js";
+export type { MermaidOptions } from "./converters/mermaid-to-png.js";

@@ -19,8 +19,8 @@
     "db:studio": "prisma studio --schema=prisma/schema.prisma"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^6.0.0",
-    "@prisma/client": "^6.0.0",
+    "@prisma/adapter-pg": "^7.0.0",
+    "@prisma/client": "^7.0.0",
     "bcryptjs": "^3.0.3",
     "pg": "^8.13.0"
   },
@@ -29,7 +29,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/pg": "^8.11.0",
     "eslint": "^9.0.0",
-    "prisma": "^6.0.0",
+    "prisma": "^7.0.0",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.0.0",
     "vitest": "^3.0.0"

@@ -75,12 +75,12 @@ describe("authConfig (Edge-compatible)", () => {
 
     const result = await jwt({
       token: { sub: "tok-123" },
-      user: { id: "user-abc", email: "a@test.com", emailVerified: null },
+      user: { id: "user-abc", email: "a@test.com" },
       account: null,
       trigger: "signIn",
     });
 
-    expect(result.userId).toBe("user-abc");
+    expect(result!.userId).toBe("user-abc");
   });
 
   it("jwt callback is a no-op when user is absent", async () => {
@@ -91,12 +91,12 @@ describe("authConfig (Edge-compatible)", () => {
     const token = { sub: "tok-123", userId: "existing-id" };
     const result = await jwt({
       token,
-      user: undefined as unknown as { id: string; email: string; emailVerified: null },
+      user: undefined as unknown as { id: string; email: string },
       account: null,
       trigger: "update",
     });
 
-    expect(result.userId).toBe("existing-id");
+    expect(result!.userId).toBe("existing-id");
   });
 
   describe("authorized callback", () => {
@@ -106,11 +106,11 @@ describe("authConfig (Edge-compatible)", () => {
       if (!authorized) throw new Error("authorized callback missing");
 
       return authorized({
-        auth: hasUser ? { user: { id: "u1", name: "Test", email: "t@t.com", emailVerified: null }, expires: "" } : null,
+        auth: hasUser ? { user: { id: "u1", name: "Test", email: "t@t.com" }, expires: "" } : null,
         request: {
           nextUrl: { pathname } as URL,
-        } as Request & { nextUrl: URL },
-      });
+        },
+      } as Parameters<NonNullable<typeof authorized>>[0]);
     }
 
     it("allows unauthenticated access to public routes", async () => {

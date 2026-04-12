@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@axle/db";
 import { getCurrentUser } from "@axle/auth";
 import { scheduleUpdateSchema } from "@/lib/validations/schedule";
 import {
@@ -8,6 +7,11 @@ import {
   unauthorizedResponse,
   notFoundResponse,
 } from "@/lib/api-helpers";
+import {
+  getSchedule,
+  updateSchedule,
+  deleteSchedule,
+} from "@/lib/services/schedule-service";
 
 type RouteContext = { params: Promise<{ scheduleId: string }> };
 
@@ -26,14 +30,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
     }
 
     const { scheduleId } = await ctx.params;
-
-    const schedule = await prisma.schedule.findFirst({
-      where: { id: scheduleId, orgId: user.orgId },
-      include: {
-        client: { select: { id: true, name: true } },
-        program: { select: { id: true, name: true } },
-      },
-    });
+    const schedule = await getSchedule(scheduleId, user.orgId);
 
     if (!schedule) {
       return notFoundResponse("Schedule");
@@ -61,31 +58,17 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
 
     const { scheduleId } = await ctx.params;
 
-    const existing = await prisma.schedule.findFirst({
-      where: { id: scheduleId, orgId: user.orgId },
-      select: { id: true },
-    });
-
-    if (!existing) {
-      return notFoundResponse("Schedule");
-    }
-
     const body = await req.json();
     const parsed = scheduleUpdateSchema.safeParse(body);
     if (!parsed.success) {
       return handleZodError(parsed.error);
     }
 
-    const { startDate, endDate, ...rest } = parsed.data;
+    const schedule = await updateSchedule(scheduleId, user.orgId, parsed.data);
 
-    const schedule = await prisma.schedule.update({
-      where: { id: scheduleId },
-      data: {
-        ...rest,
-        ...(startDate !== undefined ? { startDate: new Date(startDate) } : {}),
-        ...(endDate !== undefined ? { endDate: endDate ? new Date(endDate) : null } : {}),
-      },
-    });
+    if (!schedule) {
+      return notFoundResponse("Schedule");
+    }
 
     return NextResponse.json({ data: schedule });
   } catch (err) {
@@ -108,17 +91,11 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
     }
 
     const { scheduleId } = await ctx.params;
+    const deleted = await deleteSchedule(scheduleId, user.orgId);
 
-    const existing = await prisma.schedule.findFirst({
-      where: { id: scheduleId, orgId: user.orgId },
-      select: { id: true },
-    });
-
-    if (!existing) {
+    if (!deleted) {
       return notFoundResponse("Schedule");
     }
-
-    await prisma.schedule.delete({ where: { id: scheduleId } });
 
     return NextResponse.json({ data: { deleted: true } });
   } catch (err) {

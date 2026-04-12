@@ -1,8 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@axle/ui";
 import { ProjectOverview } from "./project-overview";
 import { ChecklistPanel } from "../checklist/checklist-panel";
+import { ActivityFeed } from "../collaboration/activity-feed";
+import { MemberList } from "./member-list";
+import { AddMemberDialog } from "./add-member-dialog";
+import { HandoffForm } from "./handoff-form";
+import { HandoffSummary } from "./handoff-summary";
 import type { ProjectStatus, ProjectType, Priority, FeeType } from "@prisma/client";
 
 interface ChildProject {
@@ -39,6 +45,9 @@ const TABS = [
   { id: "checklist", label: "체크리스트" },
   { id: "documents", label: "서류" },
   { id: "meetings", label: "미팅" },
+  { id: "members", label: "팀원" },
+  { id: "activity", label: "활동" },
+  { id: "handoff", label: "인수인계" },
   { id: "ai_jobs", label: "AI 작업" },
 ] as const;
 
@@ -46,6 +55,7 @@ type TabId = (typeof TABS)[number]["id"];
 
 export function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [memberDialogOpen, setMemberDialogOpen] = useState(false);
   const tablistId = "project-detail-tablist";
 
   return (
@@ -94,17 +104,46 @@ export function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
         )}
         {activeTab === "documents" && (
           <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
-            서류 탭은 추후 연동 예정입니다.
+            프로젝트별 서류 목록은 준비 중입니다.
           </div>
         )}
         {activeTab === "meetings" && (
           <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
-            미팅 탭은 추후 연동 예정입니다.
+            프로젝트별 미팅 목록은 준비 중입니다.
+          </div>
+        )}
+        {activeTab === "members" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium text-muted-foreground">프로젝트 멤버</h3>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setMemberDialogOpen(true)}
+              >
+                팀원 추가
+              </Button>
+            </div>
+            <MemberList projectId={project.id} canManage />
+            <AddMemberDialog
+              projectId={project.id}
+              open={memberDialogOpen}
+              onClose={() => setMemberDialogOpen(false)}
+            />
+          </div>
+        )}
+        {activeTab === "activity" && (
+          <ActivityFeed projectId={project.id} />
+        )}
+        {activeTab === "handoff" && (
+          <div className="space-y-6">
+            <HandoffForm projectId={project.id} />
+            <HandoffSummary projectId={project.id} />
           </div>
         )}
         {activeTab === "ai_jobs" && (
           <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
-            AI 작업 탭은 추후 연동 예정입니다.
+            AI 작업 목록은 준비 중입니다.
           </div>
         )}
       </div>

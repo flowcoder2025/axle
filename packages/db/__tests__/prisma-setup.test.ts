@@ -12,11 +12,21 @@ describe("Prisma 7 Client Engine + Driver Adapter setup", () => {
       expect(existsSync(schemaPath)).toBe(true);
     });
 
-    it("uses postgresql provider with DATABASE_URL and DIRECT_URL", () => {
+    it("uses postgresql provider (Prisma 7: URLs moved to prisma.config.ts)", () => {
       const schema = readFileSync(schemaPath, "utf-8");
-      expect(schema).toContain('provider  = "postgresql"');
-      expect(schema).toContain('env("DATABASE_URL")');
-      expect(schema).toContain('env("DIRECT_URL")');
+      expect(schema).toContain('provider = "postgresql"');
+      // Prisma 7: url and directUrl are no longer in schema datasource block
+      // They are configured in prisma.config.ts via defineConfig()
+      expect(schema).not.toContain('env("DATABASE_URL")');
+      expect(schema).not.toContain('directUrl');
+    });
+
+    it("has prisma.config.ts with DATABASE_URL", () => {
+      const configPath = resolve(PACKAGE_ROOT, "prisma.config.ts");
+      expect(existsSync(configPath)).toBe(true);
+      const config = readFileSync(configPath, "utf-8");
+      expect(config).toContain("DATABASE_URL");
+      expect(config).toContain("defineConfig");
     });
 
     it("uses Client Engine (engineType = client)", () => {

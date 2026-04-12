@@ -4,8 +4,7 @@ import { getCurrentUser } from "@axle/auth";
 import { programCreateSchema, programQuerySchema } from "@/lib/validations/program";
 import { handleZodError, handleInternalError, unauthorizedResponse } from "@/lib/api-helpers";
 import { Prisma } from "@prisma/client";
-
-const PROGRAM_DUE_REMINDER_DAYS = [30, 14, 7, 3, 1];
+import { createProgramWithDeadlines } from "@/lib/services/program-deadline";
 
 // GET /api/programs — list programs filtered by category/region, sorted by applicationEnd
 export async function GET(req: NextRequest) {
@@ -92,47 +91,7 @@ export async function POST(req: NextRequest) {
       return handleZodError(parsed.error);
     }
 
-    const {
-      applicationStart,
-      applicationEnd,
-      maxFunding,
-      requirements,
-      eligibility,
-      announcementUrl,
-      ...rest
-    } = parsed.data;
-
-    const program = await prisma.$transaction(async (tx) => {
-      const created = await tx.programInfo.create({
-        data: {
-          ...rest,
-          orgId,
-          announcementUrl: announcementUrl || null,
-          applicationStart: applicationStart ? new Date(applicationStart) : null,
-          applicationEnd: applicationEnd ? new Date(applicationEnd) : null,
-          maxFunding: maxFunding !== undefined && maxFunding !== null ? maxFunding : undefined,
-          requirements:
-            requirements != null ? (requirements as Prisma.InputJsonValue) : undefined,
-          eligibility: eligibility != null ? (eligibility as Prisma.InputJsonValue) : undefined,
-        },
-      });
-
-      if (created.applicationEnd) {
-        await tx.schedule.create({
-          data: {
-            orgId,
-            programId: created.id,
-            title: `[마감] ${created.name}`,
-            type: "PROGRAM_DUE",
-            startDate: created.applicationEnd,
-            isAllDay: true,
-            reminderDays: PROGRAM_DUE_REMINDER_DAYS,
-          },
-        });
-      }
-
-      return created;
-    });
+    const program = await createProgramWithDeadlines(orgId, parsed.data);
 
     return NextResponse.json({ data: program }, { status: 201 });
   } catch (err) {
