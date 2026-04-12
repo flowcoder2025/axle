@@ -9,10 +9,9 @@ import {
   notFoundResponse,
 } from "@/lib/api-helpers";
 import { Prisma } from "@prisma/client";
+import { syncDeadlines, deleteProgramWithDeadlines } from "@/lib/services/program-deadline";
 
 type RouteContext = { params: Promise<{ programId: string }> };
-
-const PROGRAM_DUE_REMINDER_DAYS = [30, 14, 7, 3, 1];
 
 // GET /api/programs/[programId]
 export async function GET(_req: NextRequest, ctx: RouteContext) {
@@ -132,36 +131,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
       // Sync PROGRAM_DUE schedule when applicationEnd changes
       if (applicationEnd !== undefined) {
         const newEndDate = applicationEnd ? new Date(applicationEnd) : null;
-        const existingSchedule = await tx.schedule.findFirst({
-          where: { programId, type: "PROGRAM_DUE" },
-          select: { id: true },
-        });
-
-        if (newEndDate) {
-          if (existingSchedule) {
-            await tx.schedule.update({
-              where: { id: existingSchedule.id },
-              data: {
-                startDate: newEndDate,
-                title: `[마감] ${updated.name}`,
-              },
-            });
-          } else {
-            await tx.schedule.create({
-              data: {
-                orgId: user.orgId!,
-                programId,
-                title: `[마감] ${updated.name}`,
-                type: "PROGRAM_DUE",
-                startDate: newEndDate,
-                isAllDay: true,
-                reminderDays: PROGRAM_DUE_REMINDER_DAYS,
-              },
-            });
-          }
-        } else if (existingSchedule) {
-          await tx.schedule.delete({ where: { id: existingSchedule.id } });
-        }
+        await syncDeadlines(programId, user.orgId!, newEndDate, updated.name, tx);
       }
 
       return updated;
@@ -197,10 +167,7 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
       return notFoundResponse("Program");
     }
 
-    await prisma.$transaction(async (tx) => {
-      await tx.schedule.deleteMany({ where: { programId } });
-      await tx.programInfo.delete({ where: { id: programId } });
-    });
+    await deleteProgramWithDeadlines(programId);
 
     return NextResponse.json({ data: { deleted: true } });
   } catch (err) {
