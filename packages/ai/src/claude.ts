@@ -1,13 +1,6 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { AnthropicProvider } from "./providers/anthropic.js";
 
-let _client: Anthropic | null = null;
-
-function getClient(): Anthropic {
-  if (!_client) {
-    _client = new Anthropic(); // uses ANTHROPIC_API_KEY env var
-  }
-  return _client;
-}
+const _provider = new AnthropicProvider();
 
 export interface ClaudeCompletionInput {
   system?: string;
@@ -17,18 +10,14 @@ export interface ClaudeCompletionInput {
 }
 
 /**
- * Send a single prompt to Claude and return the text response.
- * Throws on API errors — callers should handle gracefully.
+ * @deprecated Use `getProvider("API_HAIKU").complete()` instead.
  */
 export async function complete(input: ClaudeCompletionInput): Promise<string> {
-  const client = getClient();
-  const response = await client.messages.create({
-    model: input.model ?? "claude-haiku-4-5-20251001",
-    max_tokens: input.maxTokens ?? 2048,
+  const result = await _provider.complete({
     system: input.system,
-    messages: [{ role: "user", content: input.prompt }],
+    prompt: input.prompt,
+    maxTokens: input.maxTokens,
+    model: input.model,
   });
-
-  const textBlock = response.content.find((b) => b.type === "text");
-  return textBlock?.text ?? "";
+  return result.text;
 }
