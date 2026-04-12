@@ -81,7 +81,9 @@ export async function generateSummary(meetingId: string): Promise<void> {
         maxTokens: 2048,
       });
 
-      const parsed: SummaryResponse = JSON.parse(result.text);
+      // Strip markdown code fences if present (e.g., ```json ... ```)
+      const jsonStr = result.text.replace(/^```(?:json)?\s*\n?/m, "").replace(/\n?```\s*$/m, "");
+      const parsed: SummaryResponse = JSON.parse(jsonStr);
 
       await prisma.meetingTranscript.update({
         where: { meetingId },
