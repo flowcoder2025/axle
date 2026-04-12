@@ -7,7 +7,7 @@
 
 import { prisma } from "@axle/db";
 import { Prisma } from "@prisma/client";
-import { createAiJob, resolveProvider, updateJobStatus } from "@axle/ai";
+import { createAiJob, completeWithFallback, updateJobStatus } from "@axle/ai";
 
 const SUMMARY_SYSTEM_PROMPT = `You are a meeting summarizer. Given a meeting transcript, extract:
 1. A concise summary (2-3 sentences in Korean)
@@ -75,14 +75,15 @@ export async function generateSummary(meetingId: string): Promise<void> {
 
     // AI inference: call provider and update transcript
     try {
-      const provider = await resolveProvider("SUMMARY");
-      const result = await provider.complete({
+      const result = await completeWithFallback("SUMMARY", {
         system: SUMMARY_SYSTEM_PROMPT,
         prompt: transcript.rawTranscript.slice(0, 8000),
         maxTokens: 2048,
       });
 
-      const parsed: SummaryResponse = JSON.parse(result.text);
+      // Strip markdown code fences if present (e.g., ```json ... ```)
+      const jsonStr = result.text.replace(/^```(?:json)?\s*\n?/m, "").replace(/\n?```\s*$/m, "");
+      const parsed: SummaryResponse = JSON.parse(jsonStr);
 
       await prisma.meetingTranscript.update({
         where: { meetingId },

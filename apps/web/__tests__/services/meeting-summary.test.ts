@@ -19,13 +19,12 @@ vi.mock("@axle/db", () => ({
 
 const mockCreateAiJob = vi.fn();
 const mockUpdateJobStatus = vi.fn();
-const mockComplete = vi.fn();
-const mockResolveProvider = vi.fn();
+const mockCompleteWithFallback = vi.fn();
 
 vi.mock("@axle/ai", () => ({
   createAiJob: mockCreateAiJob,
   updateJobStatus: mockUpdateJobStatus,
-  resolveProvider: mockResolveProvider,
+  completeWithFallback: mockCompleteWithFallback,
 }));
 
 // --- Test data ---
@@ -59,7 +58,7 @@ const BASE_JOB = {
 describe("generateSummary", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockResolveProvider.mockResolvedValue({ complete: mockComplete });
+    // completeWithFallback is called directly (not via provider.complete)
   });
 
   it("returns early when transcript is not found", async () => {
@@ -92,7 +91,7 @@ describe("generateSummary", () => {
     mockTranscriptOps.findUnique.mockResolvedValue(BASE_TRANSCRIPT);
     mockCreateAiJob.mockResolvedValue(BASE_JOB);
     mockTranscriptOps.update.mockResolvedValue({});
-    mockComplete.mockResolvedValue({
+    mockCompleteWithFallback.mockResolvedValue({
       text: JSON.stringify(AI_RESPONSE),
       usage: { inputTokens: 100, outputTokens: 200 },
       model: "claude-haiku-4-5-20251001",
@@ -122,8 +121,7 @@ describe("generateSummary", () => {
     );
 
     // Verify AI provider was resolved and called
-    expect(mockResolveProvider).toHaveBeenCalledWith("SUMMARY");
-    expect(mockComplete).toHaveBeenCalledWith(
+    expect(mockCompleteWithFallback).toHaveBeenCalledWith("SUMMARY",
       expect.objectContaining({
         system: expect.stringContaining("meeting summarizer"),
         prompt: BASE_TRANSCRIPT.rawTranscript,
@@ -156,7 +154,7 @@ describe("generateSummary", () => {
     mockTranscriptOps.findUnique.mockResolvedValue(BASE_TRANSCRIPT);
     mockCreateAiJob.mockResolvedValue(BASE_JOB);
     mockTranscriptOps.update.mockResolvedValue({});
-    mockComplete.mockRejectedValue(new Error("API rate limit exceeded"));
+    mockCompleteWithFallback.mockRejectedValue(new Error("API rate limit exceeded"));
     mockUpdateJobStatus.mockResolvedValue({});
 
     const { generateSummary } = await import(
@@ -189,7 +187,7 @@ describe("generateSummary", () => {
     mockTranscriptOps.findUnique.mockResolvedValue(BASE_TRANSCRIPT);
     mockCreateAiJob.mockResolvedValue(BASE_JOB);
     mockTranscriptOps.update.mockResolvedValue({});
-    mockComplete.mockResolvedValue({
+    mockCompleteWithFallback.mockResolvedValue({
       text: "This is not valid JSON",
       usage: { inputTokens: 50, outputTokens: 30 },
       model: "claude-haiku-4-5-20251001",
@@ -232,7 +230,7 @@ describe("generateSummary", () => {
     });
     mockCreateAiJob.mockResolvedValue(BASE_JOB);
     mockTranscriptOps.update.mockResolvedValue({});
-    mockComplete.mockResolvedValue({
+    mockCompleteWithFallback.mockResolvedValue({
       text: JSON.stringify(AI_RESPONSE),
       usage: { inputTokens: 100, outputTokens: 200 },
       model: "claude-haiku-4-5-20251001",
@@ -245,7 +243,7 @@ describe("generateSummary", () => {
     await generateSummary(MEETING_ID);
 
     // AI prompt should be capped at 8000 chars
-    expect(mockComplete).toHaveBeenCalledWith(
+    expect(mockCompleteWithFallback).toHaveBeenCalledWith("SUMMARY",
       expect.objectContaining({
         prompt: longTranscript.slice(0, 8000),
       })
