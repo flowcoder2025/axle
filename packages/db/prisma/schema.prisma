@@ -299,6 +299,7 @@ model Certificate {
   isActive          Boolean   @default(true)
 
   client            Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  checklistItems    ChecklistItem[]
 
   @@index([clientId])
 }
@@ -490,19 +491,28 @@ model ChecklistTemplate {
 }
 
 model ChecklistItem {
-  id                String    @id @default(cuid())
+  id                String            @id @default(cuid())
   projectId         String
   name              String
   description       String?
-  isRequired        Boolean   @default(true)
-  status            DocStatus @default(PENDING)
+  isRequired        Boolean           @default(true)
+  itemType          ChecklistItemType @default(DOCUMENT)
+  status            DocStatus         @default(PENDING)
   requestedAt       DateTime?
   uploadedAt        DateTime?
   documentId        String?
+  certificateId     String?
+  certificateType   String?           /// Expected cert type (벤처기업확인서, 사업자등록증 등)
 
-  project           Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project           Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  certificate       Certificate? @relation(fields: [certificateId], references: [id])
 
   @@index([projectId])
+}
+
+enum ChecklistItemType {
+  DOCUMENT
+  CERTIFICATE
 }
 
 model Document {
