@@ -113,7 +113,7 @@ export async function generateJournalDraft(journal: JournalDraftInput) {
 
     await updateJobStatus(job.id, {
       status: "COMPLETED",
-      output: parsed,
+      output: parsed as unknown as Prisma.InputJsonValue,
       durationMs,
     });
 

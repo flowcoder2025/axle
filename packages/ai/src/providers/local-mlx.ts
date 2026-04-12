@@ -40,7 +40,11 @@ export class LocalMlxProvider implements AiProvider {
       throw new Error(`MLX proxy error: ${res.status} ${res.statusText}`);
     }
 
-    const data = await res.json();
+    const data = (await res.json()) as {
+      choices: Array<{ message?: { content?: string } }>;
+      usage?: { prompt_tokens?: number; completion_tokens?: number };
+      model?: string;
+    };
     return {
       text: data.choices[0]?.message?.content ?? "",
       usage: {

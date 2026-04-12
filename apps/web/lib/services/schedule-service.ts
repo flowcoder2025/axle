@@ -58,7 +58,7 @@ export async function listSchedules(
 
   const where: Prisma.ScheduleWhereInput = {
     orgId,
-    ...(type ? { type } : {}),
+    ...(type ? { type: type as Prisma.ScheduleWhereInput["type"] } : {}),
     ...(clientId ? { clientId } : {}),
     ...(startDateFrom || startDateTo
       ? {
@@ -105,16 +105,23 @@ export async function createSchedule(
   orgId: string,
   data: ScheduleCreateData
 ): Promise<any> {
-  const { startDate, endDate, ...rest } = data;
+  const { startDate, endDate, type, ...rest } = data;
 
-  return prisma.schedule.create({
-    data: {
-      ...rest,
-      orgId,
-      startDate: new Date(startDate),
-      endDate: endDate ? new Date(endDate) : undefined,
-    },
-  });
+  const createData: Prisma.ScheduleUncheckedCreateInput = {
+    orgId,
+    title: rest.title,
+    type: type as Prisma.ScheduleUncheckedCreateInput["type"],
+    startDate: new Date(startDate),
+    endDate: endDate ? new Date(endDate) : undefined,
+    ...(rest.description !== undefined ? { description: rest.description } : {}),
+    ...(rest.isAllDay !== undefined ? { isAllDay: rest.isAllDay } : {}),
+    ...(rest.reminderDays !== undefined ? { reminderDays: rest.reminderDays } : {}),
+    ...(rest.clientId !== undefined ? { clientId: rest.clientId } : {}),
+    ...(rest.projectId !== undefined ? { projectId: rest.projectId } : {}),
+    ...(rest.programId !== undefined ? { programId: rest.programId } : {}),
+  };
+
+  return prisma.schedule.create({ data: createData });
 }
 
 export async function getSchedule(
@@ -144,15 +151,24 @@ export async function updateSchedule(
     return null;
   }
 
-  const { startDate, endDate, ...rest } = data;
+  const { startDate, endDate, type, ...rest } = data;
+
+  const updateData: Prisma.ScheduleUncheckedUpdateInput = {
+    ...(rest.title !== undefined ? { title: rest.title } : {}),
+    ...(rest.description !== undefined ? { description: rest.description } : {}),
+    ...(type !== undefined ? { type: type as Prisma.ScheduleUncheckedUpdateInput["type"] } : {}),
+    ...(startDate !== undefined ? { startDate: new Date(startDate) } : {}),
+    ...(endDate !== undefined ? { endDate: endDate ? new Date(endDate) : null } : {}),
+    ...(rest.isAllDay !== undefined ? { isAllDay: rest.isAllDay } : {}),
+    ...(rest.reminderDays !== undefined ? { reminderDays: rest.reminderDays } : {}),
+    ...(rest.clientId !== undefined ? { clientId: rest.clientId } : {}),
+    ...(rest.projectId !== undefined ? { projectId: rest.projectId } : {}),
+    ...(rest.programId !== undefined ? { programId: rest.programId } : {}),
+  };
 
   return prisma.schedule.update({
     where: { id },
-    data: {
-      ...rest,
-      ...(startDate !== undefined ? { startDate: new Date(startDate) } : {}),
-      ...(endDate !== undefined ? { endDate: endDate ? new Date(endDate) : null } : {}),
-    },
+    data: updateData,
   });
 }
 

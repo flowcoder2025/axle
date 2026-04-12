@@ -86,7 +86,7 @@ describe("createBundleChildren", () => {
     await createBundleChildren(mockTx as never, BUNDLE_ID, PARENT_TITLE, CLIENT_ID, ORG_ID);
 
     expect(mockTxProject.create).toHaveBeenCalledTimes(3);
-    const calls = mockTxProject.create.mock.calls.map((c: [{ data: unknown }]) => c[0].data);
+    const calls = mockTxProject.create.mock.calls.map((c: unknown[]) => (c[0] as { data: unknown }).data);
     expect(calls).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ type: "VENTURE_CERT", parentId: BUNDLE_ID, clientId: CLIENT_ID }),
@@ -99,7 +99,7 @@ describe("createBundleChildren", () => {
   it("composes child titles as '{parentTitle} - {typeLabel}'", async () => {
     await createBundleChildren(mockTx as never, BUNDLE_ID, PARENT_TITLE, CLIENT_ID, ORG_ID);
 
-    const calls = mockTxProject.create.mock.calls.map((c: [{ data: { title: string } }]) => c[0].data.title);
+    const calls = mockTxProject.create.mock.calls.map((c: unknown[]) => (c[0] as { data: { title: string } }).data.title);
     expect(calls).toContain(`${PARENT_TITLE} - ${PROJECT_TYPE_LABELS["VENTURE_CERT"]}`);
     expect(calls).toContain(`${PARENT_TITLE} - ${PROJECT_TYPE_LABELS["RESEARCH_INSTITUTE"]}`);
     expect(calls).toContain(`${PARENT_TITLE} - ${PROJECT_TYPE_LABELS["PATENT"]}`);
@@ -116,7 +116,7 @@ describe("createBundleChildren", () => {
     );
 
     expect(mockTxProject.create).toHaveBeenCalledTimes(2);
-    const types = mockTxProject.create.mock.calls.map((c: [{ data: { type: string } }]) => c[0].data.type);
+    const types = mockTxProject.create.mock.calls.map((c: unknown[]) => (c[0] as { data: { type: string } }).data.type);
     expect(types).toEqual(["SOBOOJANG_CERT", "PATENT"]);
   });
 

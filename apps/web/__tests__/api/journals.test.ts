@@ -45,9 +45,13 @@ vi.mock("@axle/auth", () => ({
 }));
 
 const mockCreateAiJob = vi.fn();
+const mockResolveProvider = vi.fn();
+const mockUpdateJobStatus = vi.fn();
 
 vi.mock("@axle/ai", () => ({
   createAiJob: mockCreateAiJob,
+  resolveProvider: mockResolveProvider,
+  updateJobStatus: mockUpdateJobStatus,
 }));
 
 vi.mock("@axle/docgen", () => ({
@@ -641,6 +645,14 @@ describe("POST /api/journals/[journalId]/ai-draft", () => {
       tier: "LOCAL_MLX",
       status: "QUEUED",
     });
+    mockResolveProvider.mockResolvedValue({
+      complete: vi.fn().mockResolvedValue({
+        text: '{"objectives": "목표", "results": "결과", "nextSteps": "계획"}',
+        usage: { inputTokens: 100, outputTokens: 50 },
+        model: "mlx-local",
+      }),
+    });
+    mockUpdateJobStatus.mockResolvedValue({});
     const { POST } = await import(
       "../../app/api/journals/[journalId]/ai-draft/route"
     );

@@ -6,6 +6,7 @@
  */
 
 import { prisma } from "@axle/db";
+import { Prisma } from "@prisma/client";
 import { createAiJob, resolveProvider, updateJobStatus } from "@axle/ai";
 
 const SUMMARY_SYSTEM_PROMPT = `You are a meeting summarizer. Given a meeting transcript, extract:
@@ -93,7 +94,7 @@ export async function generateSummary(meetingId: string): Promise<void> {
 
       await updateJobStatus(job.id, {
         status: "COMPLETED",
-        output: parsed,
+        output: parsed as unknown as Prisma.InputJsonValue,
         durationMs: 0,
       });
 

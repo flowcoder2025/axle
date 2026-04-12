@@ -45,36 +45,37 @@ export async function createProgramWithDeadlines(
     requirements,
     eligibility,
     announcementUrl,
+    category,
     ...rest
   } = data;
 
   return prisma.$transaction(async (tx) => {
-    const created = await tx.programInfo.create({
-      data: {
-        ...rest,
-        orgId,
-        announcementUrl: announcementUrl || null,
-        applicationStart: applicationStart ? new Date(applicationStart) : null,
-        applicationEnd: applicationEnd ? new Date(applicationEnd) : null,
-        maxFunding: maxFunding !== undefined && maxFunding !== null ? maxFunding : undefined,
-        requirements:
-          requirements != null ? (requirements as Prisma.InputJsonValue) : undefined,
-        eligibility: eligibility != null ? (eligibility as Prisma.InputJsonValue) : undefined,
-      },
-    });
+    const createData: Prisma.ProgramInfoUncheckedCreateInput = {
+      ...rest,
+      orgId,
+      category: category as Prisma.ProgramInfoUncheckedCreateInput["category"],
+      announcementUrl: announcementUrl || null,
+      applicationStart: applicationStart ? new Date(applicationStart) : null,
+      applicationEnd: applicationEnd ? new Date(applicationEnd) : null,
+      maxFunding: maxFunding !== undefined && maxFunding !== null ? maxFunding : undefined,
+      requirements:
+        requirements != null ? (requirements as Prisma.InputJsonValue) : undefined,
+      eligibility: eligibility != null ? (eligibility as Prisma.InputJsonValue) : undefined,
+    };
+
+    const created = await tx.programInfo.create({ data: createData });
 
     if (created.applicationEnd) {
-      await tx.schedule.create({
-        data: {
-          orgId,
-          programId: created.id,
-          title: `[마감] ${created.name}`,
-          type: "PROGRAM_DUE",
-          startDate: created.applicationEnd,
-          isAllDay: true,
-          reminderDays: PROGRAM_DUE_REMINDER_DAYS,
-        },
-      });
+      const scheduleData: Prisma.ScheduleUncheckedCreateInput = {
+        orgId,
+        programId: created.id,
+        title: `[마감] ${created.name}`,
+        type: "PROGRAM_DUE",
+        startDate: created.applicationEnd,
+        isAllDay: true,
+        reminderDays: PROGRAM_DUE_REMINDER_DAYS,
+      };
+      await tx.schedule.create({ data: scheduleData });
     }
 
     return created;
@@ -111,17 +112,16 @@ export async function syncDeadlines(
         },
       });
     } else {
-      await tx.schedule.create({
-        data: {
-          orgId,
-          programId,
-          title: `[마감] ${programName}`,
-          type: "PROGRAM_DUE",
-          startDate: newEndDate,
-          isAllDay: true,
-          reminderDays: PROGRAM_DUE_REMINDER_DAYS,
-        },
-      });
+      const scheduleData: Prisma.ScheduleUncheckedCreateInput = {
+        orgId,
+        programId,
+        title: `[마감] ${programName}`,
+        type: "PROGRAM_DUE",
+        startDate: newEndDate,
+        isAllDay: true,
+        reminderDays: PROGRAM_DUE_REMINDER_DAYS,
+      };
+      await tx.schedule.create({ data: scheduleData });
     }
   } else if (existingSchedule) {
     await tx.schedule.delete({ where: { id: existingSchedule.id } });
