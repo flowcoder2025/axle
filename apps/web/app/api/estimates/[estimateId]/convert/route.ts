@@ -119,7 +119,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
           data: {
             clientId: estimate.clientId,
             title: body.projectTitle ?? `${estimate.client.name} 프로젝트`,
-            type: "GENERAL",
+            type: "BUSINESS_PLAN",
             status: "INTAKE",
             priority: "MEDIUM",
             assignedToId: user.id,
