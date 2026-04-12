@@ -57,3 +57,18 @@ export type {
   HybridSearchOptions,
   EmbeddingRecord,
 } from "./rag/index.js";
+
+// Providers
+export { getProvider, resolveProvider } from "./providers/index.js";
+export type { AiProvider, CompletionInput, CompletionResult } from "./providers/index.js";
+export { AnthropicProvider } from "./providers/index.js";
+export { LocalMlxProvider } from "./providers/index.js";
+export { ClaudeCliProvider } from "./providers/index.js";
+
+// Pre-Submission Verification
+export { verifyPreSubmission } from "./verification/pre-submission.js";
+export type {
+  DocumentData,
+  VerificationResult,
+  VerificationIssue,
+} from "./verification/types.js";

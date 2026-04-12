@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@axle/db";
 import { getCurrentUser } from "@axle/auth";
 import { scheduleCreateSchema, scheduleQuerySchema } from "@/lib/validations/schedule";
 import { handleZodError, handleInternalError, unauthorizedResponse } from "@/lib/api-helpers";
-import { Prisma } from "@prisma/client";
+import { listSchedules, createSchedule } from "@/lib/services/schedule-service";
 
 // GET /api/schedules — list schedules with filters and pagination
 export async function GET(req: NextRequest) {
@@ -25,50 +24,8 @@ export async function GET(req: NextRequest) {
       return handleZodError(parsed.error);
     }
 
-    const { type, clientId, startDateFrom, startDateTo, page, pageSize } = parsed.data;
-    const skip = (page - 1) * pageSize;
-
-    const where: Prisma.ScheduleWhereInput = {
-      orgId: user.orgId,
-      ...(type ? { type } : {}),
-      ...(clientId ? { clientId } : {}),
-      ...(startDateFrom || startDateTo
-        ? {
-            startDate: {
-              ...(startDateFrom ? { gte: new Date(startDateFrom) } : {}),
-              ...(startDateTo ? { lte: new Date(startDateTo) } : {}),
-            },
-          }
-        : {}),
-    };
-
-    const [schedules, total] = await Promise.all([
-      prisma.schedule.findMany({
-        where,
-        skip,
-        take: pageSize,
-        orderBy: { startDate: "asc" },
-        select: {
-          id: true,
-          orgId: true,
-          clientId: true,
-          projectId: true,
-          programId: true,
-          title: true,
-          description: true,
-          type: true,
-          startDate: true,
-          endDate: true,
-          isAllDay: true,
-          reminderDays: true,
-          googleCalendarId: true,
-          createdAt: true,
-          client: { select: { id: true, name: true } },
-          program: { select: { id: true, name: true } },
-        },
-      }),
-      prisma.schedule.count({ where }),
-    ]);
+    const { page, pageSize } = parsed.data;
+    const { schedules, total } = await listSchedules(user.orgId, parsed.data);
 
     return NextResponse.json({ data: schedules, total, page, pageSize });
   } catch (err) {
@@ -96,16 +53,7 @@ export async function POST(req: NextRequest) {
       return handleZodError(parsed.error);
     }
 
-    const { startDate, endDate, ...rest } = parsed.data;
-
-    const schedule = await prisma.schedule.create({
-      data: {
-        ...rest,
-        orgId: user.orgId,
-        startDate: new Date(startDate),
-        endDate: endDate ? new Date(endDate) : undefined,
-      },
-    });
+    const schedule = await createSchedule(user.orgId, parsed.data);
 
     return NextResponse.json({ data: schedule }, { status: 201 });
   } catch (err) {

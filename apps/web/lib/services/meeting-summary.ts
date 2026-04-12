@@ -2,18 +2,34 @@
  * meeting-summary.ts
  *
  * Generates AI summary and extracts action items from a meeting transcript.
- * Phase 9: creates AiJob record only — actual AI inference wired in Phase 14.
+ * Creates an AiJob, calls the AI provider, and updates the transcript with results.
  */
 
 import { prisma } from "@axle/db";
-import { createAiJob } from "@axle/ai";
+import { Prisma } from "@prisma/client";
+import { createAiJob, resolveProvider, updateJobStatus } from "@axle/ai";
+
+const SUMMARY_SYSTEM_PROMPT = `You are a meeting summarizer. Given a meeting transcript, extract:
+1. A concise summary (2-3 sentences in Korean)
+2. Key decisions made
+3. Action items with assignees
+
+Respond in JSON: {"summary": "...", "keyDecisions": ["..."], "actionItems": [{"task": "...", "assignee": "..."}]}`;
+
+interface SummaryResponse {
+  summary: string;
+  keyDecisions: string[];
+  actionItems: { task: string; assignee: string }[];
+}
 
 /**
  * Generate an AI summary for a meeting transcript.
  *
  * 1. Fetches MeetingTranscript.rawTranscript
  * 2. Creates an AiJob (type: SUMMARY, tier: API_HAIKU)
- * 3. Phase 14: actual LLM call will update summary, keyDecisions, and extract ActionItems
+ * 3. Calls AI provider to generate summary, keyDecisions, and actionItems
+ * 4. Updates MeetingTranscript with the results
+ * 5. Marks job as COMPLETED (or FAILED on error)
  *
  * This function is intentionally fire-and-forget — errors are swallowed to
  * prevent blocking the caller (e.g. transcript save endpoint).
@@ -51,17 +67,53 @@ export async function generateSummary(meetingId: string): Promise<void> {
       data: { aiJobId: job.id },
     });
 
-    // Phase 14 TODO: enqueue LLM worker that:
-    //   1. Calls AI to generate summary + keyDecisions
-    //   2. Updates MeetingTranscript.summary and MeetingTranscript.keyDecisions
-    //   3. Auto-extracts ActionItems from summary and creates them
-    //   4. Marks job as COMPLETED
-
     console.info("[meeting-summary] job created", {
       meetingId,
       aiJobId: job.id,
       tier: job.tier,
     });
+
+    // AI inference: call provider and update transcript
+    try {
+      const provider = await resolveProvider("SUMMARY");
+      const result = await provider.complete({
+        system: SUMMARY_SYSTEM_PROMPT,
+        prompt: transcript.rawTranscript.slice(0, 8000),
+        maxTokens: 2048,
+      });
+
+      const parsed: SummaryResponse = JSON.parse(result.text);
+
+      await prisma.meetingTranscript.update({
+        where: { meetingId },
+        data: {
+          summary: parsed.summary,
+          keyDecisions: parsed.keyDecisions,
+        },
+      });
+
+      await updateJobStatus(job.id, {
+        status: "COMPLETED",
+        output: parsed as unknown as Prisma.InputJsonValue,
+        durationMs: 0,
+      });
+
+      console.info("[meeting-summary] summary generated", {
+        meetingId,
+        aiJobId: job.id,
+      });
+    } catch (aiErr) {
+      await updateJobStatus(job.id, {
+        status: "FAILED",
+        errorMessage:
+          aiErr instanceof Error ? aiErr.message : "Unknown AI error",
+      });
+      console.error("[meeting-summary] AI call failed", {
+        meetingId,
+        aiJobId: job.id,
+        err: aiErr,
+      });
+    }
   } catch (err) {
     console.error("[meeting-summary] failed to create summary job", { meetingId, err });
   }
