@@ -52,3 +52,36 @@ export async function resolveProvider(
   // Last resort — return primary even if unavailable (will error on call)
   return primary;
 }
+
+/**
+ * Call complete() with automatic fallback on failure.
+ * Tries resolved provider first, then OpenRouter, then API_HAIKU.
+ * Useful when a provider's isAvailable() is true but the call fails
+ * (e.g., Anthropic API key exists but credits exhausted).
+ */
+export async function completeWithFallback(
+  jobType: AiJobType,
+  input: import("./types.js").CompletionInput,
+  config?: RouterConfig,
+): Promise<import("./types.js").CompletionResult> {
+  const tier = resolveAiTier(jobType, config);
+  const primary = providers[tier];
+
+  const candidates: AiProvider[] = [primary, ...fallbackChain].filter(
+    (p, i, arr) => arr.indexOf(p) === i, // deduplicate
+  );
+
+  let lastError: Error | null = null;
+
+  for (const provider of candidates) {
+    if (!(await provider.isAvailable())) continue;
+    try {
+      return await provider.complete(input);
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      // Continue to next fallback
+    }
+  }
+
+  throw lastError ?? new Error("No available AI provider");
+}

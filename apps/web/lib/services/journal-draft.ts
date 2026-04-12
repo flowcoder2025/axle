@@ -6,7 +6,7 @@
  */
 
 import { prisma } from "@axle/db";
-import { createAiJob, resolveProvider, updateJobStatus } from "@axle/ai";
+import { createAiJob, completeWithFallback, updateJobStatus } from "@axle/ai";
 import { Prisma } from "@prisma/client";
 
 const JOURNAL_DRAFT_SYSTEM_PROMPT = `You are a research journal assistant. Given project context and existing notes, generate:
@@ -79,7 +79,6 @@ export async function generateJournalDraft(journal: JournalDraftInput) {
 
   try {
     const startMs = Date.now();
-    const provider = await resolveProvider("JOURNAL_DRAFT");
 
     const userPrompt = [
       `제목: ${journal.title}`,
@@ -92,7 +91,7 @@ export async function generateJournalDraft(journal: JournalDraftInput) {
       .filter(Boolean)
       .join("\n\n");
 
-    const completion = await provider.complete({
+    const completion = await completeWithFallback("JOURNAL_DRAFT", {
       system: JOURNAL_DRAFT_SYSTEM_PROMPT,
       prompt: userPrompt,
       maxTokens: 2048,

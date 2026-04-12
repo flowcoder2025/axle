@@ -16,11 +16,10 @@ vi.mock("@axle/db", () => ({
   },
 }));
 
-const mockComplete = vi.fn();
-const mockResolveProvider = vi.fn();
+const mockCompleteWithFallback = vi.fn();
 
 vi.mock("@axle/ai", () => ({
-  resolveProvider: (...args: unknown[]) => mockResolveProvider(...args),
+  completeWithFallback: (...args: unknown[]) => mockCompleteWithFallback(...args),
 }));
 
 // --- Tests ---
@@ -28,8 +27,10 @@ vi.mock("@axle/ai", () => ({
 describe("generateFinancialNarrative", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockResolveProvider.mockResolvedValue({
-      complete: mockComplete,
+    mockCompleteWithFallback.mockResolvedValue({
+      text: "AI 분석 내러티브",
+      usage: { inputTokens: 100, outputTokens: 200 },
+      model: "test",
     });
   });
 
@@ -49,7 +50,7 @@ describe("generateFinancialNarrative", () => {
     };
     mockClientFinancialOps.findFirst.mockResolvedValue(fakeFinancial);
 
-    mockComplete.mockResolvedValue({
+    mockCompleteWithFallback.mockResolvedValue({
       text: "해당 기업의 2025년 재무상태는 양호합니다.",
       usage: { inputTokens: 500, outputTokens: 200 },
       model: "claude-haiku-4-5-20251001",
@@ -67,11 +68,8 @@ describe("generateFinancialNarrative", () => {
       where: { clientId: "client-1", year: 2025 },
     });
 
-    // Verify AI provider was resolved with correct job type
-    expect(mockResolveProvider).toHaveBeenCalledWith("FINANCIAL_ANALYSIS");
-
-    // Verify complete was called with system prompt and financial data
-    expect(mockComplete).toHaveBeenCalledWith(
+    // Verify completeWithFallback was called with correct job type
+    expect(mockCompleteWithFallback).toHaveBeenCalledWith("FINANCIAL_ANALYSIS",
       expect.objectContaining({
         system: expect.stringContaining("Korean business financial analyst"),
         prompt: expect.stringContaining("2025"),
@@ -90,7 +88,7 @@ describe("generateFinancialNarrative", () => {
       generateFinancialNarrative("nonexistent", 2025)
     ).rejects.toThrow("No financial data for client nonexistent year 2025");
 
-    expect(mockResolveProvider).not.toHaveBeenCalled();
+    expect(mockCompleteWithFallback).not.toHaveBeenCalled();
   });
 
   it("handles zero equity gracefully (ratios as N/A)", async () => {
@@ -109,7 +107,7 @@ describe("generateFinancialNarrative", () => {
     };
     mockClientFinancialOps.findFirst.mockResolvedValue(fakeFinancial);
 
-    mockComplete.mockResolvedValue({
+    mockCompleteWithFallback.mockResolvedValue({
       text: "자본 잠식 상태의 기업입니다.",
       usage: { inputTokens: 400, outputTokens: 150 },
       model: "claude-haiku-4-5-20251001",
@@ -123,7 +121,8 @@ describe("generateFinancialNarrative", () => {
     expect(result).toBe("자본 잠식 상태의 기업입니다.");
 
     // Verify the prompt contains N/A for equity-dependent ratios
-    const promptArg = mockComplete.mock.calls[0][0].prompt;
+    const callArgs = mockCompleteWithFallback.mock.calls[0];
+    const promptArg = callArgs[1].prompt;
     const parsed = JSON.parse(promptArg);
     expect(parsed.ratios.debtRatio).toBe("N/A");
     expect(parsed.ratios.roe).toBe("N/A");

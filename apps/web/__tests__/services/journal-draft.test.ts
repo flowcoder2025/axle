@@ -19,13 +19,12 @@ vi.mock("@axle/db", () => ({
 
 const mockCreateAiJob = vi.fn();
 const mockUpdateJobStatus = vi.fn();
-const mockComplete = vi.fn();
-const mockResolveProvider = vi.fn();
+const mockCompleteWithFallback = vi.fn();
 
 vi.mock("@axle/ai", () => ({
   createAiJob: mockCreateAiJob,
   updateJobStatus: mockUpdateJobStatus,
-  resolveProvider: mockResolveProvider,
+  completeWithFallback: mockCompleteWithFallback,
 }));
 
 // --- Helpers ---
@@ -67,16 +66,10 @@ describe("generateJournalDraft", () => {
     mockJournalOps.update.mockResolvedValue({ id: "journal-1" });
     mockUpdateJobStatus.mockResolvedValue({ id: "job-1" });
 
-    mockComplete.mockResolvedValue({
+    mockCompleteWithFallback.mockResolvedValue({
       text: JSON.stringify(AI_RESPONSE_JSON),
       usage: { inputTokens: 200, outputTokens: 300 },
       model: "local-mlx",
-    });
-
-    mockResolveProvider.mockResolvedValue({
-      tier: "LOCAL_MLX",
-      isAvailable: vi.fn().mockResolvedValue(true),
-      complete: mockComplete,
     });
   });
 
@@ -113,13 +106,16 @@ describe("generateJournalDraft", () => {
     );
   });
 
-  it("calls resolveProvider with JOURNAL_DRAFT", async () => {
+  it("calls completeWithFallback with JOURNAL_DRAFT", async () => {
     const { generateJournalDraft } = await import(
       "../../lib/services/journal-draft"
     );
     await generateJournalDraft(makeJournalInput());
 
-    expect(mockResolveProvider).toHaveBeenCalledWith("JOURNAL_DRAFT");
+    expect(mockCompleteWithFallback).toHaveBeenCalledWith(
+      "JOURNAL_DRAFT",
+      expect.objectContaining({ prompt: expect.any(String) }),
+    );
   });
 
   it("calls provider.complete with system prompt and journal context", async () => {
@@ -128,7 +124,8 @@ describe("generateJournalDraft", () => {
     );
     await generateJournalDraft(makeJournalInput());
 
-    expect(mockComplete).toHaveBeenCalledWith(
+    expect(mockCompleteWithFallback).toHaveBeenCalledWith(
+      "JOURNAL_DRAFT",
       expect.objectContaining({
         system: expect.stringContaining("research journal assistant"),
         prompt: expect.stringContaining("딥러닝 기반 이미지 분류 연구"),
@@ -176,7 +173,7 @@ describe("generateJournalDraft", () => {
   });
 
   it("handles markdown-fenced JSON response", async () => {
-    mockComplete.mockResolvedValue({
+    mockCompleteWithFallback.mockResolvedValue({
       text: "```json\n" + JSON.stringify(AI_RESPONSE_JSON) + "\n```",
       usage: { inputTokens: 200, outputTokens: 300 },
       model: "local-mlx",
@@ -194,7 +191,7 @@ describe("generateJournalDraft", () => {
   });
 
   it("marks job as FAILED when AI call throws", async () => {
-    mockComplete.mockRejectedValue(new Error("Provider unavailable"));
+    mockCompleteWithFallback.mockRejectedValue(new Error("Provider unavailable"));
 
     const { generateJournalDraft } = await import(
       "../../lib/services/journal-draft"
@@ -208,7 +205,7 @@ describe("generateJournalDraft", () => {
   });
 
   it("marks job as FAILED when JSON parsing fails", async () => {
-    mockComplete.mockResolvedValue({
+    mockCompleteWithFallback.mockResolvedValue({
       text: "This is not valid JSON",
       usage: { inputTokens: 200, outputTokens: 50 },
       model: "local-mlx",
@@ -229,7 +226,7 @@ describe("generateJournalDraft", () => {
   });
 
   it("marks job as FAILED when response missing required fields", async () => {
-    mockComplete.mockResolvedValue({
+    mockCompleteWithFallback.mockResolvedValue({
       text: JSON.stringify({ objectives: "only objectives" }),
       usage: { inputTokens: 200, outputTokens: 50 },
       model: "local-mlx",
@@ -260,14 +257,14 @@ describe("generateJournalDraft", () => {
     );
     await generateJournalDraft(input);
 
-    const promptArg = mockComplete.mock.calls[0][0].prompt as string;
+    const promptArg = mockCompleteWithFallback.mock.calls[0][1].prompt as string;
     expect(promptArg).toContain("기존 목표");
     expect(promptArg).toContain("기존 결과");
     expect(promptArg).toContain("기존 계획");
   });
 
   it("still returns job even when AI call fails", async () => {
-    mockComplete.mockRejectedValue(new Error("Network error"));
+    mockCompleteWithFallback.mockRejectedValue(new Error("Network error"));
 
     const { generateJournalDraft } = await import(
       "../../lib/services/journal-draft"

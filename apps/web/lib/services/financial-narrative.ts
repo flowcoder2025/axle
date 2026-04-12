@@ -6,7 +6,7 @@
  */
 
 import { prisma } from "@axle/db";
-import { resolveProvider } from "@axle/ai";
+import { completeWithFallback } from "@axle/ai";
 
 const FINANCIAL_PROMPT = `You are a Korean business financial analyst. Given financial data and ratios, write a concise analysis narrative in Korean (3-5 paragraphs). Cover: overall health, profitability, debt structure, and recommendations. Use specific numbers.`;
 
@@ -45,8 +45,7 @@ export async function generateFinancialNarrative(
         : "N/A",
   };
 
-  const provider = await resolveProvider("FINANCIAL_ANALYSIS");
-  const result = await provider.complete({
+  const result = await completeWithFallback("FINANCIAL_ANALYSIS", {
     system: FINANCIAL_PROMPT,
     prompt: JSON.stringify({ year, financial, ratios }),
   });

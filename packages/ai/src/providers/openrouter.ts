@@ -11,8 +11,8 @@ import type { AiProvider, CompletionInput, CompletionResult } from "./types.js";
 
 const BASE_URL = "https://openrouter.ai/api/v1";
 
-/** Default models per use case — cheapest that works */
-const DEFAULT_MODEL = "anthropic/claude-haiku-4-5-20251001";
+/** Default model — cheapest Claude on OpenRouter */
+const DEFAULT_MODEL = "anthropic/claude-haiku-4.5";
 
 export class OpenRouterProvider implements AiProvider {
   readonly tier = "API_HAIKU" as const;
