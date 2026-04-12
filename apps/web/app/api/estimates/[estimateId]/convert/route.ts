@@ -112,7 +112,32 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         },
       });
 
-      return created;
+      let projectId: string | null = created.projectId;
+
+      if (body.createProject) {
+        const project = await tx.project.create({
+          data: {
+            clientId: estimate.clientId,
+            title: body.projectTitle ?? `${estimate.client.name} 프로젝트`,
+            type: "GENERAL",
+            status: "INTAKE",
+            priority: "MEDIUM",
+            assignedToId: user.id,
+          },
+        });
+        projectId = project.id;
+
+        // Link contract to the new project
+        await tx.contract.update({
+          where: { id: created.id },
+          data: { projectId: project.id },
+        });
+      }
+
+      // Return the contract with the updated projectId
+      return projectId !== created.projectId
+        ? { ...created, projectId }
+        : created;
     });
 
     return NextResponse.json({ data: contract }, { status: 201 });
