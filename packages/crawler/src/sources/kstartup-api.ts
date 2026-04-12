@@ -47,8 +47,10 @@ export class KStartupApiSource extends BaseSource {
       throw new Error(`K-Startup API error: ${res.status}`);
     }
 
-    const json = await res.json();
-    const items: KStartupItem[] = json?.data?.data ?? [];
+    const json = (await res.json()) as Record<string, unknown>;
+    const dataWrapper = json?.data as Record<string, unknown> | undefined;
+    const items: KStartupItem[] =
+      (dataWrapper?.data as KStartupItem[]) ?? [];
 
     return items.map((item) => this.toProgram(item));
   }

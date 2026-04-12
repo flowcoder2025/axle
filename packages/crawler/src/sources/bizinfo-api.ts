@@ -50,8 +50,9 @@ export class BizinfoApiSource extends BaseSource {
       throw new Error(`Bizinfo API error: ${res.status}`);
     }
 
-    const json = await res.json();
-    const items: BizinfoItem[] = json?.jsonArray ?? json?.items ?? [];
+    const json = (await res.json()) as Record<string, unknown>;
+    const items: BizinfoItem[] =
+      (json?.jsonArray as BizinfoItem[]) ?? (json?.items as BizinfoItem[]) ?? [];
 
     return items.map((item) => this.toProgram(item));
   }
