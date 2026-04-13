@@ -19,6 +19,11 @@ enum MemberRole {
   MEMBER
 }
 
+enum PlatformRole {
+  USER
+  PLATFORM_ADMIN
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -26,6 +31,7 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?   // bcrypt hashed, null for OAuth-only users
+  platformRole  PlatformRole @default(USER)
 
   accounts      Account[]
   sessions      Session[]
@@ -955,4 +961,84 @@ model PortalJournal {
   token       PortalToken @relation(fields: [tokenId], references: [id], onDelete: Cascade)
 
   @@index([tokenId])
+}
+
+// ── Analytics ────────────────────────────────────────────────────────────────
+
+enum EventCategory {
+  PAGE_VIEW
+  FEATURE_USE
+  API_CALL
+  SYSTEM
+  BUSINESS
+}
+
+model AnalyticsEvent {
+  id        String        @id @default(cuid())
+
+  userId    String?
+  orgId     String?
+  sessionId String
+
+  category  EventCategory
+  action    String
+  label     String?
+  value     Float?
+
+  path      String?
+  referrer  String?
+
+  metadata  Json?
+  userAgent String?
+  ip        String?
+
+  createdAt DateTime      @default(now())
+
+  @@index([orgId, createdAt])
+  @@index([category, createdAt])
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+  @@index([sessionId, createdAt])
+}
+
+model DailyMetric {
+  id        String   @id @default(cuid())
+  date      DateTime @db.Date
+  orgId     String?
+
+  pageViews      Int @default(0)
+  uniqueUsers    Int @default(0)
+  sessions       Int @default(0)
+  avgSessionSec  Int @default(0)
+
+  projectsCreated    Int @default(0)
+  documentsProcessed Int @default(0)
+  matchingsRun       Int @default(0)
+
+  aiJobsTotal     Int   @default(0)
+  aiJobsCost      Float @default(0)
+  aiAvgDurationMs Int   @default(0)
+
+  apiCalls           Int @default(0)
+  apiErrors          Int @default(0)
+  avgResponseMs      Int @default(0)
+  automationRuns     Int @default(0)
+  automationFailures Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@unique([date, orgId])
+  @@index([orgId, date])
+}
+
+model DailyActionMetric {
+  id     String   @id @default(cuid())
+  date   DateTime @db.Date
+  orgId  String?
+  action String
+  count  Int      @default(0)
+
+  @@unique([date, orgId, action])
+  @@index([orgId, date])
+  @@index([action, date])
 }
