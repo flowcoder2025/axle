@@ -31,7 +31,7 @@ export const middleware: NextMiddleware = async (request: NextRequest) => {
     if (!existingSession) {
       const sid = generateSessionId();
       (res as NextResponse).cookies.set("axle_sid", sid, {
-        httpOnly: true,
+        httpOnly: false,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         maxAge: 30 * 60,

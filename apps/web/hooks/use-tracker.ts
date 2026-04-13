@@ -26,9 +26,19 @@ const TRACK_ENDPOINT = "/api/analytics/track";
 const STORAGE_KEY = "axle_analytics_buffer";
 const MAX_STORAGE_EVENTS = 100;
 
+const STORAGE_SID_KEY = "axle_analytics_sid";
+
 function getSessionId(): string {
   const match = document.cookie.match(/(?:^|;\s*)axle_sid=([^;]+)/);
-  return match?.[1] ?? "anonymous";
+  if (match?.[1]) return match[1];
+
+  // Fallback: generate and persist a client-side session ID
+  let sid = localStorage.getItem(STORAGE_SID_KEY);
+  if (!sid) {
+    sid = crypto.randomUUID();
+    localStorage.setItem(STORAGE_SID_KEY, sid);
+  }
+  return sid;
 }
 
 function sendBatch(events: EventPayload[]): boolean {
