@@ -4,7 +4,7 @@
  * Export map:
  * - auth, signIn, signOut, handlers  → Node.js runtime (Next.js Route Handler / Server Actions)
  * - authConfig                        → Edge-compatible config (middleware)
- * - getCurrentUser, requireUser, requireOrg → DAL helpers (Server Components)
+ * - getCurrentUser, requireUser, requireOrg, requireOrgAdmin, requirePlatformAdmin → DAL helpers (Server Components)
  * - getCachedSession, invalidateCachedSession → 3-tier session cache
  */
 
@@ -20,7 +20,13 @@ export { authConfig } from "./auth.config.js";
 export { auth as authMiddleware, config as middlewareConfig } from "./middleware.js";
 
 // Data Access Layer
-export { getCurrentUser, requireUser, requireOrg } from "./dal.js";
+export {
+  getCurrentUser,
+  requireUser,
+  requireOrg,
+  requireOrgAdmin,
+  requirePlatformAdmin,
+} from "./dal.js";
 
 // Session cache
 export { getCachedSession, invalidateCachedSession } from "./session-cache.js";
