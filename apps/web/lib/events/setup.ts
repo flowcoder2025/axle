@@ -8,7 +8,7 @@
  * Call setupEventHandlers() once at application startup (e.g. in instrumentation.ts).
  */
 
-import { eventBus } from "./event-bus.js";
+import { eventBus } from "./event-bus";
 import { dispatch } from "@axle/notification";
 
 let initialized = false;
