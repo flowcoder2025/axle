@@ -5,6 +5,7 @@ import { AppSidebar } from "../../src/components/app-sidebar";
 import { UserMenu } from "../../src/components/user-menu";
 import { NotificationBell } from "../../src/components/notifications/notification-bell";
 import { MobileSidebar } from "../../src/components/mobile-sidebar";
+import { GlobalSearch } from "../../src/components/global-search";
 
 export default async function AppLayout({
   children,
@@ -35,7 +36,10 @@ export default async function AppLayout({
           </div>
           {/* Spacer for desktop */}
           <div className="hidden md:block" />
-          <NotificationBell />
+          <div className="flex items-center gap-2">
+            <GlobalSearch />
+            <NotificationBell />
+          </div>
         </header>
         <main className="flex-1 overflow-y-auto bg-background">
           <div className="mx-auto max-w-7xl px-6 py-8">

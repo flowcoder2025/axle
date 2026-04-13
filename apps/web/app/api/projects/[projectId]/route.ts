@@ -9,6 +9,7 @@ import {
   notFoundResponse,
 } from "@/lib/api-helpers";
 import { resolveProject } from "@/lib/utils/resolve-project";
+import { requirePermission } from "@/lib/middleware/require-permission";
 import { Prisma } from "@prisma/client";
 
 type RouteContext = { params: Promise<{ projectId: string }> };
@@ -77,6 +78,9 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     const resolved = await resolveProject(projectId, user.orgId);
     if (!resolved.ok) return resolved.response;
 
+    const denied = await requirePermission("project", projectId, "editor", user.id);
+    if (denied) return denied;
+
     const body = await req.json();
     const parsed = projectUpdateSchema.safeParse(body);
     if (!parsed.success) {
@@ -128,6 +132,9 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
     const { projectId } = await ctx.params;
     const resolved = await resolveProject(projectId, user.orgId);
     if (!resolved.ok) return resolved.response;
+
+    const denied = await requirePermission("project", projectId, "editor", user.id);
+    if (denied) return denied;
 
     await prisma.project.delete({ where: { id: projectId } });
 

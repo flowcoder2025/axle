@@ -9,6 +9,9 @@ import { MemberList } from "./member-list";
 import { AddMemberDialog } from "./add-member-dialog";
 import { HandoffForm } from "./handoff-form";
 import { HandoffSummary } from "./handoff-summary";
+import { ProjectDocumentList } from "./project-document-list";
+import { ProjectMeetingList } from "./project-meeting-list";
+import { ProjectAiJobList } from "./project-ai-job-list";
 import type { ProjectStatus, ProjectType, Priority, FeeType } from "@prisma/client";
 
 interface ChildProject {
@@ -103,14 +106,10 @@ export function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
           <ChecklistPanel projectId={project.id} clientId={project.client.id} />
         )}
         {activeTab === "documents" && (
-          <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
-            프로젝트별 서류 목록은 준비 중입니다.
-          </div>
+          <ProjectDocumentList projectId={project.id} />
         )}
         {activeTab === "meetings" && (
-          <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
-            프로젝트별 미팅 목록은 준비 중입니다.
-          </div>
+          <ProjectMeetingList projectId={project.id} />
         )}
         {activeTab === "members" && (
           <div className="space-y-4">
@@ -142,9 +141,7 @@ export function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
           </div>
         )}
         {activeTab === "ai_jobs" && (
-          <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
-            AI 작업 목록은 준비 중입니다.
-          </div>
+          <ProjectAiJobList projectId={project.id} />
         )}
       </div>
     </div>

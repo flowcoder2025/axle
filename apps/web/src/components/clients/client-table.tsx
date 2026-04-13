@@ -19,7 +19,7 @@ import {
   DropdownMenuSeparator,
 } from "@axle/ui";
 import { ClientStatusBadge } from "./client-status-badge";
-import { ChevronUp, ChevronDown, Search, MoreHorizontal } from "lucide-react";
+import { ChevronUp, ChevronDown, Search, MoreHorizontal, Download } from "lucide-react";
 import { toast } from "@axle/ui";
 
 type ClientStatus = "ACTIVE" | "INACTIVE" | "PROSPECT";
@@ -158,6 +158,21 @@ export function ClientTable({
         </form>
 
         <div className="flex gap-2">
+          {/* CSV Export */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const params = new URLSearchParams();
+              if (currentQ) params.set("q", currentQ);
+              if (currentStatus) params.set("status", currentStatus);
+              const qs = params.toString();
+              window.open(`/api/clients/export${qs ? `?${qs}` : ""}`);
+            }}
+          >
+            <Download className="h-4 w-4 mr-1" />
+            내보내기
+          </Button>
           {/* Status filter */}
           <select
             value={currentStatus}
@@ -215,7 +230,14 @@ export function ClientTable({
               </TableRow>
             ) : (
               clients.map((client) => (
-                <TableRow key={client.id} className="hover:bg-muted/30">
+                <TableRow
+                  key={client.id}
+                  className="hover:bg-muted/30 cursor-pointer"
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("[data-radix-collection-item], button, a")) return;
+                    router.push(`/clients/${client.id}`);
+                  }}
+                >
                   <TableCell>
                     <Link
                       href={`/clients/${client.id}`}

@@ -3,6 +3,7 @@ import { prisma } from "@axle/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Badge, Card, CardContent, CardHeader, CardTitle } from "@axle/ui";
+import { ArrowLeft } from "lucide-react";
 import { ContractActions } from "../../../../src/components/contracts/contract-actions";
 import { SignaturePadWrapper } from "../../../../src/components/contracts/signature-pad-wrapper";
 import type { ContractStatus } from "@prisma/client";
@@ -44,6 +45,19 @@ export default async function ContractDetailPage({ params }: PageProps) {
 
   return (
     <div className="max-w-3xl space-y-6">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link
+          href="/contracts"
+          className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          계약 목록
+        </Link>
+        <span>/</span>
+        <span className="text-foreground font-medium">{contract.contractNumber}</span>
+      </div>
+
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3">

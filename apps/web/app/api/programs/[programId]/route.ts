@@ -10,6 +10,7 @@ import {
 } from "@/lib/api-helpers";
 import { Prisma } from "@prisma/client";
 import { syncDeadlines, deleteProgramWithDeadlines } from "@/lib/services/program-deadline";
+import { cacheInvalidatePrefix } from "@/lib/cache/redis";
 
 type RouteContext = { params: Promise<{ programId: string }> };
 
@@ -137,6 +138,9 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
       return updated;
     });
 
+    // Invalidate programs list cache for this org
+    void cacheInvalidatePrefix(`programs:list:${user.orgId}:`);
+
     return NextResponse.json({ data: program });
   } catch (err) {
     return handleInternalError(err);
@@ -168,6 +172,9 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
     }
 
     await deleteProgramWithDeadlines(programId);
+
+    // Invalidate programs list cache for this org
+    void cacheInvalidatePrefix(`programs:list:${user.orgId}:`);
 
     return NextResponse.json({ data: { deleted: true } });
   } catch (err) {

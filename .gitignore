@@ -53,3 +53,7 @@ coverage/
 .nyc_output/
 htmlcov/
 .vercel
+
+# Dev tools
+.playwright-cli/
+.superpowers/

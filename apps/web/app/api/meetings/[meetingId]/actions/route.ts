@@ -8,6 +8,7 @@ import {
   unauthorizedResponse,
   notFoundResponse,
 } from "@/lib/api-helpers";
+import { eventBus } from "@/lib/events/event-bus";
 
 type RouteContext = { params: Promise<{ meetingId: string }> };
 
@@ -76,6 +77,23 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         dueDate: dueDate ? new Date(dueDate) : undefined,
       },
     });
+
+    // Fire-and-forget: emit ACTION_ITEM_CREATED event when assignee is set
+    if (actionItem.assigneeUserId) {
+      // Resolve projectId from the meeting (action items are linked via meeting)
+      const meetingWithProject = await prisma.meeting.findUnique({
+        where: { id: meetingId },
+        select: { projectId: true },
+      });
+
+      void eventBus
+        .emit("ACTION_ITEM_CREATED", {
+          actionItemId: actionItem.id,
+          projectId: meetingWithProject?.projectId ?? "",
+          assigneeId: actionItem.assigneeUserId,
+        })
+        .catch(console.error);
+    }
 
     return NextResponse.json({ data: actionItem }, { status: 201 });
   } catch (err) {

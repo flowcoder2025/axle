@@ -34,6 +34,16 @@ interface AttendeeInput {
 interface MeetingFormProps {
   clients: ClientOption[];
   projects: ProjectOption[];
+  mode?: "create" | "edit";
+  meetingId?: string;
+  initialData?: {
+    title?: string;
+    clientId?: string;
+    projectId?: string;
+    date?: string;
+    time?: string;
+    location?: string;
+  };
 }
 
 const selectCn = cn(
@@ -42,15 +52,15 @@ const selectCn = cn(
   "disabled:cursor-not-allowed disabled:opacity-50"
 );
 
-export function MeetingForm({ clients, projects }: MeetingFormProps) {
+export function MeetingForm({ clients, projects, mode = "create", meetingId, initialData }: MeetingFormProps) {
   const router = useRouter();
 
-  const [title, setTitle] = useState("");
-  const [clientId, setClientId] = useState("");
-  const [projectId, setProjectId] = useState("");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [location, setLocation] = useState("");
+  const [title, setTitle] = useState(initialData?.title ?? "");
+  const [clientId, setClientId] = useState(initialData?.clientId ?? "");
+  const [projectId, setProjectId] = useState(initialData?.projectId ?? "");
+  const [date, setDate] = useState(initialData?.date ?? "");
+  const [time, setTime] = useState(initialData?.time ?? "");
+  const [location, setLocation] = useState(initialData?.location ?? "");
   const [attendees, setAttendees] = useState<AttendeeInput[]>([{ name: "", role: "" }]);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -99,22 +109,27 @@ export function MeetingForm({ clients, projects }: MeetingFormProps) {
     const validAttendees = attendees.filter((a) => a.name.trim());
 
     try {
-      const res = await fetch("/api/meetings", {
-        method: "POST",
+      const url = mode === "create" ? "/api/meetings" : `/api/meetings/${meetingId}`;
+      const method = mode === "create" ? "POST" : "PATCH";
+
+      const payload: Record<string, unknown> = {
+        title: title.trim(),
+        clientId,
+        projectId: projectId || undefined,
+        date: new Date(datetime).toISOString(),
+        location: location.trim() || undefined,
+      };
+      if (mode === "create" && validAttendees.length > 0) {
+        payload.attendees = validAttendees.map((a) => ({
+          name: a.name.trim(),
+          role: a.role.trim() || undefined,
+        }));
+      }
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: title.trim(),
-          clientId,
-          projectId: projectId || undefined,
-          date: new Date(datetime).toISOString(),
-          location: location.trim() || undefined,
-          attendees: validAttendees.length > 0
-            ? validAttendees.map((a) => ({
-                name: a.name.trim(),
-                role: a.role.trim() || undefined,
-              }))
-            : undefined,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const json = await res.json();
@@ -124,7 +139,7 @@ export function MeetingForm({ clients, projects }: MeetingFormProps) {
         return;
       }
 
-      const savedId: string = json.data?.id;
+      const savedId: string = json.data?.id ?? meetingId;
       router.push(`/meetings/${savedId}`);
       router.refresh();
     } catch {
@@ -321,7 +336,7 @@ export function MeetingForm({ clients, projects }: MeetingFormProps) {
                 취소
               </Button>
               <Button type="submit" disabled={submitting}>
-                {submitting ? "저장 중..." : "미팅 생성"}
+                {submitting ? "저장 중..." : mode === "create" ? "미팅 생성" : "변경 저장"}
               </Button>
             </div>
           </CardFooter>

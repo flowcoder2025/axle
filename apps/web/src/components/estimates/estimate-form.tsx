@@ -19,6 +19,13 @@ interface ClientOption {
 interface EstimateFormProps {
   clients: ClientOption[];
   defaultClientId?: string;
+  mode?: "create" | "edit";
+  estimateId?: string;
+  initialData?: {
+    clientId?: string;
+    validUntil?: string;
+    items?: EstimateItem[];
+  };
 }
 
 const EMPTY_ITEM: EstimateItem = {
@@ -31,11 +38,15 @@ const EMPTY_ITEM: EstimateItem = {
 const selectCn =
   "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
 
-export function EstimateForm({ clients, defaultClientId = "" }: EstimateFormProps) {
+export function EstimateForm({ clients, defaultClientId = "", mode = "create", estimateId, initialData }: EstimateFormProps) {
   const router = useRouter();
-  const [clientId, setClientId] = useState(defaultClientId);
-  const [validUntil, setValidUntil] = useState("");
-  const [items, setItems] = useState<EstimateItem[]>([{ ...EMPTY_ITEM }]);
+  const [clientId, setClientId] = useState(initialData?.clientId ?? defaultClientId);
+  const [validUntil, setValidUntil] = useState(initialData?.validUntil ?? "");
+  const [items, setItems] = useState<EstimateItem[]>(
+    initialData?.items && initialData.items.length > 0
+      ? initialData.items
+      : [{ ...EMPTY_ITEM }]
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,8 +89,11 @@ export function EstimateForm({ clients, defaultClientId = "" }: EstimateFormProp
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/estimates", {
-        method: "POST",
+      const url = mode === "create" ? "/api/estimates" : `/api/estimates/${estimateId}`;
+      const method = mode === "create" ? "POST" : "PATCH";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clientId,
@@ -97,7 +111,7 @@ export function EstimateForm({ clients, defaultClientId = "" }: EstimateFormProp
       }
 
       const data = await res.json();
-      router.push(`/estimates/${data.data.id}`);
+      router.push(`/estimates/${data.data?.id ?? estimateId}`);
     } catch {
       setError("네트워크 오류가 발생했습니다.");
     } finally {
@@ -255,7 +269,7 @@ export function EstimateForm({ clients, defaultClientId = "" }: EstimateFormProp
 
       <div className="flex gap-3">
         <Button type="submit" disabled={submitting}>
-          {submitting ? "저장 중..." : "견적서 생성"}
+          {submitting ? "저장 중..." : mode === "create" ? "견적서 생성" : "변경 저장"}
         </Button>
         <Button
           type="button"

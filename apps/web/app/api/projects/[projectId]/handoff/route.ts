@@ -6,7 +6,9 @@ import {
   handleInternalError,
   unauthorizedResponse,
 } from "@/lib/api-helpers";
+import { eventBus } from "@/lib/events/event-bus";
 import { executeHandoff } from "@/lib/services/project-handoff";
+import { requirePermission } from "@/lib/middleware/require-permission";
 
 type RouteContext = { params: Promise<{ projectId: string }> };
 
@@ -32,6 +34,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   try {
     const { projectId } = await params;
 
+    const denied = await requirePermission("project", projectId, "leader", user.id);
+    if (denied) return denied;
+
     let body: unknown;
     try {
       body = await req.json();
@@ -54,6 +59,15 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       initiatorId: user.id,
       orgId: user.orgId,
     });
+
+    // Fire-and-forget: emit HANDOFF event for notification dispatch
+    void eventBus
+      .emit("HANDOFF", {
+        projectId,
+        fromUserId: user.id,
+        toUserId: parsed.data.newAssigneeId,
+      })
+      .catch(console.error);
 
     return NextResponse.json({ data: result }, { status: 200 });
   } catch (err) {

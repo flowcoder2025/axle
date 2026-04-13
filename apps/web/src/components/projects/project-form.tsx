@@ -32,6 +32,9 @@ export interface ProjectFormData {
 interface ProjectFormProps {
   clients: ClientOption[];
   initialClientId?: string;
+  mode?: "create" | "edit";
+  projectId?: string;
+  initialData?: Partial<ProjectFormData>;
 }
 
 const EMPTY_FORM: ProjectFormData = {
@@ -84,11 +87,12 @@ const textareaCn = cn(
   "disabled:cursor-not-allowed disabled:opacity-50"
 );
 
-export function ProjectForm({ clients, initialClientId }: ProjectFormProps) {
+export function ProjectForm({ clients, initialClientId, mode = "create", projectId, initialData }: ProjectFormProps) {
   const router = useRouter();
   const [form, setForm] = useState<ProjectFormData>({
     ...EMPTY_FORM,
     clientId: initialClientId ?? "",
+    ...initialData,
   });
   const [errors, setErrors] = useState<Partial<Record<keyof ProjectFormData, string>>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -153,8 +157,11 @@ export function ProjectForm({ clients, initialClientId }: ProjectFormProps) {
     }
 
     try {
-      const res = await fetch("/api/projects", {
-        method: "POST",
+      const url = mode === "create" ? "/api/projects" : `/api/projects/${projectId}`;
+      const method = mode === "create" ? "POST" : "PATCH";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -166,7 +173,7 @@ export function ProjectForm({ clients, initialClientId }: ProjectFormProps) {
         return;
       }
 
-      const savedId: string = json.data?.id;
+      const savedId: string = json.data?.id ?? projectId;
       router.push(`/projects/${savedId}`);
       router.refresh();
     } catch {
@@ -424,7 +431,7 @@ export function ProjectForm({ clients, initialClientId }: ProjectFormProps) {
                 취소
               </Button>
               <Button type="submit" disabled={submitting}>
-                {submitting ? "저장 중..." : "프로젝트 추가"}
+                {submitting ? "저장 중..." : mode === "create" ? "프로젝트 추가" : "변경 저장"}
               </Button>
             </div>
           </CardFooter>

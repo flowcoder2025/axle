@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@axle/db";
+import { prisma, grant } from "@axle/db";
 import { getCurrentUser } from "@axle/auth";
 import { projectCreateSchema, projectSearchSchema } from "@/lib/validations/project";
 import { handleZodError, handleInternalError, unauthorizedResponse } from "@/lib/api-helpers";
+import { eventBus } from "@/lib/events/event-bus";
 import { Prisma } from "@prisma/client";
 import { createBundleChildren } from "@/lib/services/project-bundle";
 
@@ -153,6 +154,21 @@ export async function POST(req: NextRequest) {
 
       return created;
     });
+
+    // Grant the assignee "leader" relation on the newly created project (ReBAC)
+    if (project.assignedToId) {
+      await grant("project", project.id, "leader", "user", project.assignedToId);
+    }
+
+    // Fire-and-forget: emit PROJECT_ASSIGNED event when an assignee is set
+    if (project.assignedToId) {
+      void eventBus
+        .emit("PROJECT_ASSIGNED", {
+          projectId: project.id,
+          userId: project.assignedToId,
+        })
+        .catch(console.error);
+    }
 
     return NextResponse.json({ data: project }, { status: 201 });
   } catch (err) {

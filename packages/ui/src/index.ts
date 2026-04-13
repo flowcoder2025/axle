@@ -90,3 +90,14 @@ export {
 
 export { toast, Toaster } from "./components/toast.js";
 export type { ToasterProps } from "./components/toast.js";
+
+export {
+  Command,
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandSeparator,
+} from "./components/command.js";

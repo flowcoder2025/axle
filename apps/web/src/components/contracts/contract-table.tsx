@@ -127,7 +127,12 @@ export function ContractTable({
               contracts.map((contract) => (
                 <TableRow key={contract.id}>
                   <TableCell className="font-mono text-sm">
-                    {contract.contractNumber}
+                    <Link
+                      href={`/contracts/${contract.id}`}
+                      className="hover:text-primary hover:underline"
+                    >
+                      {contract.contractNumber}
+                    </Link>
                   </TableCell>
                   <TableCell>{contract.client.name}</TableCell>
                   <TableCell className="max-w-[200px] truncate">

@@ -127,7 +127,12 @@ export function EstimateTable({
               estimates.map((estimate) => (
                 <TableRow key={estimate.id}>
                   <TableCell className="font-mono text-sm">
-                    {estimate.estimateNumber}
+                    <Link
+                      href={`/estimates/${estimate.id}`}
+                      className="hover:text-primary hover:underline"
+                    >
+                      {estimate.estimateNumber}
+                    </Link>
                   </TableCell>
                   <TableCell>{estimate.client.name}</TableCell>
                   <TableCell className="text-right font-medium">

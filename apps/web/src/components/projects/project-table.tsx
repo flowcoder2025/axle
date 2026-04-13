@@ -15,7 +15,7 @@ import {
 } from "@axle/ui";
 import { ProjectStatusBadge } from "./project-status-badge";
 import { ProjectTypeBadge } from "./project-type-badge";
-import { ChevronUp, ChevronDown, Search } from "lucide-react";
+import { ChevronUp, ChevronDown, Search, Download } from "lucide-react";
 import type { ProjectType, ProjectStatus } from "@prisma/client";
 
 export interface ProjectRow {
@@ -132,6 +132,21 @@ export function ProjectTable({
         </form>
 
         <div className="flex gap-2 flex-wrap">
+          {/* CSV Export */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const params = new URLSearchParams();
+              if (currentType) params.set("type", currentType);
+              if (currentStatus) params.set("status", currentStatus);
+              const qs = params.toString();
+              window.open(`/api/projects/export${qs ? `?${qs}` : ""}`);
+            }}
+          >
+            <Download className="h-4 w-4 mr-1" />
+            내보내기
+          </Button>
           <select
             value={currentType}
             onChange={(e) => navigate({ type: e.target.value || undefined, page: "1" })}
@@ -206,7 +221,14 @@ export function ProjectTable({
               </TableRow>
             ) : (
               projects.map((project) => (
-                <TableRow key={project.id} className="hover:bg-muted/30">
+                <TableRow
+                  key={project.id}
+                  className="hover:bg-muted/30 cursor-pointer"
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("[data-radix-collection-item], button, a")) return;
+                    router.push(`/projects/${project.id}`);
+                  }}
+                >
                   <TableCell>
                     <Link
                       href={`/projects/${project.id}`}

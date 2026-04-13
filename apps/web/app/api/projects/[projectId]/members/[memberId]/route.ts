@@ -8,6 +8,7 @@ import {
   unauthorizedResponse,
   notFoundResponse,
 } from "@/lib/api-helpers";
+import { requirePermission } from "@/lib/middleware/require-permission";
 
 type RouteContext = { params: Promise<{ projectId: string; memberId: string }> };
 
@@ -61,6 +62,9 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     const { projectId, memberId } = await params;
     const result = await resolveMember(projectId, memberId, user.orgId);
     if (!result.ok) return result.response;
+
+    const denied = await requirePermission("project", projectId, "leader", user.id);
+    if (denied) return denied;
 
     let body: unknown;
     try {
@@ -132,6 +136,9 @@ export async function DELETE(_req: NextRequest, { params }: RouteContext) {
     const { projectId, memberId } = await params;
     const result = await resolveMember(projectId, memberId, user.orgId);
     if (!result.ok) return result.response;
+
+    const denied = await requirePermission("project", projectId, "leader", user.id);
+    if (denied) return denied;
 
     const { userId, role } = result.member;
 

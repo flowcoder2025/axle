@@ -1,7 +1,11 @@
 import { getCurrentUser } from "@axle/auth";
 import { prisma } from "@axle/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@axle/ui";
+import Link from "next/link";
 import { ExpiringDocumentsWidget } from "../../../src/components/documents/expiring-documents-widget";
+import { UpcomingMeetingsWidget } from "../../../src/components/dashboard/upcoming-meetings-widget";
+import { DeadlineProjectsWidget } from "../../../src/components/dashboard/deadline-projects-widget";
+import { RecentActivityWidget } from "../../../src/components/dashboard/recent-activity-widget";
 
 export const metadata = {
   title: "Dashboard | AXLE",
@@ -42,10 +46,10 @@ export default async function DashboardPage() {
     : [0, 0, 0, 0];
 
   const STAT_CARDS = [
-    { title: "활성 프로젝트", value: String(projectCount), description: "진행 중인 프로젝트" },
-    { title: "등록 고객", value: String(clientCount), description: "전체 고객 수" },
-    { title: "이번 달 미팅", value: String(meetingCount), description: "예정된 미팅 수" },
-    { title: "미결 서류", value: String(pendingDocs), description: "검토 대기 중인 서류" },
+    { title: "활성 프로젝트", value: String(projectCount), description: "진행 중인 프로젝트", href: "/projects" },
+    { title: "등록 고객", value: String(clientCount), description: "전체 고객 수", href: "/clients" },
+    { title: "이번 달 미팅", value: String(meetingCount), description: "예정된 미팅 수", href: "/meetings" },
+    { title: "미결 서류", value: String(pendingDocs), description: "검토 대기 중인 서류", href: "/documents" },
   ];
 
   return (
@@ -61,22 +65,27 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {STAT_CARDS.map((card) => (
-          <Card key={card.title} className="border bg-card">
-            <CardHeader className="pb-2">
-              <CardDescription className="text-xs font-medium uppercase tracking-wider">
-                {card.title}
-              </CardDescription>
-              <CardTitle className="text-3xl font-bold">{card.value}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">{card.description}</p>
-            </CardContent>
-          </Card>
+          <Link key={card.title} href={card.href} className="block">
+            <Card className="border bg-card transition-colors hover:border-primary/50 hover:bg-accent/50">
+              <CardHeader className="pb-2">
+                <CardDescription className="text-xs font-medium uppercase tracking-wider">
+                  {card.title}
+                </CardDescription>
+                <CardTitle className="text-3xl font-bold">{card.value}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground">{card.description}</p>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ExpiringDocumentsWidget />
+        <UpcomingMeetingsWidget />
+        <DeadlineProjectsWidget />
+        <RecentActivityWidget />
       </div>
     </div>
   );

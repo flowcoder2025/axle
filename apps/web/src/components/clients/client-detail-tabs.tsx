@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { ContactList } from "../contacts/contact-list";
 import { CertificateList } from "../certificates/certificate-list";
+import { ClientProjectList } from "./client-project-list";
+import { ClientAchievementList } from "./client-achievement-list";
 
 // ---------------------------------------------------------------------------
 // Minimal Client shape passed from server component
@@ -38,6 +40,7 @@ const TABS = [
   { id: "contacts", label: "인물" },
   { id: "certificates", label: "인증서" },
   { id: "projects", label: "프로젝트" },
+  { id: "achievements", label: "성과" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -81,9 +84,10 @@ export function ClientDetailTabs({ clientId, client }: ClientDetailTabsProps) {
           <CertificateList clientId={clientId} />
         )}
         {activeTab === "projects" && (
-          <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
-            프로젝트 탭은 추후 구현 예정입니다.
-          </div>
+          <ClientProjectList clientId={clientId} />
+        )}
+        {activeTab === "achievements" && (
+          <ClientAchievementList clientId={clientId} />
         )}
       </div>
     </div>

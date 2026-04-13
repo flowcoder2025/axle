@@ -82,7 +82,26 @@ export default async function ClientDetailPage({ params }: PageProps) {
       </div>
 
       {/* Tabs — client component handles active tab state */}
-      <ClientDetailTabs clientId={clientId} client={client} />
+      <ClientDetailTabs
+        clientId={clientId}
+        client={{
+          id: client.id,
+          name: client.name,
+          businessNumber: client.businessNumber,
+          ceoName: client.ceoName,
+          industry: client.industry,
+          address: client.address,
+          phone: client.phone,
+          email: client.email,
+          website: client.website,
+          memo: client.memo,
+          region: client.region,
+          isVenture: client.isVenture,
+          isInnoBiz: client.isInnoBiz,
+          isMainBiz: client.isMainBiz,
+          isSocial: client.isSocial,
+        }}
+      />
     </div>
   );
 }

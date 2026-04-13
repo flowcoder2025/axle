@@ -71,7 +71,7 @@ apps/web/src/components/projects/project-detail-tabs.tsx  # 수정: 탭 확장
 - Create: `packages/ai/src/providers/anthropic.ts`
 - Create: `packages/ai/__tests__/providers/anthropic.test.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
 // packages/ai/__tests__/providers/anthropic.test.ts
@@ -121,12 +121,12 @@ describe("AnthropicProvider", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd /Volumes/포터블/AXLE && npx vitest run packages/ai/__tests__/providers/anthropic.test.ts`
 Expected: FAIL — module not found
 
-- [ ] **Step 3: Create provider types**
+- [x] **Step 3: Create provider types**
 
 ```typescript
 // packages/ai/src/providers/types.ts
@@ -152,7 +152,7 @@ export interface AiProvider {
 }
 ```
 
-- [ ] **Step 4: Implement AnthropicProvider**
+- [x] **Step 4: Implement AnthropicProvider**
 
 ```typescript
 // packages/ai/src/providers/anthropic.ts
@@ -206,12 +206,12 @@ export class AnthropicProvider implements AiProvider {
 }
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `cd /Volumes/포터블/AXLE && npx vitest run packages/ai/__tests__/providers/anthropic.test.ts`
 Expected: PASS (4 tests)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/ai/src/providers/types.ts packages/ai/src/providers/anthropic.ts packages/ai/__tests__/providers/anthropic.test.ts
@@ -228,7 +228,7 @@ git commit -m "feat: add AiProvider interface and AnthropicProvider"
 - Create: `packages/ai/__tests__/providers/local-mlx.test.ts`
 - Create: `packages/ai/__tests__/providers/claude-cli.test.ts`
 
-- [ ] **Step 1: Write tests for LocalMlxProvider**
+- [x] **Step 1: Write tests for LocalMlxProvider**
 
 ```typescript
 // packages/ai/__tests__/providers/local-mlx.test.ts
@@ -282,7 +282,7 @@ describe("LocalMlxProvider", () => {
 });
 ```
 
-- [ ] **Step 2: Write tests for ClaudeCliProvider**
+- [x] **Step 2: Write tests for ClaudeCliProvider**
 
 ```typescript
 // packages/ai/__tests__/providers/claude-cli.test.ts
@@ -313,12 +313,12 @@ describe("ClaudeCliProvider", () => {
 });
 ```
 
-- [ ] **Step 3: Run tests to verify they fail**
+- [x] **Step 3: Run tests to verify they fail**
 
 Run: `cd /Volumes/포터블/AXLE && npx vitest run packages/ai/__tests__/providers/local-mlx.test.ts packages/ai/__tests__/providers/claude-cli.test.ts`
 Expected: FAIL — modules not found
 
-- [ ] **Step 4: Implement LocalMlxProvider**
+- [x] **Step 4: Implement LocalMlxProvider**
 
 ```typescript
 // packages/ai/src/providers/local-mlx.ts
@@ -377,7 +377,7 @@ export class LocalMlxProvider implements AiProvider {
 }
 ```
 
-- [ ] **Step 5: Implement ClaudeCliProvider**
+- [x] **Step 5: Implement ClaudeCliProvider**
 
 ```typescript
 // packages/ai/src/providers/claude-cli.ts
@@ -417,12 +417,12 @@ export class ClaudeCliProvider implements AiProvider {
 }
 ```
 
-- [ ] **Step 6: Run tests to verify they pass**
+- [x] **Step 6: Run tests to verify they pass**
 
 Run: `cd /Volumes/포터블/AXLE && npx vitest run packages/ai/__tests__/providers/local-mlx.test.ts packages/ai/__tests__/providers/claude-cli.test.ts`
 Expected: PASS
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/ai/src/providers/local-mlx.ts packages/ai/src/providers/claude-cli.ts packages/ai/__tests__/providers/local-mlx.test.ts packages/ai/__tests__/providers/claude-cli.test.ts
@@ -440,7 +440,7 @@ git commit -m "feat: add LocalMlxProvider and ClaudeCliProvider"
 - Modify: `packages/ai/src/index.ts`
 - Create: `packages/ai/__tests__/providers/registry.test.ts`
 
-- [ ] **Step 1: Write registry test**
+- [x] **Step 1: Write registry test**
 
 ```typescript
 // packages/ai/__tests__/providers/registry.test.ts
@@ -479,12 +479,12 @@ describe("Provider Registry", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd /Volumes/포터블/AXLE && npx vitest run packages/ai/__tests__/providers/registry.test.ts`
 Expected: FAIL
 
-- [ ] **Step 3: Implement registry**
+- [x] **Step 3: Implement registry**
 
 ```typescript
 // packages/ai/src/providers/index.ts
@@ -531,7 +531,7 @@ export async function resolveProvider(
 }
 ```
 
-- [ ] **Step 4: Update claude.ts to delegate to AnthropicProvider**
+- [x] **Step 4: Update claude.ts to delegate to AnthropicProvider**
 
 ```typescript
 // packages/ai/src/claude.ts
@@ -561,7 +561,7 @@ export async function complete(input: ClaudeCompletionInput): Promise<string> {
 }
 ```
 
-- [ ] **Step 5: Update index.ts exports**
+- [x] **Step 5: Update index.ts exports**
 
 Add these lines to the end of `packages/ai/src/index.ts`:
 
@@ -574,12 +574,12 @@ export { LocalMlxProvider } from "./providers/index.js";
 export { ClaudeCliProvider } from "./providers/index.js";
 ```
 
-- [ ] **Step 6: Run all ai package tests**
+- [x] **Step 6: Run all ai package tests**
 
 Run: `cd /Volumes/포터블/AXLE && npx vitest run packages/ai/`
 Expected: ALL PASS (existing + new tests)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/ai/src/providers/index.ts packages/ai/src/claude.ts packages/ai/src/index.ts packages/ai/__tests__/providers/registry.test.ts
@@ -596,7 +596,7 @@ git commit -m "feat: add provider registry and integrate with router"
 - Create: `packages/ai/__tests__/verification/pre-submission.test.ts`
 - Modify: `packages/ai/src/index.ts`
 
-- [ ] **Step 1: Write test**
+- [x] **Step 1: Write test**
 
 ```typescript
 // packages/ai/__tests__/verification/pre-submission.test.ts
@@ -657,12 +657,12 @@ describe("verifyPreSubmission", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd /Volumes/포터블/AXLE && npx vitest run packages/ai/__tests__/verification/pre-submission.test.ts`
 Expected: FAIL
 
-- [ ] **Step 3: Implement types**
+- [x] **Step 3: Implement types**
 
 ```typescript
 // packages/ai/src/verification/types.ts
@@ -692,7 +692,7 @@ export interface VerificationResult {
 }
 ```
 
-- [ ] **Step 4: Implement pre-submission verification**
+- [x] **Step 4: Implement pre-submission verification**
 
 ```typescript
 // packages/ai/src/verification/pre-submission.ts
@@ -754,7 +754,7 @@ export function verifyPreSubmission(doc: DocumentData): VerificationResult {
 }
 ```
 
-- [ ] **Step 5: Update index.ts exports**
+- [x] **Step 5: Update index.ts exports**
 
 Add to `packages/ai/src/index.ts`:
 
@@ -764,17 +764,17 @@ export { verifyPreSubmission } from "./verification/pre-submission.js";
 export type { DocumentData, VerificationResult, VerificationIssue } from "./verification/types.js";
 ```
 
-- [ ] **Step 6: Run tests**
+- [x] **Step 6: Run tests**
 
 Run: `cd /Volumes/포터블/AXLE && npx vitest run packages/ai/`
 Expected: ALL PASS
 
-- [ ] **Step 7: Run build**
+- [x] **Step 7: Run build**
 
 Run: `cd /Volumes/포터블/AXLE && npx turbo build --filter=@axle/ai`
 Expected: PASS
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add packages/ai/src/verification/ packages/ai/__tests__/verification/ packages/ai/src/index.ts
@@ -790,7 +790,7 @@ git commit -m "feat: add pre-submission verification module"
 - Create: `packages/docgen/__tests__/converters/text-parser.test.ts`
 - Modify: `packages/docgen/src/index.ts`
 
-- [ ] **Step 1: Write test**
+- [x] **Step 1: Write test**
 
 ```typescript
 // packages/docgen/__tests__/converters/text-parser.test.ts
@@ -851,12 +851,12 @@ describe("extractText", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd /Volumes/포터블/AXLE && npx vitest run packages/docgen/__tests__/converters/text-parser.test.ts`
 Expected: FAIL
 
-- [ ] **Step 3: Implement text-parser**
+- [x] **Step 3: Implement text-parser**
 
 ```typescript
 // packages/docgen/src/converters/text-parser.ts
@@ -951,7 +951,7 @@ async function extractDocx(buffer: Buffer): Promise<ParseResult> {
 }
 ```
 
-- [ ] **Step 4: Update docgen index.ts**
+- [x] **Step 4: Update docgen index.ts**
 
 Add to `packages/docgen/src/index.ts`:
 ```typescript
@@ -959,12 +959,12 @@ export { extractText } from "./converters/text-parser.js";
 export type { ParseResult } from "./converters/text-parser.js";
 ```
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 Run: `cd /Volumes/포터블/AXLE && npx vitest run packages/docgen/__tests__/converters/text-parser.test.ts`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/docgen/src/converters/text-parser.ts packages/docgen/__tests__/converters/text-parser.test.ts packages/docgen/src/index.ts
@@ -982,7 +982,7 @@ git commit -m "feat: add text-parser for PDF/HWPX/DOCX extraction"
 - Create: `packages/docgen/__tests__/converters/mermaid-to-png.test.ts`
 - Modify: `packages/docgen/src/index.ts`
 
-- [ ] **Step 1: Write image-generator test**
+- [x] **Step 1: Write image-generator test**
 
 ```typescript
 // packages/docgen/__tests__/generators/image-generator.test.ts
@@ -1026,7 +1026,7 @@ describe("generateImage", () => {
 });
 ```
 
-- [ ] **Step 2: Write mermaid-to-png test**
+- [x] **Step 2: Write mermaid-to-png test**
 
 ```typescript
 // packages/docgen/__tests__/converters/mermaid-to-png.test.ts
@@ -1059,12 +1059,12 @@ describe("convertMermaid", () => {
 });
 ```
 
-- [ ] **Step 3: Run tests to verify they fail**
+- [x] **Step 3: Run tests to verify they fail**
 
 Run: `cd /Volumes/포터블/AXLE && npx vitest run packages/docgen/__tests__/generators/image-generator.test.ts packages/docgen/__tests__/converters/mermaid-to-png.test.ts`
 Expected: FAIL
 
-- [ ] **Step 4: Implement image-generator**
+- [x] **Step 4: Implement image-generator**
 
 ```typescript
 // packages/docgen/src/generators/image-generator.ts
@@ -1106,7 +1106,7 @@ export async function generateImage(
 }
 ```
 
-- [ ] **Step 5: Implement mermaid-to-png**
+- [x] **Step 5: Implement mermaid-to-png**
 
 ```typescript
 // packages/docgen/src/converters/mermaid-to-png.ts
@@ -1154,7 +1154,7 @@ export async function convertMermaid(
 }
 ```
 
-- [ ] **Step 6: Update docgen index.ts**
+- [x] **Step 6: Update docgen index.ts**
 
 Add to `packages/docgen/src/index.ts`:
 ```typescript
@@ -1164,12 +1164,12 @@ export { convertMermaid } from "./converters/mermaid-to-png.js";
 export type { MermaidOptions } from "./converters/mermaid-to-png.js";
 ```
 
-- [ ] **Step 7: Run tests**
+- [x] **Step 7: Run tests**
 
 Run: `cd /Volumes/포터블/AXLE && npx vitest run packages/docgen/`
 Expected: ALL PASS
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add packages/docgen/src/generators/image-generator.ts packages/docgen/src/converters/mermaid-to-png.ts packages/docgen/__tests__/generators/image-generator.test.ts packages/docgen/__tests__/converters/mermaid-to-png.test.ts packages/docgen/src/index.ts
@@ -1186,7 +1186,7 @@ git commit -m "feat: add image-generator and mermaid-to-png converters"
 - Modify: `apps/web/app/api/schedules/route.ts`
 - Modify: `apps/web/app/api/schedules/[scheduleId]/route.ts`
 
-- [ ] **Step 1: Write test**
+- [x] **Step 1: Write test**
 
 ```typescript
 // apps/web/__tests__/services/schedule-service.test.ts
@@ -1232,7 +1232,7 @@ describe("ScheduleService", () => {
 });
 ```
 
-- [ ] **Step 2: Implement schedule-service.ts**
+- [x] **Step 2: Implement schedule-service.ts**
 
 ```typescript
 // apps/web/lib/services/schedule-service.ts
@@ -1349,7 +1349,7 @@ export async function deleteSchedule(id: string, orgId: string) {
 }
 ```
 
-- [ ] **Step 3: Update API routes to use service**
+- [x] **Step 3: Update API routes to use service**
 
 Replace inline logic in `apps/web/app/api/schedules/route.ts`:
 - GET: call `listSchedules(user.orgId, parsed.data)` → return result
@@ -1360,12 +1360,12 @@ Replace inline logic in `apps/web/app/api/schedules/[scheduleId]/route.ts`:
 - PATCH: call `updateSchedule(scheduleId, user.orgId, parsed.data)`
 - DELETE: call `deleteSchedule(scheduleId, user.orgId)`
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `cd /Volumes/포터블/AXLE && npx vitest run apps/web/__tests__/services/schedule-service.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/lib/services/schedule-service.ts apps/web/__tests__/services/schedule-service.test.ts apps/web/app/api/schedules/
@@ -1382,7 +1382,7 @@ git commit -m "refactor: extract schedule service from API routes"
 - Modify: `apps/web/app/api/programs/route.ts`
 - Modify: `apps/web/app/api/programs/[programId]/route.ts`
 
-- [ ] **Step 1: Write test**
+- [x] **Step 1: Write test**
 
 ```typescript
 // apps/web/__tests__/services/program-deadline.test.ts
@@ -1447,7 +1447,7 @@ describe("ProgramDeadlineService", () => {
 });
 ```
 
-- [ ] **Step 2: Implement program-deadline.ts**
+- [x] **Step 2: Implement program-deadline.ts**
 
 ```typescript
 // apps/web/lib/services/program-deadline.ts
@@ -1548,17 +1548,17 @@ export async function deleteProgramWithDeadlines(programId: string) {
 }
 ```
 
-- [ ] **Step 3: Update programs API routes to use service**
+- [x] **Step 3: Update programs API routes to use service**
 
 Replace inline transaction logic in `apps/web/app/api/programs/route.ts` POST with `createProgramWithDeadlines()`.
 Replace inline transaction logic in `apps/web/app/api/programs/[programId]/route.ts` PATCH/DELETE with `syncDeadlines()` / `deleteProgramWithDeadlines()`.
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `cd /Volumes/포터블/AXLE && npx vitest run apps/web/__tests__/services/program-deadline.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/lib/services/program-deadline.ts apps/web/__tests__/services/program-deadline.test.ts apps/web/app/api/programs/
@@ -1573,7 +1573,7 @@ git commit -m "refactor: extract program-deadline service from API routes"
 - Modify: `apps/web/lib/services/meeting-summary.ts`
 - Modify: `apps/web/__tests__/services/meeting-summary.test.ts` (or create)
 
-- [ ] **Step 1: Write test**
+- [x] **Step 1: Write test**
 
 ```typescript
 // apps/web/__tests__/services/meeting-summary.test.ts
@@ -1626,7 +1626,7 @@ describe("generateSummary", () => {
 });
 ```
 
-- [ ] **Step 2: Update meeting-summary.ts**
+- [x] **Step 2: Update meeting-summary.ts**
 
 ```typescript
 // apps/web/lib/services/meeting-summary.ts
@@ -1706,12 +1706,12 @@ export async function generateSummary(meetingId: string): Promise<void> {
 }
 ```
 
-- [ ] **Step 3: Run test**
+- [x] **Step 3: Run test**
 
 Run: `cd /Volumes/포터블/AXLE && npx vitest run apps/web/__tests__/services/meeting-summary.test.ts`
 Expected: PASS
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/web/lib/services/meeting-summary.ts apps/web/__tests__/services/meeting-summary.test.ts
@@ -1725,11 +1725,11 @@ git commit -m "feat: wire AI provider into meeting summary generation"
 **Files:**
 - Modify: `apps/web/lib/services/journal-draft.ts`
 
-- [ ] **Step 1: Write test**
+- [x] **Step 1: Write test**
 
 Same pattern as Task 9 — mock `resolveProvider`, verify `prisma.researchJournal.update` called with AI-generated content.
 
-- [ ] **Step 2: Update journal-draft.ts**
+- [x] **Step 2: Update journal-draft.ts**
 
 Add after AiJob creation (replace Phase 14 TODO block):
 
@@ -1763,7 +1763,7 @@ await prisma.researchJournal.update({
 await updateJobStatus(job.id, { status: "COMPLETED", output: parsed as Record<string, unknown> });
 ```
 
-- [ ] **Step 3: Run test and commit**
+- [x] **Step 3: Run test and commit**
 
 ```bash
 git add apps/web/lib/services/journal-draft.ts apps/web/__tests__/services/journal-draft.test.ts
@@ -1779,7 +1779,7 @@ git commit -m "feat: wire AI provider into journal draft generation"
 - Create: `apps/web/app/api/analytics/narrative/route.ts`
 - Create: `apps/web/__tests__/services/financial-narrative.test.ts`
 
-- [ ] **Step 1: Write test**
+- [x] **Step 1: Write test**
 
 ```typescript
 // apps/web/__tests__/services/financial-narrative.test.ts
@@ -1830,7 +1830,7 @@ describe("generateFinancialNarrative", () => {
 });
 ```
 
-- [ ] **Step 2: Implement service**
+- [x] **Step 2: Implement service**
 
 ```typescript
 // apps/web/lib/services/financial-narrative.ts
@@ -1871,7 +1871,7 @@ export async function generateFinancialNarrative(clientId: string, year: number)
 }
 ```
 
-- [ ] **Step 3: Implement API route**
+- [x] **Step 3: Implement API route**
 
 ```typescript
 // apps/web/app/api/analytics/narrative/route.ts
@@ -1908,12 +1908,12 @@ export async function POST(req: NextRequest) {
 }
 ```
 
-- [ ] **Step 4: Run test**
+- [x] **Step 4: Run test**
 
 Run: `cd /Volumes/포터블/AXLE && npx vitest run apps/web/__tests__/services/financial-narrative.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/lib/services/financial-narrative.ts apps/web/app/api/analytics/narrative/route.ts apps/web/__tests__/services/financial-narrative.test.ts
@@ -1929,7 +1929,7 @@ git commit -m "feat: add financial narrative AI generation service and API"
 - Create: `apps/web/src/components/projects/member-list.tsx`
 - Create: `apps/web/src/components/projects/add-member-dialog.tsx`
 
-- [ ] **Step 1: Create member-role-select.tsx**
+- [x] **Step 1: Create member-role-select.tsx**
 
 ```tsx
 // apps/web/src/components/projects/member-role-select.tsx
@@ -1965,7 +1965,7 @@ export function MemberRoleSelect({ value, onChange, disabled }: MemberRoleSelect
 }
 ```
 
-- [ ] **Step 2: Create member-list.tsx**
+- [x] **Step 2: Create member-list.tsx**
 
 ```tsx
 // apps/web/src/components/projects/member-list.tsx
@@ -2060,7 +2060,7 @@ export function MemberList({ projectId, currentUserRole }: MemberListProps) {
 }
 ```
 
-- [ ] **Step 3: Create add-member-dialog.tsx**
+- [x] **Step 3: Create add-member-dialog.tsx**
 
 ```tsx
 // apps/web/src/components/projects/add-member-dialog.tsx
@@ -2182,7 +2182,7 @@ export function AddMemberDialog({ projectId, open, onOpenChange, onMemberAdded }
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/web/src/components/projects/member-role-select.tsx apps/web/src/components/projects/member-list.tsx apps/web/src/components/projects/add-member-dialog.tsx
@@ -2197,7 +2197,7 @@ git commit -m "feat: add member management UI components"
 - Create: `apps/web/src/components/projects/handoff-form.tsx`
 - Create: `apps/web/src/components/projects/handoff-summary.tsx`
 
-- [ ] **Step 1: Create handoff-form.tsx**
+- [x] **Step 1: Create handoff-form.tsx**
 
 ```tsx
 // apps/web/src/components/projects/handoff-form.tsx
@@ -2324,7 +2324,7 @@ export function HandoffForm({ projectId, onHandoffComplete }: HandoffFormProps) 
 }
 ```
 
-- [ ] **Step 2: Create handoff-summary.tsx**
+- [x] **Step 2: Create handoff-summary.tsx**
 
 ```tsx
 // apps/web/src/components/projects/handoff-summary.tsx
@@ -2395,7 +2395,7 @@ export function HandoffSummary({ projectId }: HandoffSummaryProps) {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/web/src/components/projects/handoff-form.tsx apps/web/src/components/projects/handoff-summary.tsx
@@ -2409,7 +2409,7 @@ git commit -m "feat: add handoff form and summary UI components"
 **Files:**
 - Modify: `apps/web/src/components/projects/project-detail-tabs.tsx`
 
-- [ ] **Step 1: Update TABS array and imports**
+- [x] **Step 1: Update TABS array and imports**
 
 Replace the entire file with expanded version — add imports for all tab components and extend TABS array with members, activity, handoff, ai_jobs.
 
@@ -2445,12 +2445,12 @@ Replace placeholder panels:
 - `handoff` → `<HandoffForm>` + `<HandoffSummary>`
 - `ai_jobs` → Simple AiJob list table (fetch from `/api/projects/{id}` with `aiJobs` include)
 
-- [ ] **Step 2: Run build to verify**
+- [x] **Step 2: Run build to verify**
 
 Run: `cd /Volumes/포터블/AXLE && npx turbo build --filter=web`
 Expected: PASS
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/web/src/components/projects/project-detail-tabs.tsx
@@ -2465,7 +2465,7 @@ git commit -m "feat: expand ProjectDetailTabs with all 8 tabs"
 - Modify: `apps/web/package.json` (Next.js version)
 - Modify: `packages/db/package.json` (Prisma version)
 
-- [ ] **Step 1: Check available versions**
+- [x] **Step 1: Check available versions**
 
 Run:
 ```bash
@@ -2476,7 +2476,7 @@ npm view prisma version
 If Next.js 16 stable and Prisma 7 stable exist → upgrade.
 If not available → skip, keep current versions.
 
-- [ ] **Step 2: Upgrade (if available)**
+- [x] **Step 2: Upgrade (if available)**
 
 ```bash
 cd /Volumes/포터블/AXLE
@@ -2486,7 +2486,7 @@ cd /Volumes/포터블/AXLE
 # cd packages/db && npx prisma generate
 ```
 
-- [ ] **Step 3: Full verification**
+- [x] **Step 3: Full verification**
 
 ```bash
 cd /Volumes/포터블/AXLE
@@ -2498,11 +2498,11 @@ npx turbo test
 
 Expected: ALL PASS
 
-- [ ] **Step 4: Fix any failures**
+- [x] **Step 4: Fix any failures**
 
 If any check fails, fix the root cause and re-run.
 
-- [ ] **Step 5: Final commit**
+- [x] **Step 5: Final commit**
 
 ```bash
 git add -A

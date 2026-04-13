@@ -2,7 +2,8 @@ import { getCurrentUser } from "@axle/auth";
 import { prisma } from "@axle/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Button, Badge, Card, CardContent, CardHeader, CardTitle } from "@axle/ui";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@axle/ui";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { EstimateActions } from "../../../../src/components/estimates/estimate-actions";
 import type { EstimateStatus } from "@prisma/client";
 
@@ -50,6 +51,19 @@ export default async function EstimateDetailPage({ params }: PageProps) {
 
   return (
     <div className="max-w-3xl space-y-6">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link
+          href="/estimates"
+          className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          견적 목록
+        </Link>
+        <span>/</span>
+        <span className="text-foreground font-medium">{estimate.estimateNumber}</span>
+      </div>
+
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3">
@@ -62,11 +76,21 @@ export default async function EstimateDetailPage({ params }: PageProps) {
             고객사: {estimate.client.name}
           </p>
         </div>
-        <EstimateActions
-          estimateId={estimateId}
-          status={estimate.status}
-          estimateNumber={estimate.estimateNumber}
-        />
+        <div className="flex items-center gap-2">
+          {(estimate.status === "DRAFT" || estimate.status === "SENT") && (
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/estimates/${estimateId}/edit`}>
+                <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                편집
+              </Link>
+            </Button>
+          )}
+          <EstimateActions
+            estimateId={estimateId}
+            status={estimate.status}
+            estimateNumber={estimate.estimateNumber}
+          />
+        </div>
       </div>
 
       <Card>

@@ -8,6 +8,7 @@ import {
   unauthorizedResponse,
 } from "@/lib/api-helpers";
 import { resolveProject } from "@/lib/utils/resolve-project";
+import { requirePermission } from "@/lib/middleware/require-permission";
 
 type RouteContext = { params: Promise<{ projectId: string }> };
 
@@ -72,6 +73,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     const { projectId } = await params;
     const result = await resolveProject(projectId, user.orgId);
     if (!result.ok) return result.response;
+
+    const denied = await requirePermission("project", projectId, "leader", user.id);
+    if (denied) return denied;
 
     let body: unknown;
     try {

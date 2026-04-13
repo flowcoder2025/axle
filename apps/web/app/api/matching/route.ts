@@ -10,6 +10,7 @@ import {
   unauthorizedResponse,
   notFoundResponse,
 } from "@/lib/api-helpers";
+import { eventBus } from "@/lib/events/event-bus";
 
 // POST /api/matching — run matching for a client, persist results, return sorted list
 export async function POST(req: NextRequest) {
@@ -126,6 +127,19 @@ export async function POST(req: NextRequest) {
         createdAt: record?.createdAt?.toISOString() ?? null,
       };
     });
+
+    // Fire-and-forget: emit MATCHING_RESULT events for each high-scoring match
+    for (const r of data) {
+      if (r.id) {
+        void eventBus
+          .emit("MATCHING_RESULT", {
+            matchingId: r.id,
+            assigneeId: user.id,
+            score: r.score,
+          })
+          .catch(console.error);
+      }
+    }
 
     return NextResponse.json({ data });
   } catch (err) {

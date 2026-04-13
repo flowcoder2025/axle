@@ -7,6 +7,7 @@ import {
   handleInternalError,
   unauthorizedResponse,
 } from "@/lib/api-helpers";
+import { eventBus } from "@/lib/events/event-bus";
 import { Prisma } from "@prisma/client";
 
 // GET /api/meetings — list meetings with filtering and pagination
@@ -119,6 +120,18 @@ export async function POST(req: NextRequest) {
         _count: { select: { attendees: true } },
       },
     });
+
+    // Fire-and-forget: emit MEETING_SCHEDULED event for notification dispatch
+    void eventBus
+      .emit("MEETING_SCHEDULED", {
+        meetingId: meeting.id,
+        projectId: rest.projectId ?? "",
+        attendeeIds: (meeting.attendees ?? [])
+          .map((a: { userId?: string | null }) => a.userId)
+          .filter((id): id is string => !!id),
+        scheduledAt: new Date(date),
+      })
+      .catch(console.error);
 
     return NextResponse.json({ data: meeting }, { status: 201 });
   } catch (err) {

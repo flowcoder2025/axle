@@ -9,6 +9,7 @@ import {
   unauthorizedResponse,
   notFoundResponse,
 } from "@/lib/api-helpers";
+import { eventBus } from "@/lib/events/event-bus";
 import { extractAndStorePattern } from "@axle/ai";
 
 type RouteContext = { params: Promise<{ jobId: string }> };
@@ -138,6 +139,35 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         output: updated.output,
         success: true,
       });
+    }
+
+    // Fire-and-forget: emit AI_JOB_COMPLETE or AI_JOB_FAILED for notification dispatch
+    if (status === "COMPLETED" || status === "FAILED") {
+      // Resolve assignee from the linked project
+      const jobWithProject = await prisma.aiJob.findUnique({
+        where: { id: jobId },
+        select: { projectId: true, project: { select: { assignedToId: true } } },
+      });
+      const assigneeId = jobWithProject?.project?.assignedToId ?? user.id;
+
+      if (status === "COMPLETED") {
+        void eventBus
+          .emit("AI_JOB_COMPLETE", {
+            jobId: updated.id,
+            jobType: updated.type,
+            assigneeId,
+          })
+          .catch(console.error);
+      } else {
+        void eventBus
+          .emit("AI_JOB_FAILED", {
+            jobId: updated.id,
+            jobType: updated.type,
+            assigneeId,
+            errorMessage: updated.errorMessage ?? "Unknown error",
+          })
+          .catch(console.error);
+      }
     }
 
     return NextResponse.json({ data: updated });

@@ -14,6 +14,7 @@ import {
   unauthorizedResponse,
 } from "@/lib/api-helpers";
 import { triggerDocumentOcr } from "@/lib/services/document-ocr";
+import { eventBus } from "@/lib/events/event-bus";
 import { Prisma } from "@prisma/client";
 
 // GET /api/documents — list documents with filtering and pagination
@@ -198,6 +199,15 @@ export async function POST(req: NextRequest) {
 
     // Fire-and-forget: trigger OCR for eligible file types without blocking the 201 response
     void triggerDocumentOcr(document.id);
+
+    // Fire-and-forget: emit DOC_UPLOADED event for notification dispatch
+    void eventBus
+      .emit("DOC_UPLOADED", {
+        documentId: document.id,
+        clientId: document.clientId,
+        uploaderId: user.id,
+      })
+      .catch(console.error);
 
     return NextResponse.json({ data: document }, { status: 201 });
   } catch (err) {

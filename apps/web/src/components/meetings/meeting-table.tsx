@@ -173,7 +173,14 @@ export function MeetingTable({
               </TableRow>
             ) : (
               meetings.map((meeting) => (
-                <TableRow key={meeting.id} className="hover:bg-muted/30">
+                <TableRow
+                  key={meeting.id}
+                  className="hover:bg-muted/30 cursor-pointer"
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("[data-radix-collection-item], button, a")) return;
+                    router.push(`/meetings/${meeting.id}`);
+                  }}
+                >
                   <TableCell>
                     <Link
                       href={`/meetings/${meeting.id}`}
