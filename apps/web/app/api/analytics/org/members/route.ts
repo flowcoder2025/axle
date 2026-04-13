@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     if (!user) return forbiddenResponse();
 
     const { searchParams } = request.nextUrl;
-    const days = Math.min(parseInt(searchParams.get("days") ?? "30"), 90);
+    const days = Math.min(parseInt(searchParams.get("days") ?? "30", 10) || 30, 90);
 
     const since = new Date();
     since.setDate(since.getDate() - days);

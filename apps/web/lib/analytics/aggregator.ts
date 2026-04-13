@@ -1,6 +1,7 @@
 /**
  * Analytics aggregation queries — used by cron jobs and API routes.
  */
+import { unstable_cache } from "next/cache";
 import { prisma } from "@axle/db";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -29,14 +30,19 @@ export type ActionCount = {
 
 // ── Today (realtime from raw events) ─────────────────────────────────────────
 
-const todayStart = () => {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
+/** Get start of today in KST (UTC+9) */
+const todayStartKST = () => {
+  const now = new Date();
+  // Convert to KST by adding 9 hours offset
+  const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  // Get KST midnight
+  kstNow.setHours(0, 0, 0, 0);
+  // Convert back to UTC for DB query
+  return new Date(kstNow.getTime() - 9 * 60 * 60 * 1000);
 };
 
-export async function getTodayOverview(orgId?: string | null): Promise<OverviewStats> {
-  const start = todayStart();
+async function _getTodayOverview(orgId?: string | null): Promise<OverviewStats> {
+  const start = todayStartKST();
   const where = {
     createdAt: { gte: start },
     ...(orgId ? { orgId } : {}),
@@ -77,6 +83,16 @@ export async function getTodayOverview(orgId?: string | null): Promise<OverviewS
     apiErrors,
   };
 }
+
+export const getTodayOverview = async (orgId?: string | null): Promise<OverviewStats> => {
+  const cacheKey = `analytics-today-${orgId ?? "platform"}`;
+  const cached = unstable_cache(
+    () => _getTodayOverview(orgId),
+    [cacheKey],
+    { revalidate: 300 }, // 5 minutes
+  );
+  return cached();
+};
 
 // ── Daily trends (from DailyMetric) ──────────────────────────────────────────
 
@@ -231,14 +247,15 @@ async function upsertDailyActionMetric(
 // ── Aggregation job (called by cron) ─────────────────────────────────────────
 
 export async function aggregateYesterday(): Promise<{ orgs: number; actions: number }> {
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  yesterday.setHours(0, 0, 0, 0);
+  // Calculate yesterday's date range in KST (UTC+9)
+  const nowKST = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
+  nowKST.setHours(0, 0, 0, 0); // KST midnight (today)
+  const todayMidnight = new Date(nowKST.getTime() - 9 * 60 * 60 * 1000); // convert back to UTC
+  const yesterday = new Date(todayMidnight.getTime() - 24 * 60 * 60 * 1000); // KST yesterday start in UTC
 
-  const todayMidnight = new Date(yesterday);
-  todayMidnight.setDate(todayMidnight.getDate() + 1);
-
-  const dateOnly = new Date(yesterday.toISOString().split("T")[0]!);
+  // dateOnly uses the KST calendar date for yesterday
+  const kstYesterday = new Date(nowKST.getTime() - 24 * 60 * 60 * 1000);
+  const dateOnly = new Date(kstYesterday.toISOString().split("T")[0]!);
 
   const baseWhere = {
     createdAt: { gte: yesterday, lt: todayMidnight },
