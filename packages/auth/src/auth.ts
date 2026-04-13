@@ -61,31 +61,39 @@ const nextAuth: NextAuthResult = NextAuth({
      * Runs after authConfig.callbacks.jwt, so userId is already set.
      */
     async jwt({ token, user, account }) {
-      // Call base callback first
       if (user?.id) {
         token.userId = user.id;
       }
 
-      // On sign-in, fetch orgId from DB
+      // On sign-in, fetch orgId and platformRole from DB
       if (account && token.userId) {
-        const membership = await prisma.membership.findFirst({
-          where: { userId: token.userId as string },
-          select: { organizationId: true },
-        });
+        const [membership, dbUser] = await Promise.all([
+          prisma.membership.findFirst({
+            where: { userId: token.userId as string },
+            select: { organizationId: true },
+          }),
+          prisma.user.findUnique({
+            where: { id: token.userId as string },
+            select: { platformRole: true },
+          }),
+        ]);
         token.orgId = membership?.organizationId ?? null;
+        token.platformRole = dbUser?.platformRole ?? "USER";
       }
 
       return token;
     },
 
     /**
-     * session callback — surfaces userId and orgId to the client session.
+     * session callback — surfaces userId, orgId, and platformRole to the client session.
      */
     session({ session, token }) {
       if (token.userId && session.user) {
         session.user.id = token.userId as string;
-        (session.user as typeof session.user & { orgId: string | null }).orgId =
+        (session.user as typeof session.user & { orgId: string | null; platformRole: string }).orgId =
           (token.orgId as string | null) ?? null;
+        (session.user as typeof session.user & { orgId: string | null; platformRole: string }).platformRole =
+          (token.platformRole as string) ?? "USER";
       }
       return session;
     },

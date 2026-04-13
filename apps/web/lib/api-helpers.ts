@@ -35,3 +35,10 @@ export function notFoundResponse(resource = "Resource") {
     { status: 404 }
   );
 }
+
+export function forbiddenResponse(message = "Insufficient permissions") {
+  return NextResponse.json(
+    { error: { code: "FORBIDDEN", message } },
+    { status: 403 }
+  );
+}

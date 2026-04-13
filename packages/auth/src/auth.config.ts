@@ -7,7 +7,7 @@
 import type { NextAuthConfig } from "next-auth";
 
 /** Routes that require authentication */
-const PROTECTED_PREFIXES = ["/dashboard", "/settings", "/org", "/api/protected"];
+const PROTECTED_PREFIXES = ["/dashboard", "/settings", "/org", "/api/protected", "/platform-admin"];
 
 export const authConfig: NextAuthConfig = {
   pages: {

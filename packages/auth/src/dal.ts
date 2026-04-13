@@ -14,32 +14,29 @@ type AuthUser = {
   email?: string | null;
   image?: string | null;
   orgId?: string | null;
+  platformRole?: string | null;
 };
 
 /**
  * getCurrentUser — React cache-wrapped session fetch.
- *
- * Safe to call multiple times in one render; only hits auth() once per request.
- * Returns the session user or null if unauthenticated.
  */
 export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
   const session = await auth();
   if (!session?.user?.id) return null;
 
+  const user = session.user as AuthUser;
   return {
     id: session.user.id,
     name: session.user.name,
     email: session.user.email,
     image: session.user.image,
-    orgId: (session.user as AuthUser).orgId ?? null,
+    orgId: user.orgId ?? null,
+    platformRole: user.platformRole ?? "USER",
   };
 });
 
 /**
  * requireUser — throws a redirect to /login if not authenticated.
- *
- * Use in Server Components / Server Actions that require auth.
- * Next.js redirect() throws internally, so calling code need not check the return.
  */
 export async function requireUser(): Promise<AuthUser> {
   const user = await getCurrentUser();
@@ -51,8 +48,6 @@ export async function requireUser(): Promise<AuthUser> {
 
 /**
  * requireOrg — throws a redirect to /login if user has no active org.
- *
- * Use in org-scoped Server Components / Server Actions.
  */
 export async function requireOrg(): Promise<AuthUser & { orgId: string }> {
   const user = await requireUser();
@@ -60,4 +55,33 @@ export async function requireOrg(): Promise<AuthUser & { orgId: string }> {
     redirect("/login");
   }
   return user as AuthUser & { orgId: string };
+}
+
+/**
+ * requirePlatformAdmin — throws Error("FORBIDDEN") if not PLATFORM_ADMIN.
+ * Use in API routes. Catch the error and return forbiddenResponse().
+ */
+export async function requirePlatformAdmin(): Promise<AuthUser> {
+  const user = await requireUser();
+  if (user.platformRole !== "PLATFORM_ADMIN") {
+    throw new Error("FORBIDDEN");
+  }
+  return user;
+}
+
+/**
+ * requireOrgAdmin — returns user if OWNER or ADMIN of current org.
+ * Requires DB lookup for membership role.
+ */
+export async function requireOrgAdmin(): Promise<AuthUser & { orgId: string }> {
+  const user = await requireOrg();
+  const { prisma } = await import("@axle/db");
+  const membership = await prisma.membership.findFirst({
+    where: { userId: user.id, organizationId: user.orgId },
+    select: { role: true },
+  });
+  if (!membership || membership.role === "MEMBER") {
+    throw new Error("FORBIDDEN");
+  }
+  return user;
 }
