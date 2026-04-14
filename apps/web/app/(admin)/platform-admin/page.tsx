@@ -7,7 +7,15 @@ import { ActivityFeed } from "@/src/components/admin/activity-feed";
 import { OrgLeaderboard } from "@/src/components/admin/org-leaderboard";
 
 export default async function AdminDashboardPage() {
-  const [today, trends, topActions, wau, mau, platformStats, recentEvents, orgLeaderboard] =
+  // KST start-of-day for "today" queries
+  const todayKstStart = (() => {
+    const now = new Date();
+    const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+    kstNow.setUTCHours(0, 0, 0, 0);
+    return new Date(kstNow.getTime() - 9 * 60 * 60 * 1000);
+  })();
+
+  const [today, trends, topActions, wau, mau, platformStats, recentEvents, orgLeaderboard, todayBusiness] =
     await Promise.all([
       getTodayOverview(),
       getDailyTrends(30),
@@ -42,9 +50,30 @@ export default async function AdminDashboardPage() {
           orgId: { not: null },
           date: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
         },
-        _sum: { pageViews: true },
-        orderBy: { _sum: { pageViews: "desc" } },
-        take: 10,
+        _sum: {
+          projectsCreated: true,
+          documentsProcessed: true,
+          matchingsRun: true,
+          aiJobsTotal: true,
+          automationRuns: true,
+        },
+        orderBy: { _sum: { aiJobsTotal: "desc" } },
+        take: 100,
+      }),
+      prisma.analyticsEvent.groupBy({
+        by: ["action"],
+        where: {
+          createdAt: { gte: todayKstStart },
+          action: { in: ["project.create", "doc.upload", "matching.run"] },
+        },
+        _count: true,
+      }).then((rows) => {
+        const map = new Map(rows.map((r) => [r.action, r._count]));
+        return {
+          projectsCreated: map.get("project.create") ?? 0,
+          documentsProcessed: map.get("doc.upload") ?? 0,
+          matchingsRun: map.get("matching.run") ?? 0,
+        };
       }),
     ]);
 
@@ -73,17 +102,29 @@ export default async function AdminDashboardPage() {
   });
   const orgMap = new Map(orgs.map((o) => [o.id, o.name]));
 
-  const orgRanks = orgLeaderboard.map((o) => ({
-    orgId: o.orgId ?? "",
-    orgName: orgMap.get(o.orgId ?? "") ?? "Unknown",
-    eventCount: o._sum.pageViews ?? 0,
-  }));
+  const orgRanks = orgLeaderboard
+    .map((o) => {
+      const total =
+        (o._sum.projectsCreated ?? 0) +
+        (o._sum.documentsProcessed ?? 0) +
+        (o._sum.matchingsRun ?? 0) +
+        (o._sum.aiJobsTotal ?? 0) +
+        (o._sum.automationRuns ?? 0);
+      return {
+        orgId: o.orgId ?? "",
+        orgName: orgMap.get(o.orgId ?? "") ?? "Unknown",
+        eventCount: total,
+      };
+    })
+    .sort((a, b) => b.eventCount - a.eventCount)
+    .slice(0, 10);
 
   // DAU change vs yesterday
-  const yesterdayUsers = trends.length >= 2 ? trends[trends.length - 1]!.uniqueUsers : 0;
-  const dauChange = yesterdayUsers > 0
-    ? ((today.uniqueUsers - yesterdayUsers) / yesterdayUsers) * 100
-    : 0;
+  const yesterdayUsers = trends.length > 0 ? trends[trends.length - 1]!.uniqueUsers : 0;
+  const dauChange =
+    yesterdayUsers > 0
+      ? ((today.uniqueUsers - yesterdayUsers) / yesterdayUsers) * 100
+      : undefined;
 
   return (
     <div className="space-y-8">
@@ -125,8 +166,8 @@ export default async function AdminDashboardPage() {
         />
         <StatCard
           title="비즈니스 활동"
-          value={String(today.aiJobsTotal + today.apiCalls)}
-          description="AI + API 합산"
+          value={String(todayBusiness.projectsCreated + todayBusiness.documentsProcessed + todayBusiness.matchingsRun)}
+          description={`프로젝트 ${todayBusiness.projectsCreated} · 서류 ${todayBusiness.documentsProcessed} · 매칭 ${todayBusiness.matchingsRun}`}
         />
       </div>
 
