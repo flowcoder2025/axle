@@ -101,3 +101,19 @@ export {
   CommandItem,
   CommandSeparator,
 } from "./components/command.js";
+
+export {
+  AlertDialog,
+  AlertDialogPortal,
+  AlertDialogOverlay,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "./components/alert-dialog.js";
+
+export { Checkbox } from "./components/checkbox.js";
