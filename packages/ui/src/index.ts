@@ -117,3 +117,5 @@ export {
 } from "./components/alert-dialog.js";
 
 export { Checkbox } from "./components/checkbox.js";
+
+export { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/tabs.js";
