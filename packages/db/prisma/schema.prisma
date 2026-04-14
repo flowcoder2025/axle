@@ -32,6 +32,7 @@ model User {
   image         String?
   password      String?   // bcrypt hashed, null for OAuth-only users
   platformRole  PlatformRole @default(USER)
+  isActive      Boolean      @default(true)
 
   accounts      Account[]
   sessions      Session[]
@@ -112,6 +113,11 @@ model Organization {
   clients     Client[]
   programs    ProgramInfo[]
   templates   ChecklistTemplate[]
+
+  plan         String  @default("free")
+  quotaAiJobs  Int     @default(100)
+  quotaMembers Int     @default(10)
+  isSuspended  Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
