@@ -164,15 +164,12 @@ export async function getActiveUsers(days: number): Promise<number> {
   const since = todayStartKST();
   since.setDate(since.getDate() - days);
 
-  const result = await prisma.analyticsEvent.groupBy({
-    by: ["userId"],
-    where: {
-      userId: { not: null },
-      createdAt: { gte: since },
-    },
-  });
-
-  return result.length;
+  const result = await prisma.$queryRaw<{ count: bigint }[]>`
+    SELECT COUNT(DISTINCT "userId") AS count
+    FROM "AnalyticsEvent"
+    WHERE "userId" IS NOT NULL AND "createdAt" >= ${since}
+  `;
+  return Number(result[0]?.count ?? 0);
 }
 
 // ── Upsert helpers (handle nullable orgId correctly) ─────────────────────────
