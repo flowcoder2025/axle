@@ -154,6 +154,27 @@ export async function getTopActions(
   }));
 }
 
+// ── Accurate WAU/MAU (COUNT DISTINCT over raw events) ────────────────────────
+
+/**
+ * Accurate WAU/MAU — COUNT(DISTINCT userId) over N-day window.
+ * Cannot use DailyMetric.uniqueUsers sum (double-counts across days).
+ */
+export async function getActiveUsers(days: number): Promise<number> {
+  const since = todayStartKST();
+  since.setDate(since.getDate() - days);
+
+  const result = await prisma.analyticsEvent.groupBy({
+    by: ["userId"],
+    where: {
+      userId: { not: null },
+      createdAt: { gte: since },
+    },
+  });
+
+  return result.length;
+}
+
 // ── Upsert helpers (handle nullable orgId correctly) ─────────────────────────
 //
 // Prisma's compound unique upsert (`date_orgId`) requires orgId: string (non-null).
