@@ -7,7 +7,7 @@
 import type { NextAuthConfig } from "next-auth";
 
 /** Routes that require authentication */
-const PROTECTED_PREFIXES = ["/dashboard", "/settings", "/org", "/api/protected", "/platform-admin"];
+const PROTECTED_PREFIXES = ["/dashboard", "/settings", "/org", "/api/protected", "/platform-admin", "/api/admin"];
 
 export const authConfig: NextAuthConfig = {
   pages: {
@@ -31,6 +31,7 @@ export const authConfig: NextAuthConfig = {
     /**
      * authorized callback — used by middleware to guard routes.
      * Returns true to allow, false/redirect to deny.
+     * Also enforces PLATFORM_ADMIN role for admin routes.
      */
     authorized({ auth, request }) {
       const pathname = request.nextUrl.pathname;
@@ -38,7 +39,17 @@ export const authConfig: NextAuthConfig = {
         pathname.startsWith(prefix),
       );
       if (!isProtected) return true;
-      return !!auth?.user;
+      if (!auth?.user) return false;
+
+      const isAdminRoute = pathname.startsWith("/platform-admin") || pathname.startsWith("/api/admin");
+      if (isAdminRoute) {
+        const role = (auth.user as { platformRole?: string }).platformRole;
+        if (role !== "PLATFORM_ADMIN") {
+          return Response.redirect(new URL("/dashboard", request.nextUrl));
+        }
+      }
+
+      return true;
     },
   },
   providers: [],

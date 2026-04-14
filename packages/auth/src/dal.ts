@@ -19,10 +19,18 @@ type AuthUser = {
 
 /**
  * getCurrentUser — React cache-wrapped session fetch.
+ * Re-validates isActive on every request to enforce suspension immediately.
  */
 export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
   const session = await auth();
   if (!session?.user?.id) return null;
+
+  const { prisma } = await import("@axle/db");
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { isActive: true },
+  });
+  if (!dbUser?.isActive) return null;
 
   const user = session.user as AuthUser;
   return {
@@ -47,13 +55,24 @@ export async function requireUser(): Promise<AuthUser> {
 }
 
 /**
- * requireOrg — throws a redirect to /login if user has no active org.
+ * requireOrg — throws a redirect to /login if user has no active org,
+ * or /suspended if the org is suspended.
  */
 export async function requireOrg(): Promise<AuthUser & { orgId: string }> {
   const user = await requireUser();
   if (!user.orgId) {
     redirect("/login");
   }
+
+  const { prisma } = await import("@axle/db");
+  const org = await prisma.organization.findUnique({
+    where: { id: user.orgId },
+    select: { isSuspended: true },
+  });
+  if (org?.isSuspended) {
+    redirect("/suspended");
+  }
+
   return user as AuthUser & { orgId: string };
 }
 

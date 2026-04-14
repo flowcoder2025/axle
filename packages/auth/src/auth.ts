@@ -57,6 +57,20 @@ const nextAuth: NextAuthResult = NextAuth({
     ...authConfig.callbacks,
 
     /**
+     * signIn callback — blocks inactive users from signing in.
+     * Runs for both OAuth and Credentials providers.
+     */
+    async signIn({ user }) {
+      if (!user?.id) return true;
+      const dbUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { isActive: true },
+      });
+      if (dbUser && !dbUser.isActive) return false;
+      return true;
+    },
+
+    /**
      * jwt callback — extends Edge jwt with orgId from DB.
      * Runs after authConfig.callbacks.jwt, so userId is already set.
      */
