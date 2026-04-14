@@ -4,16 +4,13 @@ import { revalidatePath } from "next/cache";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { requirePlatformAdmin } from "@axle/auth";
 import { prisma } from "@axle/db";
+import { PlanQuotaSchema, type PlanQuota } from "@/lib/admin/org-schemas";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
 export async function updatePlanQuota(
   orgId: string,
-  data: {
-    plan?: "free" | "pro" | "enterprise";
-    quotaAiJobs?: number;
-    quotaMembers?: number;
-  },
+  data: PlanQuota,
 ): Promise<ActionResult> {
   try {
     await requirePlatformAdmin();
@@ -22,16 +19,19 @@ export async function updatePlanQuota(
     return { ok: false, error: "권한이 없습니다" };
   }
 
-  if (data.quotaAiJobs !== undefined && data.quotaAiJobs < 0) {
-    return { ok: false, error: "AI 작업 쿼터는 0 이상이어야 합니다" };
-  }
-  if (data.quotaMembers !== undefined && data.quotaMembers < 1) {
-    return { ok: false, error: "멤버 쿼터는 1 이상이어야 합니다" };
+  const parsed = PlanQuotaSchema.safeParse(data);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues
+        .map((i) => `${i.path.join(".")}: ${i.message}`)
+        .join("; "),
+    };
   }
 
   await prisma.organization.update({
     where: { id: orgId },
-    data,
+    data: parsed.data,
   });
 
   revalidatePath("/platform-admin/organizations");
@@ -48,6 +48,10 @@ export async function toggleOrgSuspend(
   } catch (err) {
     if (isRedirectError(err)) throw err;
     return { ok: false, error: "권한이 없습니다" };
+  }
+
+  if (typeof isSuspended !== "boolean") {
+    return { ok: false, error: "invalid isSuspended value" };
   }
 
   await prisma.organization.update({

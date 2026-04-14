@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { requirePlatformAdmin } from "@axle/auth";
 import { prisma } from "@axle/db";
@@ -9,17 +8,7 @@ import {
   forbiddenResponse,
   notFoundResponse,
 } from "@/lib/api-helpers";
-
-const PatchSchema = z
-  .object({
-    plan: z.enum(["free", "pro", "enterprise"]).optional(),
-    quotaAiJobs: z.number().int().min(0).optional(),
-    quotaMembers: z.number().int().min(1).optional(),
-    isSuspended: z.boolean().optional(),
-  })
-  .refine((d) => Object.keys(d).length > 0, {
-    message: "At least one field required",
-  });
+import { OrgPatchSchema } from "@/lib/admin/org-schemas";
 
 export async function GET(
   _request: NextRequest,
@@ -92,7 +81,7 @@ export async function PATCH(
 
     const { orgId } = await params;
     const body = await request.json();
-    const parsed = PatchSchema.safeParse(body);
+    const parsed = OrgPatchSchema.safeParse(body);
     if (!parsed.success) return handleZodError(parsed.error);
 
     const existing = await prisma.organization.findUnique({

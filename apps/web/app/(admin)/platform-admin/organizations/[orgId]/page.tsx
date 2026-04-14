@@ -36,34 +36,35 @@ export default async function OrgDetailPage({ params }: Props) {
   await requirePlatformAdmin();
   const { orgId } = await params;
 
-  const org = await prisma.organization.findUnique({
-    where: { id: orgId },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      logoUrl: true,
-      plan: true,
-      quotaAiJobs: true,
-      quotaMembers: true,
-      isSuspended: true,
-      createdAt: true,
-      memberships: {
-        select: {
-          role: true,
-          createdAt: true,
-          user: {
-            select: { id: true, name: true, email: true, image: true },
+  const [org, stats] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: orgId },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        logoUrl: true,
+        plan: true,
+        quotaAiJobs: true,
+        quotaMembers: true,
+        isSuspended: true,
+        createdAt: true,
+        memberships: {
+          select: {
+            role: true,
+            createdAt: true,
+            user: {
+              select: { id: true, name: true, email: true, image: true },
+            },
           },
+          orderBy: { createdAt: "asc" },
         },
-        orderBy: { createdAt: "asc" },
       },
-    },
-  });
+    }),
+    getOrgStats(orgId),
+  ]);
 
   if (!org) notFound();
-
-  const stats = await getOrgStats(orgId);
 
   return (
     <div className="space-y-6">

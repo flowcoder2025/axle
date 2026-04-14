@@ -58,7 +58,15 @@ export function SuspendToggle({ orgId, isSuspended }: SuspendToggleProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isPending}>취소</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirm} disabled={isPending}>
+            <AlertDialogAction
+              onClick={handleConfirm}
+              disabled={isPending}
+              className={
+                !isSuspended
+                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  : undefined
+              }
+            >
               {isPending ? "처리 중..." : "확인"}
             </AlertDialogAction>
           </AlertDialogFooter>
