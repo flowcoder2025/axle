@@ -28,7 +28,7 @@ export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
   const { prisma } = await import("@axle/db");
   const dbUser = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { isActive: true },
+    select: { isActive: true, platformRole: true },
   });
   if (!dbUser?.isActive) return null;
 
@@ -39,7 +39,7 @@ export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
     email: session.user.email,
     image: session.user.image,
     orgId: user.orgId ?? null,
-    platformRole: user.platformRole ?? "USER",
+    platformRole: dbUser.platformRole as string,
   };
 });
 

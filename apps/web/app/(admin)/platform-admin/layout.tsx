@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { requirePlatformAdmin } from "@axle/auth";
+import { Toaster } from "@axle/ui";
 import { AdminSidebar } from "@/src/components/admin/admin-sidebar";
 
 export default async function AdminLayout({
@@ -9,7 +11,8 @@ export default async function AdminLayout({
 }) {
   try {
     await requirePlatformAdmin();
-  } catch {
+  } catch (err) {
+    if (isRedirectError(err)) throw err;
     redirect("/dashboard");
   }
 
@@ -27,6 +30,7 @@ export default async function AdminLayout({
           <div className="mx-auto max-w-7xl px-6 py-8">{children}</div>
         </main>
       </div>
+      <Toaster />
     </div>
   );
 }
