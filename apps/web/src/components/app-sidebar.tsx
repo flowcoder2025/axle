@@ -15,6 +15,7 @@ import {
   Award,
   Sparkles,
   BarChart3,
+  Shield,
 } from "lucide-react";
 import {
   Sidebar,
@@ -43,9 +44,10 @@ const NAV_ITEMS = [
 
 interface AppSidebarProps {
   userMenu: React.ReactNode;
+  platformRole?: string;
 }
 
-export function AppSidebar({ userMenu }: AppSidebarProps) {
+export function AppSidebar({ userMenu, platformRole }: AppSidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -81,7 +83,17 @@ export function AppSidebar({ userMenu }: AppSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>{userMenu}</SidebarFooter>
+      <SidebarFooter>
+        {platformRole === "PLATFORM_ADMIN" && (
+          <Link href="/platform-admin" className="block">
+            <SidebarItem
+              icon={<Shield size={18} />}
+              label="관리자 콘솔"
+            />
+          </Link>
+        )}
+        {userMenu}
+      </SidebarFooter>
     </Sidebar>
   );
 }

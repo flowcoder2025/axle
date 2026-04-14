@@ -25,7 +25,7 @@ export default async function AppLayout({
     <div className="flex h-screen overflow-hidden">
       {/* Desktop sidebar — hidden on mobile */}
       <div className="hidden md:flex">
-        <AppSidebar userMenu={userMenu} />
+        <AppSidebar userMenu={userMenu} platformRole={user.platformRole ?? undefined} />
       </div>
 
       <div className="flex flex-1 flex-col overflow-hidden">
