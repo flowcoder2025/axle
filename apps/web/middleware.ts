@@ -28,9 +28,12 @@ export const middleware: NextMiddleware = async (request: NextRequest) => {
   const pathname = request.nextUrl.pathname;
   if (!shouldSkipSession(pathname)) {
     const existingSession = request.cookies.get("axle_sid");
-    if (!existingSession) {
+    // Only set cookie if response is a NextResponse (not a plain redirect Response).
+    // Plain Response objects don't have `.cookies` — the user will get the cookie
+    // on their next request after the redirect completes.
+    if (!existingSession && res instanceof NextResponse) {
       const sid = generateSessionId();
-      (res as NextResponse).cookies.set("axle_sid", sid, {
+      res.cookies.set("axle_sid", sid, {
         httpOnly: false,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
