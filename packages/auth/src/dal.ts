@@ -17,19 +17,51 @@ type AuthUser = {
   platformRole?: string | null;
 };
 
+type CachedDbUser = { isActive: boolean; platformRole: string | null };
+
+// Process-local TTL cache for the DB lookup portion of getCurrentUser.
+// Keyed by userId. Short TTL bounds the window during which a suspended
+// (isActive=false) user could still pass auth.
+const USER_CACHE_TTL_MS = Number(process.env.AUTH_USER_CACHE_TTL_MS ?? 10_000);
+const userCache = new Map<string, { value: CachedDbUser; expiresAt: number }>();
+
+async function fetchDbUser(userId: string): Promise<CachedDbUser | null> {
+  const cached = userCache.get(userId);
+  const now = Date.now();
+  if (cached && cached.expiresAt > now) return cached.value;
+
+  const { prisma } = await import("@axle/db");
+  const dbUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isActive: true, platformRole: true },
+  });
+  if (!dbUser) {
+    userCache.delete(userId);
+    return null;
+  }
+  const value: CachedDbUser = {
+    isActive: dbUser.isActive,
+    platformRole: dbUser.platformRole as string | null,
+  };
+  userCache.set(userId, { value, expiresAt: now + USER_CACHE_TTL_MS });
+  return value;
+}
+
+/** Invalidate cached DB state for a user (call after role/activation changes). */
+export function invalidateUserCache(userId: string): void {
+  userCache.delete(userId);
+}
+
 /**
  * getCurrentUser — React cache-wrapped session fetch.
- * Re-validates isActive on every request to enforce suspension immediately.
+ * Re-validates isActive on every request (with a short process-local TTL
+ * to avoid a DB hit on every Server Component render).
  */
 export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
   const session = await auth();
   if (!session?.user?.id) return null;
 
-  const { prisma } = await import("@axle/db");
-  const dbUser = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { isActive: true, platformRole: true },
-  });
+  const dbUser = await fetchDbUser(session.user.id);
   if (!dbUser?.isActive) return null;
 
   const user = session.user as AuthUser;
