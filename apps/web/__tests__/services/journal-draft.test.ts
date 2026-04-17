@@ -9,11 +9,15 @@ import { Prisma } from "@prisma/client";
 const mockJournalOps = {
   update: vi.fn(),
 };
+const mockClientOps = {
+  findUnique: vi.fn(),
+};
 
 vi.mock("@axle/db", () => ({
   DB_PACKAGE: "@axle/db",
   prisma: {
     researchJournal: mockJournalOps,
+    client: mockClientOps,
   },
 }));
 
@@ -63,6 +67,7 @@ describe("generateJournalDraft", () => {
       status: "QUEUED",
     });
 
+    mockClientOps.findUnique.mockResolvedValue({ orgId: "org-1" });
     mockJournalOps.update.mockResolvedValue({ id: "journal-1" });
     mockUpdateJobStatus.mockResolvedValue({ id: "job-1" });
 
@@ -82,6 +87,7 @@ describe("generateJournalDraft", () => {
 
     expect(mockCreateAiJob).toHaveBeenCalledWith(
       expect.objectContaining({
+        orgId: "org-1",
         type: "JOURNAL_DRAFT",
         tier: "LOCAL_MLX",
         input: expect.objectContaining({

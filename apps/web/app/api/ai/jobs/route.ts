@@ -31,11 +31,7 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * pageSize;
 
     const where: Prisma.AiJobWhereInput = {
-      // Org boundary: prefer orgId FK, fall back to project path for pre-backfill rows
-      OR: [
-        { orgId: user.orgId },
-        { orgId: null, project: { client: { orgId: user.orgId } } },
-      ],
+      orgId: user.orgId,
       ...(projectId ? { projectId } : {}),
       ...(type ? { type } : {}),
       ...(status ? { status } : {}),

@@ -33,11 +33,15 @@ const MEETING_ID = "meeting-1";
 const TRANSCRIPT_ID = "transcript-1";
 const JOB_ID = "job-1";
 const PROJECT_ID = "project-1";
+const ORG_ID = "org-1";
 
 const BASE_TRANSCRIPT = {
   id: TRANSCRIPT_ID,
   rawTranscript: "회의 내용입니다. 결정 사항: A를 진행합니다.",
-  meeting: { projectId: PROJECT_ID },
+  meeting: {
+    projectId: PROJECT_ID,
+    project: { client: { orgId: ORG_ID } },
+  },
 };
 
 const AI_RESPONSE = {
@@ -87,6 +91,20 @@ describe("generateSummary", () => {
     expect(mockCreateAiJob).not.toHaveBeenCalled();
   });
 
+  it("returns early when meeting has no project/client (no orgId)", async () => {
+    mockTranscriptOps.findUnique.mockResolvedValue({
+      ...BASE_TRANSCRIPT,
+      meeting: { projectId: null, project: null },
+    });
+
+    const { generateSummary } = await import(
+      "../../lib/services/meeting-summary"
+    );
+    await generateSummary(MEETING_ID);
+
+    expect(mockCreateAiJob).not.toHaveBeenCalled();
+  });
+
   it("creates job, calls AI, and updates transcript with summary", async () => {
     mockTranscriptOps.findUnique.mockResolvedValue(BASE_TRANSCRIPT);
     mockCreateAiJob.mockResolvedValue(BASE_JOB);
@@ -106,6 +124,7 @@ describe("generateSummary", () => {
     // Verify job creation
     expect(mockCreateAiJob).toHaveBeenCalledWith(
       expect.objectContaining({
+        orgId: ORG_ID,
         type: "SUMMARY",
         tier: "API_HAIKU",
         projectId: PROJECT_ID,

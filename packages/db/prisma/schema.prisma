@@ -752,7 +752,7 @@ model ActionItem {
 
 model AiJob {
   id                String     @id @default(cuid())
-  orgId             String?
+  orgId             String
   projectId         String?
   type              AiJobType
   tier              AiTier
@@ -766,7 +766,7 @@ model AiJob {
 
   skillPattern      SkillPattern? @relation(fields: [skillPatternId], references: [id])
   project           Project?      @relation(fields: [projectId], references: [id])
-  organization      Organization? @relation(fields: [orgId], references: [id])
+  organization      Organization  @relation(fields: [orgId], references: [id])
   createdAt         DateTime      @default(now())
 
   @@index([orgId])

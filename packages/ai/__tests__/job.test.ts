@@ -41,12 +41,14 @@ describe("createAiJob", () => {
     mockAiJob.create.mockResolvedValue(fakeJob);
 
     const result = await createAiJob({
+      orgId: "org-1",
       type: "BUSINESS_PLAN",
       input: { prompt: "hello" },
     });
 
     expect(mockAiJob.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
+        orgId: "org-1",
         type: "BUSINESS_PLAN",
         tier: "CLI_CLAUDE",
         status: "QUEUED",
@@ -61,6 +63,7 @@ describe("createAiJob", () => {
     mockAiJob.create.mockResolvedValue(fakeJob);
 
     await createAiJob({
+      orgId: "org-1",
       type: "BUSINESS_PLAN",
       input: {},
       tier: "API_OPUS",
@@ -75,20 +78,21 @@ describe("createAiJob", () => {
     mockAiJob.create.mockResolvedValue({ id: "job-3" });
 
     await createAiJob({
+      orgId: "org-1",
       type: "SUMMARY",
       input: {},
       projectId: "proj-1",
     });
 
     expect(mockAiJob.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ projectId: "proj-1" }),
+      data: expect.objectContaining({ orgId: "org-1", projectId: "proj-1" }),
     });
   });
 
   it("auto-resolves to API_HAIKU for FINANCIAL_ANALYSIS", async () => {
     mockAiJob.create.mockResolvedValue({ id: "job-4", tier: "API_HAIKU" });
 
-    await createAiJob({ type: "FINANCIAL_ANALYSIS", input: {} });
+    await createAiJob({ orgId: "org-1", type: "FINANCIAL_ANALYSIS", input: {} });
 
     expect(mockAiJob.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ tier: "API_HAIKU" }),
