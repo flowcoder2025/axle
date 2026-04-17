@@ -138,7 +138,7 @@ export function TranscriptPanel({ meetingId, transcript: initial, onChanged }: T
                 </p>
               )}
               <p className="mt-2 text-xs text-muted-foreground">
-                "다시 시도" 버튼을 눌러 재생성할 수 있습니다.
+                &lsquo;다시 시도&rsquo; 버튼을 눌러 재생성할 수 있습니다.
               </p>
             </div>
           ) : (
