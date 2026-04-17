@@ -54,6 +54,11 @@ coverage/
 htmlcov/
 .vercel
 
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
 # Dev tools
 .playwright-cli/
 .superpowers/
