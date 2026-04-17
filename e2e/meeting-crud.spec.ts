@@ -16,7 +16,7 @@ function todayDateInput(): string {
 test.describe("meeting CRUD (authenticated)", () => {
   test.skip(!hasTestCreds, "Set E2E_USER_EMAIL + E2E_USER_PASSWORD to run");
 
-  test("create meeting → verify in list → delete", async ({ page }) => {
+  test("create meeting → verify in list → edit → delete", async ({ page }) => {
     await signInAsTestUser(page);
 
     await page.goto("/meetings/new");
@@ -51,15 +51,24 @@ test.describe("meeting CRUD (authenticated)", () => {
     await page.goto("/meetings");
     await expect(page.getByText(title).first()).toBeVisible();
 
-    // --- DELETE ---
+    // --- EDIT ---
+    const updatedTitle = `${title}-UPDATED`;
     await page.getByText(title).first().click();
     await page.waitForURL(/\/meetings\/[a-z0-9]+/i);
+    await page.getByRole("link", { name: /편집|수정|edit/i }).first().click();
+    await page.waitForURL(/\/meetings\/[a-z0-9]+\/edit/i);
+    await page.getByLabel(/^제목/).fill(updatedTitle);
+    await page.getByRole("button", { name: /저장|수정|업데이트/ }).click();
+    await page.waitForURL(/\/meetings\/[a-z0-9]+$/i, { timeout: 10_000 });
+    await expect(page.getByText(updatedTitle).first()).toBeVisible();
+
+    // --- DELETE ---
     page.once("dialog", (dialog) => dialog.accept());
     await page
       .getByRole("button", { name: /삭제|delete/i })
       .first()
       .click();
     await page.waitForURL(/\/meetings$/i, { timeout: 10_000 });
-    await expect(page.getByText(title)).toHaveCount(0);
+    await expect(page.getByText(updatedTitle)).toHaveCount(0);
   });
 });
