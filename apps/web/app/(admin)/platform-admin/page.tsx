@@ -6,14 +6,20 @@ import { FeatureRankChart } from "@/src/components/admin/feature-rank-chart";
 import { ActivityFeed } from "@/src/components/admin/activity-feed";
 import { OrgLeaderboard } from "@/src/components/admin/org-leaderboard";
 
+function computeTodayKstStart(): Date {
+  const now = new Date();
+  const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  kstNow.setUTCHours(0, 0, 0, 0);
+  return new Date(kstNow.getTime() - 9 * 60 * 60 * 1000);
+}
+
+function computeSevenDaysAgo(): Date {
+  return new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+}
+
 export default async function AdminDashboardPage() {
-  // KST start-of-day for "today" queries
-  const todayKstStart = (() => {
-    const now = new Date();
-    const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-    kstNow.setUTCHours(0, 0, 0, 0);
-    return new Date(kstNow.getTime() - 9 * 60 * 60 * 1000);
-  })();
+  const todayKstStart = computeTodayKstStart();
+  const sevenDaysAgo = computeSevenDaysAgo();
 
   const [today, trends, topActions, wau, mau, platformStats, recentEvents, orgLeaderboard, todayBusiness] =
     await Promise.all([
@@ -48,7 +54,7 @@ export default async function AdminDashboardPage() {
         by: ["orgId"],
         where: {
           orgId: { not: null },
-          date: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+          date: { gte: sevenDaysAgo },
         },
         _sum: {
           projectsCreated: true,

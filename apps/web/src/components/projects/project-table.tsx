@@ -44,6 +44,23 @@ interface ProjectTableProps {
 type SortBy = "title" | "createdAt" | "updatedAt" | "status" | "dueDate";
 type SortOrder = "asc" | "desc";
 
+function SortIcon({
+  column,
+  currentSortBy,
+  currentSortOrder,
+}: {
+  column: SortBy;
+  currentSortBy: string;
+  currentSortOrder: string;
+}) {
+  if (currentSortBy !== column) return null;
+  return currentSortOrder === "asc" ? (
+    <ChevronUp className="inline h-3 w-3 ml-1" />
+  ) : (
+    <ChevronDown className="inline h-3 w-3 ml-1" />
+  );
+}
+
 export function ProjectTable({
   projects,
   total,
@@ -88,15 +105,6 @@ export function ProjectTable({
     const newOrder =
       currentSortBy === column && currentSortOrder === "asc" ? "desc" : "asc";
     navigate({ sortBy: column, sortOrder: newOrder, page: "1" });
-  }
-
-  function SortIcon({ column }: { column: SortBy }) {
-    if (currentSortBy !== column) return null;
-    return currentSortOrder === "asc" ? (
-      <ChevronUp className="inline h-3 w-3 ml-1" />
-    ) : (
-      <ChevronDown className="inline h-3 w-3 ml-1" />
-    );
   }
 
   function formatDate(iso: string | null) {
@@ -191,7 +199,7 @@ export function ProjectTable({
                 onClick={() => handleSort("title")}
               >
                 프로젝트명
-                <SortIcon column="title" />
+                <SortIcon column="title" currentSortBy={currentSortBy} currentSortOrder={currentSortOrder} />
               </TableHead>
               <TableHead>고객사</TableHead>
               <TableHead>유형</TableHead>
@@ -200,7 +208,7 @@ export function ProjectTable({
                 onClick={() => handleSort("status")}
               >
                 상태
-                <SortIcon column="status" />
+                <SortIcon column="status" currentSortBy={currentSortBy} currentSortOrder={currentSortOrder} />
               </TableHead>
               <TableHead>담당자</TableHead>
               <TableHead
@@ -208,7 +216,7 @@ export function ProjectTable({
                 onClick={() => handleSort("dueDate")}
               >
                 마감일
-                <SortIcon column="dueDate" />
+                <SortIcon column="dueDate" currentSortBy={currentSortBy} currentSortOrder={currentSortOrder} />
               </TableHead>
             </TableRow>
           </TableHeader>

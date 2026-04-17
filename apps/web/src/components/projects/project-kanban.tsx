@@ -135,6 +135,7 @@ export function ProjectKanban({ projects: initialProjects }: ProjectKanbanProps)
         </div>
       )}
       <div className="flex gap-3 min-w-max">
+        {/* eslint-disable-next-line react-hooks/refs -- false positive: refs are only read in drag event handlers, not during render */}
         {COLUMNS.map((col) => {
           const colProjects = getColumnProjects(col.status);
           const isOver = dragOverColumn === col.status;

@@ -8,7 +8,7 @@ const relaxedReactRules = {
   "react-hooks/refs": "warn",
 };
 
-export default [
+const config = [
   ...nextCoreWebVitals,
   {
     rules: relaxedReactRules,
@@ -17,3 +17,5 @@ export default [
     ignores: [".next/**", "node_modules/**", "dist/**", "build/**", "__tests__/**"],
   },
 ];
+
+export default config;

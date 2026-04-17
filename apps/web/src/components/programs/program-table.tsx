@@ -25,6 +25,23 @@ import type { ProgramCategory } from "@prisma/client";
 type SortBy = "applicationEnd" | "name" | "createdAt";
 type SortOrder = "asc" | "desc";
 
+function SortIcon({
+  column,
+  currentSortBy,
+  currentSortOrder,
+}: {
+  column: SortBy;
+  currentSortBy: string;
+  currentSortOrder: string;
+}) {
+  if (currentSortBy !== column) return null;
+  return currentSortOrder === "asc" ? (
+    <ChevronUp className="inline h-3 w-3 ml-1" />
+  ) : (
+    <ChevronDown className="inline h-3 w-3 ml-1" />
+  );
+}
+
 export interface ProgramRow {
   id: string;
   name: string;
@@ -134,15 +151,6 @@ export function ProgramTable({
     navigate({ sortBy: column, sortOrder: newOrder, page: "1" });
   }
 
-  function SortIcon({ column }: { column: SortBy }) {
-    if (currentSortBy !== column) return null;
-    return currentSortOrder === "asc" ? (
-      <ChevronUp className="inline h-3 w-3 ml-1" />
-    ) : (
-      <ChevronDown className="inline h-3 w-3 ml-1" />
-    );
-  }
-
   async function handleDelete(programId: string, programName: string) {
     if (!confirm(`"${programName}" 지원사업을 삭제하시겠습니까?`)) return;
     const res = await fetch(`/api/programs/${programId}`, { method: "DELETE" });
@@ -199,7 +207,7 @@ export function ProgramTable({
                 onClick={() => handleSort("name")}
               >
                 프로그램명
-                <SortIcon column="name" />
+                <SortIcon column="name" currentSortBy={currentSortBy} currentSortOrder={currentSortOrder} />
               </TableHead>
               <TableHead>기관</TableHead>
               <TableHead>카테고리</TableHead>
@@ -208,7 +216,7 @@ export function ProgramTable({
                 onClick={() => handleSort("applicationEnd")}
               >
                 마감일
-                <SortIcon column="applicationEnd" />
+                <SortIcon column="applicationEnd" currentSortBy={currentSortBy} currentSortOrder={currentSortOrder} />
               </TableHead>
               <TableHead>최대지원금</TableHead>
               <TableHead>지역</TableHead>

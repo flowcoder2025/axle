@@ -65,6 +65,36 @@ interface DocumentTableProps {
 type SortBy = "name" | "createdAt" | "expiresAt";
 type SortOrder = "asc" | "desc";
 
+function SortIcon({
+  column,
+  currentSortBy,
+  currentSortOrder,
+}: {
+  column: SortBy;
+  currentSortBy: SortBy;
+  currentSortOrder: SortOrder;
+}) {
+  if (currentSortBy !== column) return null;
+  return currentSortOrder === "asc" ? (
+    <ChevronUp className="inline h-3 w-3 ml-1" />
+  ) : (
+    <ChevronDown className="inline h-3 w-3 ml-1" />
+  );
+}
+
+function formatDate(iso: string | null | undefined) {
+  if (!iso) return "-";
+  try {
+    return new Date(iso).toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+}
+
 export function DocumentTable({
   documents,
   total,
@@ -109,28 +139,6 @@ export function DocumentTable({
     const newOrder =
       currentSortBy === column && currentSortOrder === "asc" ? "desc" : "asc";
     navigate({ sortBy: column, sortOrder: newOrder, page: "1" });
-  }
-
-  function SortIcon({ column }: { column: SortBy }) {
-    if (currentSortBy !== column) return null;
-    return currentSortOrder === "asc" ? (
-      <ChevronUp className="inline h-3 w-3 ml-1" />
-    ) : (
-      <ChevronDown className="inline h-3 w-3 ml-1" />
-    );
-  }
-
-  function formatDate(iso: string | null | undefined) {
-    if (!iso) return "-";
-    try {
-      return new Date(iso).toLocaleDateString("ko-KR", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      });
-    } catch {
-      return iso;
-    }
   }
 
   return (
@@ -197,7 +205,7 @@ export function DocumentTable({
                 onClick={() => handleSort("name")}
               >
                 파일명
-                <SortIcon column="name" />
+                <SortIcon column="name" currentSortBy={currentSortBy} currentSortOrder={currentSortOrder} />
               </TableHead>
               <TableHead>고객사</TableHead>
               <TableHead>분류</TableHead>
@@ -207,7 +215,7 @@ export function DocumentTable({
                 onClick={() => handleSort("expiresAt")}
               >
                 만료일
-                <SortIcon column="expiresAt" />
+                <SortIcon column="expiresAt" currentSortBy={currentSortBy} currentSortOrder={currentSortOrder} />
               </TableHead>
               <TableHead>만료 상태</TableHead>
               <TableHead
@@ -215,7 +223,7 @@ export function DocumentTable({
                 onClick={() => handleSort("createdAt")}
               >
                 등록일
-                <SortIcon column="createdAt" />
+                <SortIcon column="createdAt" currentSortBy={currentSortBy} currentSortOrder={currentSortOrder} />
               </TableHead>
             </TableRow>
           </TableHeader>
