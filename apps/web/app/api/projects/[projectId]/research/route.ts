@@ -58,6 +58,7 @@ export async function POST(_req: NextRequest, ctx: RouteContext) {
 
     const aiJob = await prisma.aiJob.create({
       data: {
+        orgId: user.orgId,
         projectId: project.id,
         type: "RESEARCH",
         tier: "CLI_CLAUDE",

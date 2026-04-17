@@ -41,7 +41,12 @@ export async function generateSummary(meetingId: string): Promise<void> {
       select: {
         id: true,
         rawTranscript: true,
-        meeting: { select: { projectId: true } },
+        meeting: {
+          select: {
+            projectId: true,
+            project: { select: { client: { select: { orgId: true } } } },
+          },
+        },
       },
     });
 
@@ -50,7 +55,17 @@ export async function generateSummary(meetingId: string): Promise<void> {
       return;
     }
 
+    const orgId = transcript.meeting.project?.client.orgId;
+    if (!orgId) {
+      console.warn("[meeting-summary] meeting has no project/client org — skipping", {
+        meetingId,
+        projectId: transcript.meeting.projectId,
+      });
+      return;
+    }
+
     const job = await createAiJob({
+      orgId,
       type: "SUMMARY",
       tier: "API_HAIKU",
       projectId: transcript.meeting.projectId ?? undefined,

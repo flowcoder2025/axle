@@ -39,11 +39,7 @@ export async function getAiJobQuotaStatus(orgId: string): Promise<AiJobQuotaStat
   const used = await prisma.aiJob.count({
     where: {
       createdAt: { gte: startOfMonth() },
-      // Prefer orgId FK; fall back to project path for pre-backfill rows.
-      OR: [
-        { orgId },
-        { orgId: null, project: { client: { orgId } } },
-      ],
+      orgId,
     },
   });
 

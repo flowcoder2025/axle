@@ -52,10 +52,9 @@ describe("getAiJobQuotaStatus", () => {
     mockCount.mockResolvedValue(0);
     await getAiJobQuotaStatus("org1");
     const args = mockCount.mock.calls[0][0];
-    // Boundary uses OR: direct orgId FK or fallback via project path
-    const orClauses = args.where.OR as Array<Record<string, unknown>>;
-    expect(orClauses).toBeDefined();
-    expect(orClauses.some((c) => c.orgId === "org1")).toBe(true);
+    // After AiJob.orgId NOT NULL migration: boundary is direct orgId FK (no fallback)
+    expect(args.where.orgId).toBe("org1");
+    expect(args.where.OR).toBeUndefined();
     expect(args.where.createdAt.gte).toBeInstanceOf(Date);
     // Start of the month → day=1, hours=0
     const d: Date = args.where.createdAt.gte;

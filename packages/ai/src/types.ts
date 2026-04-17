@@ -4,6 +4,8 @@ import type { Prisma } from "@prisma/client";
 export type { AiJob, AiJobType, AiTier, JobStatus };
 
 export interface CreateAiJobData {
+  /** Owning organization. Required — used for quota accounting and org boundary enforcement. */
+  orgId: string;
   projectId?: string;
   type: AiJobType;
   input: Prisma.InputJsonValue;

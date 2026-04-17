@@ -13,6 +13,7 @@ const mockJournalOps = {
 
 const mockClientOps = {
   findFirst: vi.fn(),
+  findUnique: vi.fn(),
 };
 
 const mockContactOps = {
@@ -639,6 +640,7 @@ describe("POST /api/journals/[journalId]/ai-draft", () => {
     vi.mocked(getCurrentUser).mockResolvedValue(authedUser as never);
     mockJournalOps.findFirst.mockResolvedValue(BASE_JOURNAL);
     mockJournalOps.update.mockResolvedValue({ ...BASE_JOURNAL, aiDraftJobId: "job-1" });
+    mockClientOps.findUnique.mockResolvedValue({ orgId: "org-1" });
     mockCreateAiJob.mockResolvedValue({
       id: "job-1",
       type: "JOURNAL_DRAFT",

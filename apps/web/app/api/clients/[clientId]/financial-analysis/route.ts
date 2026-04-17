@@ -82,6 +82,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     // Create AiJob record
     const job = await prisma.aiJob.create({
       data: {
+        orgId: user.orgId,
         type: "FINANCIAL_ANALYSIS",
         tier: "API_HAIKU",
         status: "COMPLETED",

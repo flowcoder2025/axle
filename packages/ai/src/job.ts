@@ -12,6 +12,7 @@ export async function createAiJob(data: CreateAiJobData) {
 
   return prisma.aiJob.create({
     data: {
+      orgId: data.orgId,
       projectId: data.projectId,
       type: data.type,
       tier,

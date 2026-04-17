@@ -48,7 +48,16 @@ interface JournalDraftResult {
  * @returns The created AiJob record
  */
 export async function generateJournalDraft(journal: JournalDraftInput) {
+  const client = await prisma.client.findUnique({
+    where: { id: journal.clientId },
+    select: { orgId: true },
+  });
+  if (!client) {
+    throw new Error(`Client ${journal.clientId} not found`);
+  }
+
   const job = await createAiJob({
+    orgId: client.orgId,
     type: "JOURNAL_DRAFT",
     tier: "LOCAL_MLX",
     input: {

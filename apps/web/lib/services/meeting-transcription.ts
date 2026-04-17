@@ -19,7 +19,12 @@ import { createAiJob } from "@axle/ai";
 export async function startTranscription(meetingId: string): Promise<string> {
   const meeting = await prisma.meeting.findUnique({
     where: { id: meetingId },
-    select: { id: true, recordingUrl: true, projectId: true },
+    select: {
+      id: true,
+      recordingUrl: true,
+      projectId: true,
+      project: { select: { client: { select: { orgId: true } } } },
+    },
   });
 
   if (!meeting) {
@@ -30,7 +35,13 @@ export async function startTranscription(meetingId: string): Promise<string> {
     throw new Error(`Meeting ${meetingId} has no recording URL`);
   }
 
+  const orgId = meeting.project?.client.orgId;
+  if (!orgId) {
+    throw new Error(`Meeting ${meetingId} has no project/client org`);
+  }
+
   const job = await createAiJob({
+    orgId,
     type: "TRANSCRIBE",
     projectId: meeting.projectId ?? undefined,
     input: {
