@@ -52,7 +52,10 @@ describe("getAiJobQuotaStatus", () => {
     mockCount.mockResolvedValue(0);
     await getAiJobQuotaStatus("org1");
     const args = mockCount.mock.calls[0][0];
-    expect(args.where.project.client.orgId).toBe("org1");
+    // Boundary uses OR: direct orgId FK or fallback via project path
+    const orClauses = args.where.OR as Array<Record<string, unknown>>;
+    expect(orClauses).toBeDefined();
+    expect(orClauses.some((c) => c.orgId === "org1")).toBe(true);
     expect(args.where.createdAt.gte).toBeInstanceOf(Date);
     // Start of the month → day=1, hours=0
     const d: Date = args.where.createdAt.gte;

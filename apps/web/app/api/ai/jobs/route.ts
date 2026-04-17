@@ -31,8 +31,11 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * pageSize;
 
     const where: Prisma.AiJobWhereInput = {
-      // Enforce org boundary via project → client → orgId
-      project: { client: { orgId: user.orgId } },
+      // Org boundary: prefer orgId FK, fall back to project path for pre-backfill rows
+      OR: [
+        { orgId: user.orgId },
+        { orgId: null, project: { client: { orgId: user.orgId } } },
+      ],
       ...(projectId ? { projectId } : {}),
       ...(type ? { type } : {}),
       ...(status ? { status } : {}),
@@ -122,6 +125,7 @@ export async function POST(req: NextRequest) {
 
     const job = await prisma.aiJob.create({
       data: {
+        orgId: user.orgId,
         projectId,
         type,
         tier,
