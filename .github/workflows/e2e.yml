@@ -20,6 +20,8 @@ permissions:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: '--max-old-space-size=4096'
     steps:
       - uses: actions/checkout@v4
 
