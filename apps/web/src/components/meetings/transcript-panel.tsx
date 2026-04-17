@@ -10,6 +10,7 @@ interface TranscriptData {
   summary: string | null;
   keyDecisions: unknown;
   aiJobId: string | null;
+  aiJob: { status: string; errorMessage: string | null } | null;
 }
 
 interface TranscriptPanelProps {
@@ -121,14 +122,32 @@ export function TranscriptPanel({ meetingId, transcript: initial, onChanged }: T
               onClick={handleGenerateSummary}
               disabled={summarizing}
             >
-              {summarizing ? "요약 중..." : "요약 생성"}
+              {summarizing
+                ? "요약 중..."
+                : transcript.aiJob?.status === "FAILED"
+                  ? "다시 시도"
+                  : "요약 생성"}
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground">
-            {transcript.aiJobId
-              ? "요약 생성 중입니다. 잠시 후 새로고침 해주세요."
-              : "아직 요약이 없습니다. '요약 생성' 버튼을 클릭하세요."}
-          </p>
+          {transcript.aiJob?.status === "FAILED" ? (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+              <p className="font-medium">요약 생성에 실패했습니다.</p>
+              {transcript.aiJob.errorMessage && (
+                <p className="mt-1 text-xs opacity-90 break-words">
+                  {transcript.aiJob.errorMessage}
+                </p>
+              )}
+              <p className="mt-2 text-xs text-muted-foreground">
+                "다시 시도" 버튼을 눌러 재생성할 수 있습니다.
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {transcript.aiJobId
+                ? "요약 생성 중입니다. 잠시 후 새로고침 해주세요."
+                : "아직 요약이 없습니다. '요약 생성' 버튼을 클릭하세요."}
+            </p>
+          )}
         </div>
       )}
 

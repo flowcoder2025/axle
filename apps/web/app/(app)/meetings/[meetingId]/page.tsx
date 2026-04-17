@@ -79,6 +79,14 @@ export default async function MeetingDetailPage({ params }: PageProps) {
           summary: meeting.transcript.summary,
           keyDecisions: meeting.transcript.keyDecisions,
           aiJobId: meeting.transcript.aiJobId,
+          aiJob: meeting.transcript.aiJobId
+            ? await prisma.aiJob
+                .findUnique({
+                  where: { id: meeting.transcript.aiJobId },
+                  select: { status: true, errorMessage: true },
+                })
+                .then((j) => (j ? { status: j.status, errorMessage: j.errorMessage } : null))
+            : null,
         }
       : null,
     actionItems: meeting.actionItems.map((a) => ({

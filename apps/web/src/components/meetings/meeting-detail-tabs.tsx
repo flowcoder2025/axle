@@ -13,6 +13,7 @@ interface TranscriptData {
   summary: string | null;
   keyDecisions: unknown;
   aiJobId: string | null;
+  aiJob: { status: string; errorMessage: string | null } | null;
 }
 
 interface MeetingInfo {
