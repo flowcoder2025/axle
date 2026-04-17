@@ -1,0 +1,87 @@
+name: DB Migrate (manual)
+
+# Manually triggered workflow to run `prisma db push` and/or one-off
+# backfill scripts against the production DB using repository secrets.
+# Use via Actions → DB Migrate (manual) → "Run workflow".
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_db_push:
+        description: "Run `prisma db push` against DATABASE_URL"
+        type: boolean
+        default: false
+      run_backfill_aijob_orgid:
+        description: "Run backfill-aijob-orgid script"
+        type: boolean
+        default: false
+      dry_run:
+        description: "Dry run (print intended actions only)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: "--max-old-space-size=4096"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build @axle/db (generates Prisma client)
+        run: npx turbo build --filter=@axle/db
+
+      - name: Summary
+        run: |
+          echo "run_db_push=${{ inputs.run_db_push }}"
+          echo "run_backfill_aijob_orgid=${{ inputs.run_backfill_aijob_orgid }}"
+          echo "dry_run=${{ inputs.dry_run }}"
+
+      - name: prisma db push
+        if: inputs.run_db_push && !inputs.dry_run
+        working-directory: packages/db
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: npx prisma db push --schema=prisma/schema.prisma --skip-generate --accept-data-loss
+
+      - name: prisma db push (DRY RUN)
+        if: inputs.run_db_push && inputs.dry_run
+        working-directory: packages/db
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: |
+          echo "[dry-run] Would execute: prisma db push --schema=prisma/schema.prisma"
+          npx prisma migrate diff \
+            --from-url "$DATABASE_URL" \
+            --to-schema-datamodel prisma/schema.prisma \
+            --script || true
+
+      - name: Install tsx for one-off scripts
+        if: inputs.run_backfill_aijob_orgid
+        run: npm install --no-save tsx
+
+      - name: backfill AiJob.orgId
+        if: inputs.run_backfill_aijob_orgid && !inputs.dry_run
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: npx tsx packages/db/scripts/backfill-aijob-orgid.ts
+
+      - name: backfill AiJob.orgId (DRY RUN)
+        if: inputs.run_backfill_aijob_orgid && inputs.dry_run
+        run: |
+          echo "[dry-run] Would execute: tsx packages/db/scripts/backfill-aijob-orgid.ts"
+          echo "Script source:"
+          cat packages/db/scripts/backfill-aijob-orgid.ts
