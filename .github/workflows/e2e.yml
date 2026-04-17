@@ -3,6 +3,15 @@ name: E2E Tests
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - "packages/**"
+      - "e2e/**"
+      - "playwright.config.ts"
+      - "package-lock.json"
+      - ".github/workflows/e2e.yml"
 
 permissions:
   contents: read
@@ -36,7 +45,12 @@ jobs:
         run: |
           npm start &
           npx wait-on http://localhost:3000 --timeout 30000
-          npx playwright test --reporter=json > e2e-results.json 2>&1 || true
+          # PR: surface failures via exit code. Push: always continue so regression issues get filed.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            npx playwright test --reporter=json > e2e-results.json
+          else
+            npx playwright test --reporter=json > e2e-results.json 2>&1 || true
+          fi
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
@@ -46,8 +60,21 @@ jobs:
           E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
           E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
 
-      - name: Check results and create regression issues
+      - name: Upload Playwright report
         if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+            e2e-results.json
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Check results and create regression issues
+        # Regression issues are only meaningful for main pushes; skip on PRs.
+        if: always() && github.event_name == 'push'
         run: |
           if [ ! -f e2e-results.json ]; then
             echo "No e2e results file found"
