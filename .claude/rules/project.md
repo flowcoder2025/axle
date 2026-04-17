@@ -48,6 +48,19 @@
 - 모든 체크 통과 필수
 - 머지 후 브랜치 자동 삭제
 
+## Git 저자 고정 (CRITICAL — Vercel 배포 차단 방지)
+- **모든 커밋/PR 저자는 `flowcoder25 <flowcoder25@gmail.com>` 필수**
+- Vercel 팀(flowcoder)에서 `Jerome87hyunil <hyunil8702@gmail.com>`은 `VIEWER_FOR_PLUS` 역할 → Production 배포 시 `TEAM_ACCESS_REQUIRED` 에러로 차단됨
+- 저자가 다르면: live prod가 이전 성공 빌드에 고정 → 신규 라우트가 배포 안 돼 404 발생
+- 작업 시작 전 반드시 확인: `git config user.name && git config user.email`
+- 다르면 교정:
+  ```bash
+  git config user.name "flowcoder25"
+  git config user.email "flowcoder25@gmail.com"
+  ```
+- **PR squash 머지 시 저자는 `gh auth` 활성 계정으로 찍힘** (local git user가 아님!) — PR #8~#21이 Jerome87hyunil로 찍힌 실제 원인. 해결: `gh auth status` → flowcoder25가 Active인지 확인. 아니면 `gh auth switch --user flowcoder25`
+- 기존에 다른 저자로 머지된 commit이 main에 있으면 `git commit --amend --author` 또는 rebase로 재작성 필요 (push force는 팀 합의 후)
+
 ## RAG 컨텍스트
 - 작업 시작 전 `.claude/rules/rag-context.md`의 주제-파일 매핑에 따라 관련 RAG 로드
 - 작업 중 변경사항은 해당 RAG 파일에 즉시 반영

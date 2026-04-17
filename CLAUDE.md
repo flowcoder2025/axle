@@ -49,6 +49,7 @@ docs/
 6. **전수 조사**: 동일 패턴이 다른 곳에도 있는지 전수 검색. 부분 수정 금지.
 7. **사이드이펙트 사전 분석**: 깨질 수 있는 기존 기능 미리 식별. 한쪽 고치면서 다른 쪽 깨지는 해결 금지.
 8. **E2E = 브라우저 UI 조작**: `request.get/post`는 E2E가 아님. `page.goto → fill → click → 검증` 필수.
+9. **Git 저자는 flowcoder25 고정**: 모든 커밋/PR 저자는 `flowcoder25 <flowcoder25@gmail.com>`. 다른 저자(예: `Jerome87hyunil`)는 Vercel 팀 `VIEWER_FOR_PLUS` 권한이라 Production 배포가 `TEAM_ACCESS_REQUIRED`로 block됨. PR 머지 시에도 저자 유지 필요 — `gh pr merge --squash --body` 전에 `git config user.name/email` 확인하고, squash 커밋 트레일러에 `Co-authored-by: flowcoder25 <flowcoder25@gmail.com>` 대신 **author 자체를 flowcoder25로** 설정할 것. 저자가 섞이면 라이브 prod가 5일 전 빌드에 고정되어 라우트 404가 발생한다.
 
 ## 자동 강제 (hook/validate/검증 에이전트 — 사람 개입 없이 동작)
 - **검증 에이전트**: 소스 3파일+ 변경 시 자동 실행 — requirements.md vs 구현 대조, 누락/불완전 감지
