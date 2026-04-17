@@ -19,6 +19,7 @@ import {
   TableCell,
 } from "@axle/ui";
 import { getOrgStats } from "@/lib/admin/org-aggregator";
+import { getAiJobQuotaStatus } from "@/lib/quota/ai-jobs";
 import { PlanQuotaForm } from "./plan-quota-form";
 import { SuspendToggle } from "./suspend-toggle";
 
@@ -36,7 +37,7 @@ export default async function OrgDetailPage({ params }: Props) {
   await requirePlatformAdmin();
   const { orgId } = await params;
 
-  const [org, stats] = await Promise.all([
+  const [org, stats, aiQuota] = await Promise.all([
     prisma.organization.findUnique({
       where: { id: orgId },
       select: {
@@ -62,6 +63,7 @@ export default async function OrgDetailPage({ params }: Props) {
       },
     }),
     getOrgStats(orgId),
+    getAiJobQuotaStatus(orgId).catch(() => null),
   ]);
 
   if (!org) notFound();
@@ -222,6 +224,10 @@ export default async function OrgDetailPage({ params }: Props) {
                 plan={org.plan}
                 quotaAiJobs={org.quotaAiJobs}
                 quotaMembers={org.quotaMembers}
+                usage={{
+                  aiJobsThisMonth: aiQuota?.used ?? 0,
+                  members: stats.memberCount,
+                }}
               />
             </CardContent>
           </Card>
