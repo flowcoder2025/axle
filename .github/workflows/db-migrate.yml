@@ -51,22 +51,29 @@ jobs:
         if: inputs.run_db_push && !inputs.dry_run
         working-directory: packages/db
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
-        run: npx prisma db push --schema=prisma/schema.prisma --skip-generate --accept-data-loss
+        # DDL requires direct Postgres connection (not pooler). Pass DIRECT_URL via --url.
+        # Prisma 7 removed --skip-generate (no longer needed; generation is a separate step).
+        run: npx prisma db push --schema=prisma/schema.prisma --url "$DIRECT_URL" --accept-data-loss
 
       - name: prisma db push (DRY RUN)
         if: inputs.run_db_push && inputs.dry_run
         working-directory: packages/db
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          # prisma.config.ts reads DATABASE_URL; migrate diff needs direct connection for DDL.
+          DATABASE_URL: ${{ secrets.DIRECT_URL }}
+        # Prisma 7 removed --from-url; use --from-config-datasource with prisma.config.ts.
         run: |
           echo "[dry-run] Would execute: prisma db push --schema=prisma/schema.prisma"
+          echo ""
+          echo "Schema validate:"
+          npx prisma validate
+          echo ""
+          echo "Diff (current DB vs target schema):"
           npx prisma migrate diff \
-            --from-url "$DATABASE_URL" \
+            --from-config-datasource ./prisma.config.ts \
             --to-schema-datamodel prisma/schema.prisma \
-            --script || true
+            --script || echo "(diff failed — see prisma validate output above)"
 
       - name: Install tsx for one-off scripts
         if: inputs.run_backfill_aijob_orgid
