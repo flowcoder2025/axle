@@ -15,6 +15,8 @@ const {
   mockGetCurrentUser,
   mockCreateNotification,
   mockSend,
+  mockCheck,
+  mockRelationTuple,
 } = vi.hoisted(() => ({
   mockProject: { findFirst: vi.fn(), update: vi.fn() },
   mockUser: { findFirst: vi.fn(), findUnique: vi.fn() },
@@ -22,6 +24,8 @@ const {
   mockGetCurrentUser: vi.fn(),
   mockCreateNotification: vi.fn(),
   mockSend: vi.fn().mockResolvedValue(undefined),
+  mockCheck: vi.fn(),
+  mockRelationTuple: { count: vi.fn() },
 }));
 
 vi.mock("@axle/db", () => ({
@@ -29,7 +33,9 @@ vi.mock("@axle/db", () => ({
     project: mockProject,
     user: mockUser,
     projectMember: mockProjectMember,
+    relationTuple: mockRelationTuple,
   },
+  check: mockCheck,
 }));
 
 vi.mock("@axle/auth", () => ({
@@ -63,6 +69,8 @@ beforeEach(() => {
   mockGetCurrentUser.mockResolvedValue(authedUser);
   mockCreateNotification.mockResolvedValue(undefined);
   mockSend.mockResolvedValue(undefined);
+  mockCheck.mockResolvedValue(true);
+  mockRelationTuple.count.mockResolvedValue(0);
 });
 
 describe("POST /api/projects/[projectId]/handoff", () => {

@@ -23,13 +23,21 @@ const mockPrismaChecklistItem = {
   createMany: vi.fn(),
 };
 
+const mockPrismaRelationTuple = {
+  count: vi.fn(),
+};
+
+const mockCheck = vi.fn();
+
 vi.mock("@axle/db", () => ({
   DB_PACKAGE: "@axle/db",
+  check: mockCheck,
   prisma: {
     project: mockPrismaProject,
     client: mockPrismaClient,
     checklistTemplate: mockPrismaChecklistTemplate,
     checklistItem: mockPrismaChecklistItem,
+    relationTuple: mockPrismaRelationTuple,
     $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => {
       const tx = {
         project: mockPrismaProject,
@@ -140,7 +148,11 @@ describe("projectSearchSchema", () => {
 // --- GET /api/projects ---
 
 describe("GET /api/projects", () => {
-  beforeEach(() => vi.resetAllMocks());
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mockCheck.mockResolvedValue(true);
+    mockPrismaRelationTuple.count.mockResolvedValue(0);
+  });
 
   it("returns 401 when not authenticated", async () => {
     vi.mocked(getCurrentUser).mockResolvedValue(null);
@@ -198,7 +210,11 @@ describe("GET /api/projects", () => {
 // --- POST /api/projects ---
 
 describe("POST /api/projects", () => {
-  beforeEach(() => vi.resetAllMocks());
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mockCheck.mockResolvedValue(true);
+    mockPrismaRelationTuple.count.mockResolvedValue(0);
+  });
 
   it("returns 401 when not authenticated", async () => {
     vi.mocked(getCurrentUser).mockResolvedValue(null);
@@ -325,7 +341,11 @@ describe("POST /api/projects", () => {
 // --- GET /api/projects/[projectId] ---
 
 describe("GET /api/projects/[projectId]", () => {
-  beforeEach(() => vi.resetAllMocks());
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mockCheck.mockResolvedValue(true);
+    mockPrismaRelationTuple.count.mockResolvedValue(0);
+  });
 
   it("returns 404 when project not found", async () => {
     vi.mocked(getCurrentUser).mockResolvedValue(authedUser);
@@ -370,7 +390,11 @@ describe("GET /api/projects/[projectId]", () => {
 // --- PATCH /api/projects/[projectId] ---
 
 describe("PATCH /api/projects/[projectId]", () => {
-  beforeEach(() => vi.resetAllMocks());
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mockCheck.mockResolvedValue(true);
+    mockPrismaRelationTuple.count.mockResolvedValue(0);
+  });
 
   it("returns 404 if project not in org", async () => {
     vi.mocked(getCurrentUser).mockResolvedValue(authedUser);
@@ -404,7 +428,11 @@ describe("PATCH /api/projects/[projectId]", () => {
 // --- DELETE /api/projects/[projectId] ---
 
 describe("DELETE /api/projects/[projectId]", () => {
-  beforeEach(() => vi.resetAllMocks());
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mockCheck.mockResolvedValue(true);
+    mockPrismaRelationTuple.count.mockResolvedValue(0);
+  });
 
   it("returns 404 if project not found", async () => {
     vi.mocked(getCurrentUser).mockResolvedValue(authedUser);

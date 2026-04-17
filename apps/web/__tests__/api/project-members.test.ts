@@ -30,15 +30,19 @@ const mockUser = {
 
 const mockGrant = vi.fn();
 const mockRevoke = vi.fn();
+const mockCheck = vi.fn().mockResolvedValue(true);
+const mockRelationTuple = { count: vi.fn().mockResolvedValue(0) };
 
 vi.mock("@axle/db", () => ({
   prisma: {
     project: mockProject,
     projectMember: mockProjectMember,
     user: mockUser,
+    relationTuple: mockRelationTuple,
   },
   grant: mockGrant,
   revoke: mockRevoke,
+  check: mockCheck,
 }));
 
 vi.mock("@axle/auth", () => ({
@@ -78,6 +82,8 @@ beforeEach(() => {
   mockProject.findFirst.mockResolvedValue(PROJECT);
   mockGrant.mockResolvedValue(undefined);
   mockRevoke.mockResolvedValue(undefined);
+  mockCheck.mockResolvedValue(true);
+  mockRelationTuple.count.mockResolvedValue(0);
 });
 
 // ---------------------------------------------------------------------------
