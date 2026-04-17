@@ -9,6 +9,7 @@ import {
   handleInternalError,
   unauthorizedResponse,
 } from "@/lib/api-helpers";
+import { assertAiJobQuota, QuotaExceededError } from "@/lib/quota/ai-jobs";
 
 // GET /api/ai/jobs — list AI jobs with filters and pagination
 export async function GET(req: NextRequest) {
@@ -96,6 +97,25 @@ export async function POST(req: NextRequest) {
           { status: 404 }
         );
       }
+    }
+
+    try {
+      await assertAiJobQuota(user.orgId);
+    } catch (err) {
+      if (err instanceof QuotaExceededError) {
+        return NextResponse.json(
+          {
+            error: {
+              code: err.code,
+              message: err.message,
+              used: err.used,
+              limit: err.limit,
+            },
+          },
+          { status: 429 }
+        );
+      }
+      throw err;
     }
 
     const tier = tierOverride ?? resolveAiTier(type);

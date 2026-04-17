@@ -9,6 +9,10 @@ type PlanQuotaFormProps = {
   plan: string;
   quotaAiJobs: number;
   quotaMembers: number;
+  usage: {
+    aiJobsThisMonth: number;
+    members: number;
+  };
 };
 
 export function PlanQuotaForm({
@@ -16,6 +20,7 @@ export function PlanQuotaForm({
   plan,
   quotaAiJobs,
   quotaMembers,
+  usage,
 }: PlanQuotaFormProps) {
   const [isPending, startTransition] = useTransition();
   const [formPlan, setFormPlan] = useState(plan);
@@ -66,6 +71,12 @@ export function PlanQuotaForm({
           onChange={(e) => setFormAiJobs(e.target.value)}
           className="mt-1"
         />
+        <p className="mt-1 text-xs text-muted-foreground">
+          이번 달 사용: {usage.aiJobsThisMonth.toLocaleString()} / {quotaAiJobs.toLocaleString()}
+          {usage.aiJobsThisMonth >= quotaAiJobs && (
+            <span className="ml-2 font-medium text-red-600">한도 초과</span>
+          )}
+        </p>
       </div>
       <div>
         <Label htmlFor="quotaMembers">멤버 쿼터</Label>
@@ -77,6 +88,12 @@ export function PlanQuotaForm({
           onChange={(e) => setFormMembers(e.target.value)}
           className="mt-1"
         />
+        <p className="mt-1 text-xs text-muted-foreground">
+          현재 멤버: {usage.members.toLocaleString()} / {quotaMembers.toLocaleString()}
+          {usage.members >= quotaMembers && (
+            <span className="ml-2 font-medium text-red-600">한도 초과</span>
+          )}
+        </p>
       </div>
       <Button type="submit" disabled={isPending}>
         {isPending ? "저장 중..." : "저장"}

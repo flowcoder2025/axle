@@ -4,6 +4,8 @@ import { requirePlatformAdmin } from "@axle/auth";
 import { Toaster } from "@axle/ui";
 import { AdminSidebar } from "@/src/components/admin/admin-sidebar";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminLayout({
   children,
 }: {

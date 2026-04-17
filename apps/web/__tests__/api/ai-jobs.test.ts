@@ -4,8 +4,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockAiJob = {
   findMany: vi.fn(),
-  count: vi.fn(),
+  count: vi.fn().mockResolvedValue(0),
   findFirst: vi.fn(),
+  findUnique: vi.fn().mockResolvedValue(null),
   create: vi.fn(),
   update: vi.fn(),
 };
@@ -14,11 +15,16 @@ const mockProject = {
   findFirst: vi.fn(),
 };
 
+const mockOrganization = {
+  findUnique: vi.fn().mockResolvedValue({ quotaAiJobs: 10000 }),
+};
+
 vi.mock("@axle/db", () => ({
   DB_PACKAGE: "@axle/db",
   prisma: {
     aiJob: mockAiJob,
     project: mockProject,
+    organization: mockOrganization,
   },
 }));
 
