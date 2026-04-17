@@ -26,6 +26,7 @@ export {
   requireOrg,
   requireOrgAdmin,
   requirePlatformAdmin,
+  invalidateUserCache,
 } from "./dal.js";
 
 // Session cache

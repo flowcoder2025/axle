@@ -7,10 +7,6 @@ import {
   CardHeader,
   CardTitle,
   Badge,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
   Table,
   TableHeader,
   TableRow,
@@ -22,6 +18,7 @@ import { getOrgStats } from "@/lib/admin/org-aggregator";
 import { getAiJobQuotaStatus } from "@/lib/quota/ai-jobs";
 import { PlanQuotaForm } from "./plan-quota-form";
 import { SuspendToggle } from "./suspend-toggle";
+import { OrgDetailTabs } from "./org-detail-tabs";
 
 type Props = {
   params: Promise<{ orgId: string }>;
@@ -82,15 +79,10 @@ export default async function OrgDetailPage({ params }: Props) {
         )}
       </div>
 
-      <Tabs defaultValue="overview">
-        <TabsList>
-          <TabsTrigger value="overview">개요</TabsTrigger>
-          <TabsTrigger value="members">멤버 ({stats.memberCount})</TabsTrigger>
-          <TabsTrigger value="plan">플랜/쿼터</TabsTrigger>
-          <TabsTrigger value="manage">관리</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-4">
+      <OrgDetailTabs
+        memberCount={stats.memberCount}
+        overview={
+          <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="pb-2">
@@ -171,9 +163,9 @@ export default async function OrgDetailPage({ params }: Props) {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="members">
+          </div>
+        }
+        members={
           <Card>
             <CardHeader>
               <CardTitle className="text-base">멤버 목록</CardTitle>
@@ -211,9 +203,8 @@ export default async function OrgDetailPage({ params }: Props) {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="plan">
+        }
+        plan={
           <Card>
             <CardHeader>
               <CardTitle className="text-base">플랜 / 쿼터 설정</CardTitle>
@@ -231,9 +222,8 @@ export default async function OrgDetailPage({ params }: Props) {
               />
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="manage">
+        }
+        manage={
           <Card>
             <CardHeader>
               <CardTitle className="text-base">조직 관리</CardTitle>
@@ -250,8 +240,8 @@ export default async function OrgDetailPage({ params }: Props) {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        }
+      />
     </div>
   );
 }

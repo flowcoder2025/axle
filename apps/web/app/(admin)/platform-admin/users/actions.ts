@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
-import { requirePlatformAdmin } from "@axle/auth";
+import { requirePlatformAdmin, invalidateUserCache } from "@axle/auth";
 import { prisma } from "@axle/db";
 import {
   guardSelfDemotion,
@@ -37,6 +37,7 @@ export async function changeUserRole(
     where: { id: userId },
     data: { platformRole: newRole },
   });
+  invalidateUserCache(userId);
 
   revalidatePath("/platform-admin/users");
   revalidatePath(`/platform-admin/users/${userId}`);
@@ -66,6 +67,7 @@ export async function setUserActive(
     where: { id: userId },
     data: { isActive },
   });
+  invalidateUserCache(userId);
 
   revalidatePath("/platform-admin/users");
   revalidatePath(`/platform-admin/users/${userId}`);
