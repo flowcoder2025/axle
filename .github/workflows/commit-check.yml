@@ -53,3 +53,45 @@ jobs:
             echo "Example: WI-001-feat 사용자 인증 추가"
             exit 1
           fi
+
+      - name: Validate commit author (Vercel team access)
+        run: |
+          # Only flowcoder25 has Contributor access on Vercel team "flowcoder".
+          # Other authors (e.g. Jerome87hyunil = VIEWER_FOR_PLUS) cause production
+          # deploys to be blocked with TEAM_ACCESS_REQUIRED, silently freezing
+          # live prod on the last successful build. This check blocks PRs with
+          # wrong author BEFORE merge so we catch it early.
+          EXPECTED_EMAIL="flowcoder25@gmail.com"
+          AUTHORS=$(git log origin/main..HEAD --pretty=format:"%an <%ae>")
+          if [ -z "$AUTHORS" ]; then
+            echo "No new commits - skipping author check"
+            exit 0
+          fi
+          FAILED=0
+          while IFS= read -r author; do
+            if [[ "$author" != *"<$EXPECTED_EMAIL>"* ]]; then
+              echo "FAIL: '$author' — expected '<$EXPECTED_EMAIL>'"
+              FAILED=1
+            else
+              echo "OK: '$author'"
+            fi
+          done <<< "$AUTHORS"
+
+          if [ $FAILED -eq 1 ]; then
+            echo ""
+            echo "All commits must be authored by flowcoder25 <flowcoder25@gmail.com>."
+            echo "Other authors are blocked by Vercel's team access policy and"
+            echo "cause production deploys to silently freeze."
+            echo ""
+            echo "Fix (before pushing):"
+            echo "  git config user.name 'flowcoder25'"
+            echo "  git config user.email 'flowcoder25@gmail.com'"
+            echo "  git rebase -i origin/main  # then 'edit' each offending commit,"
+            echo "  git commit --amend --reset-author --no-edit && git rebase --continue"
+            echo "  git push --force-with-lease"
+            echo ""
+            echo "For PR squash merges, ensure 'gh auth status' shows flowcoder25 as"
+            echo "the Active account before merging:"
+            echo "  gh auth switch --user flowcoder25"
+            exit 1
+          fi
