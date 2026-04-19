@@ -1,4 +1,8 @@
 # .github/workflows/e2e-boundary.yml
+# Boundary (권한 경계) E2E tests — run against local Next.js build + prod DB (E2E seed).
+# Rationale: axleai.io is behind Cloudflare bot challenge, blocking GitHub Actions runners.
+# So we build the web app locally on the runner, point it at prod Supabase (read-only seed data),
+# and exercise auth/ReBAC against that localhost instance.
 name: E2E Boundary Tests
 
 on:
@@ -11,10 +15,18 @@ permissions:
 jobs:
   boundary:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       NODE_OPTIONS: '--max-old-space-size=4096'
-      E2E_BASE_URL: https://axleai.io
+      # Local server; build + run on :3000
+      E2E_BASE_URL: http://localhost:3000
+      # Prod Supabase — boundary tests are read-only and use dedicated E2E fixtures.
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+      AUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+      NEXTAUTH_URL: http://localhost:3000
+      AUTH_URL: http://localhost:3000
       E2E_PLATFORM_EMAIL: ${{ secrets.E2E_PLATFORM_EMAIL }}
       E2E_PLATFORM_PASSWORD: ${{ secrets.E2E_PLATFORM_PASSWORD }}
       E2E_ORG1_OWNER_EMAIL: ${{ secrets.E2E_ORG1_OWNER_EMAIL }}
@@ -33,13 +45,21 @@ jobs:
 
       - run: npm ci
 
+      - name: Build web app
+        run: npm run build
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run @boundary tests against prod
+      - name: Start web server
+        run: |
+          npm -w apps/web run start &
+          npx wait-on http://localhost:3000 --timeout 60000
+
+      - name: Run @boundary tests
         run: npx playwright test --grep @boundary
 
-      - name: Upload trace on failure
+      - name: Upload diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
