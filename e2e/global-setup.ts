@@ -39,12 +39,16 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
       const ctx = await browser.newContext({ baseURL });
       const page = await ctx.newPage();
       try {
-        await page.goto("/login", { waitUntil: "domcontentloaded" });
-        // Use direct id selectors (robust against hydration/label-association timing).
-        await page.locator("#email").waitFor({ state: "visible", timeout: 20_000 });
-        await page.locator("#email").fill(email);
-        await page.locator("#password").fill(password);
-        await page.locator('button[type="submit"]').click();
+        await page.goto("/login");
+        // Wait for network idle → ensures React bundle loaded + hydration complete.
+        // Without this, clicking submit triggers a raw HTML form POST (no action attr)
+        // which bypasses next-auth's credentials flow and lands on /api/auth/error.
+        await page.waitForLoadState("networkidle", { timeout: 15_000 });
+        // Using getByLabel/getByRole — these selectors implicitly wait for accessibility
+        // tree to be populated, which aligns with React hydration being complete.
+        await page.getByLabel(/이메일|email/i).fill(email);
+        await page.getByLabel(/비밀번호|password/i).fill(password);
+        await page.getByRole("button", { name: /^로그인$|^sign in$/i }).click();
         await page.waitForURL(/\/(dashboard|platform-admin|clients|projects)/, { timeout: 20_000 });
         await ctx.storageState({ path: storageStatePath(role) });
         console.log(`[global-setup] Saved storage state for ${role}`);
