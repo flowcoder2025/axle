@@ -18,14 +18,32 @@ export const authConfig: NextAuthConfig = {
   },
   callbacks: {
     /**
-     * jwt callback — runs on every token creation/refresh.
+     * jwt callback (edge) — runs on every token creation/refresh.
      * Adds `userId` to the JWT payload from the User object (available on sign-in).
+     * Note: `platformRole` and `orgId` are populated by the node-runtime jwt callback
+     * in `auth.ts` at sign-in time and persist on the token across requests.
      */
     jwt({ token, user }) {
       if (user?.id) {
         token.userId = user.id;
       }
       return token;
+    },
+
+    /**
+     * session callback (edge) — exposes token.platformRole/orgId on auth.user
+     * so middleware's authorized() can enforce role-based access.
+     * The node-runtime session callback in auth.ts does the same for page/API consumers.
+     */
+    session({ session, token }) {
+      if (session.user && token) {
+        session.user.id = (token.userId as string) ?? session.user.id;
+        (session.user as typeof session.user & { orgId: string | null; platformRole: string }).orgId =
+          (token.orgId as string | null) ?? null;
+        (session.user as typeof session.user & { orgId: string | null; platformRole: string }).platformRole =
+          (token.platformRole as string) ?? "USER";
+      }
+      return session;
     },
 
     /**

@@ -1,0 +1,72 @@
+# .github/workflows/e2e-boundary.yml
+# Boundary (권한 경계) E2E tests — run against local Next.js build + prod DB (E2E seed).
+# Rationale: axleai.io is behind Cloudflare bot challenge, blocking GitHub Actions runners.
+# So we build the web app locally on the runner, point it at prod Supabase (read-only seed data),
+# and exercise auth/ReBAC against that localhost instance.
+name: E2E Boundary Tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NODE_OPTIONS: '--max-old-space-size=4096'
+      # Local server; build + run on :3000
+      E2E_BASE_URL: http://localhost:3000
+      # Prod Supabase — boundary tests are read-only and use dedicated E2E fixtures.
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      # CI-only secret (not a real prod secret — just needs to sign JWT sessions for this run).
+      NEXTAUTH_SECRET: axle-boundary-e2e-ci-only-secret-do-not-use-in-prod
+      AUTH_SECRET: axle-boundary-e2e-ci-only-secret-do-not-use-in-prod
+      NEXTAUTH_URL: http://localhost:3000
+      AUTH_URL: http://localhost:3000
+      E2E_PLATFORM_EMAIL: ${{ secrets.E2E_PLATFORM_EMAIL }}
+      E2E_PLATFORM_PASSWORD: ${{ secrets.E2E_PLATFORM_PASSWORD }}
+      E2E_ORG1_OWNER_EMAIL: ${{ secrets.E2E_ORG1_OWNER_EMAIL }}
+      E2E_ORG1_OWNER_PASSWORD: ${{ secrets.E2E_ORG1_OWNER_PASSWORD }}
+      E2E_ORG1_MEMBER_EMAIL: ${{ secrets.E2E_ORG1_MEMBER_EMAIL }}
+      E2E_ORG1_MEMBER_PASSWORD: ${{ secrets.E2E_ORG1_MEMBER_PASSWORD }}
+      E2E_ORG2_OWNER_EMAIL: ${{ secrets.E2E_ORG2_OWNER_EMAIL }}
+      E2E_ORG2_OWNER_PASSWORD: ${{ secrets.E2E_ORG2_OWNER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start web server
+        run: |
+          npm -w apps/web run start &
+          npx wait-on http://localhost:3000 --timeout 60000
+
+      - name: Run @boundary tests
+        run: npx playwright test --grep @boundary
+
+      - name: Upload diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-boundary-trace-${{ github.run_id }}
+          path: |
+            test-results/
+            .playwright-auth/
+          retention-days: 7
+          if-no-files-found: ignore

@@ -37,15 +37,40 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
     for (const role of E2E_ROLES) {
       const { email, password } = getAccount(role);
       const ctx = await browser.newContext({ baseURL });
-      const page = await ctx.newPage();
       try {
-        await page.goto("/login");
-        await page.getByLabel(/이메일|email/i).fill(email);
-        await page.getByLabel(/비밀번호|password/i).fill(password);
-        await page.getByRole("button", { name: /로그인|sign in/i }).click();
-        await page.waitForURL(/\/(dashboard|platform-admin|clients|projects)/, { timeout: 15_000 });
+        // Authenticate via Auth.js API directly (bypasses UI hydration timing issues).
+        // Steps: GET /api/auth/csrf → POST /api/auth/callback/credentials → session cookie set.
+        const api = ctx.request;
+        const csrfRes = await api.get("/api/auth/csrf");
+        if (!csrfRes.ok()) {
+          throw new Error(`csrf fetch failed: ${csrfRes.status()} ${await csrfRes.text()}`);
+        }
+        const { csrfToken } = (await csrfRes.json()) as { csrfToken: string };
+
+        const loginRes = await api.post("/api/auth/callback/credentials", {
+          form: {
+            csrfToken,
+            email,
+            password,
+            callbackUrl: `${baseURL}/dashboard`,
+            json: "true",
+          },
+          maxRedirects: 0,
+          failOnStatusCode: false,
+        });
+        // Auth.js returns 302 to callbackUrl on success, 302 to /api/auth/error on failure.
+        const location = loginRes.headers()["location"] ?? "";
+        if (loginRes.status() !== 302 || location.includes("/api/auth/error")) {
+          throw new Error(
+            `login failed for ${role}: status=${loginRes.status()} location=${location}`,
+          );
+        }
+
         await ctx.storageState({ path: storageStatePath(role) });
         console.log(`[global-setup] Saved storage state for ${role}`);
+      } catch (err) {
+        console.error(`[global-setup] Login failed for ${role}:`, err);
+        throw err;
       } finally {
         await ctx.close();
       }
