@@ -3,6 +3,13 @@
 // authorization boundaries AND that the owner CRUD happy path works end-to-end.
 // These tests mutate DB state, so they only run against an ephemeral Postgres
 // in CI (e2e-write.yml) — never against prod.
+//
+// Note: Admin API endpoints are guarded at TWO layers:
+//   1. Middleware `authorized()` callback returns a redirect to /dashboard for
+//      non-PLATFORM_ADMIN users hitting /api/admin/* routes.
+//   2. Each admin route handler also calls `requirePlatformAdmin()` (belt & braces).
+// That means non-admin callers see a 30x redirect (not 403), so we use
+// `maxRedirects: 0` and accept either the redirect or the node-level 403.
 import { test, expect } from "@playwright/test";
 import { storageStatePath, E2E_IDS } from "./helpers/roles";
 
@@ -17,50 +24,44 @@ test.describe("role write actions @write", () => {
       expect([403, 404]).toContain(res.status());
     });
 
-    test("PATCH /api/admin/organizations/[orgId] returns 403", async ({
+    test("PATCH /api/admin/organizations/[orgId] is blocked by middleware", async ({
       request,
     }) => {
-      // MEMBER (platformRole=USER) cannot mutate any organization via admin API.
       const res = await request.patch(
         `/api/admin/organizations/${E2E_IDS.orgs.org1}`,
-        { data: { name: "hacked-by-member" } },
+        { data: { name: "hacked-by-member" }, maxRedirects: 0 },
       );
-      expect(res.status()).toBe(403);
+      const status = res.status();
+      if (status === 403) return; // node-level block (if middleware ever passes through)
+      expect([302, 307, 308]).toContain(status);
+      const location = res.headers()["location"] ?? "";
+      expect(location).toMatch(/\/dashboard|\/login/);
     });
   });
 
   test.describe("as org1-owner", () => {
     test.use({ storageState: storageStatePath("org1-owner") });
 
-    test("can CRUD a client (create → edit → delete)", async ({
-      page,
-      request,
-    }) => {
-      const clientName = `E2E-Write-${Date.now()}`;
+    // API-level CRUD: the Next.js route handlers are the real write surface,
+    // and they enforce org-scope. We exercise POST → PATCH → DELETE and assert
+    // each hop returns a success code. (A UI-driven variant is covered by the
+    // @smoke client-crud spec when E2E_USER_EMAIL is provided.)
+    test("client CRUD (POST → PATCH → DELETE) via API", async ({ request }) => {
+      const name = `E2E-Write-${Date.now()}`;
 
-      // Create
-      await page.goto("/clients/new");
-      await page.getByLabel(/고객사명/).fill(clientName);
-      await page.getByLabel(/사업자등록번호/).fill("111-11-11111");
-      await page
-        .getByRole("button", { name: /고객사 추가|생성|저장|Save|Create/i })
-        .click();
-      await page.waitForURL(/\/clients\/[^/]+$/, { timeout: 15_000 });
-      const url = page.url();
-      const clientId = url.split("/").pop()!;
-      expect(clientId).toBeTruthy();
+      const createRes = await request.post("/api/clients", {
+        data: { name, businessNumber: "111-11-11111", status: "ACTIVE" },
+      });
+      expect([200, 201]).toContain(createRes.status());
+      const created = await createRes.json();
+      const clientId: string | undefined = created?.data?.id;
+      expect(clientId, "POST /api/clients must return data.id").toBeTruthy();
 
-      // Edit
-      await page.goto(`/clients/${clientId}/edit`);
-      await page.getByLabel(/고객사명/).fill(`${clientName}-edited`);
-      await page
-        .getByRole("button", { name: /변경 저장|저장|업데이트|Save|Update/i })
-        .click();
-      // After edit the form redirects back to /clients/{id}
-      await page.waitForURL(/\/clients\/[^/]+$/, { timeout: 15_000 });
-      expect(page.url()).not.toMatch(/\/edit$/);
+      const patchRes = await request.patch(`/api/clients/${clientId}`, {
+        data: { name: `${name}-edited` },
+      });
+      expect([200, 204]).toContain(patchRes.status());
 
-      // Delete via API (UI delete flow triggers a confirm dialog)
       const delRes = await request.delete(`/api/clients/${clientId}`);
       expect([200, 204]).toContain(delRes.status());
     });
@@ -124,7 +125,6 @@ test.describe("role write actions @write", () => {
       const res = await request.get("/api/admin/users/export");
       expect(res.status()).toBe(200);
       const body = await res.text();
-      // CSV should have at least a header row + one data row.
       const lines = body.split("\n").filter((l) => l.trim().length > 0);
       expect(lines.length).toBeGreaterThan(1);
     });

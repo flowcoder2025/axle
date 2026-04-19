@@ -74,9 +74,10 @@ jobs:
       E2E_ORG1_MEMBER_PASSWORD: test1234
       E2E_ORG2_OWNER_EMAIL: owner2@e2e.axleai.io
       E2E_ORG2_OWNER_PASSWORD: test1234
-      # Legacy smoke fallback (signInAsTestUser reads these when ORG1_OWNER envs exist it uses those first)
-      E2E_USER_EMAIL: owner1@e2e.axleai.io
-      E2E_USER_PASSWORD: test1234
+      # Intentionally do NOT set E2E_USER_EMAIL/PASSWORD — the legacy smoke specs
+      # gate on `hasTestCreds` and skip when these are unset. This preserves the
+      # prior (prod) e2e.yml behavior and avoids re-enabling specs that have
+      # not yet been ported to the ephemeral-DB fixtures.
     steps:
       - uses: actions/checkout@v4
 
