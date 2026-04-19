@@ -1,27 +1,83 @@
-name: E2E Tests
+# .github/workflows/e2e-write.yml
+# Write (DB-mutating) E2E tests — run against an ephemeral Postgres service so we can
+# freely create/update/delete without touching prod. Also absorbs the @smoke run that
+# previously lived in e2e.yml, and keeps the regression-issue automation on main push.
+name: E2E Write Tests (ephemeral)
 
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
     paths:
-      - "apps/web/**"
-      - "packages/**"
-      - "e2e/**"
-      - "playwright.config.ts"
-      - "package-lock.json"
-      - ".github/workflows/e2e.yml"
+      - 'apps/web/**'
+      - 'packages/**'
+      - 'e2e/**'
+      - 'playwright.config.ts'
+      - 'package-lock.json'
+      - '.github/workflows/e2e-write.yml'
+  pull_request:
+    paths:
+      - 'apps/web/app/(admin)/**'
+      - 'apps/web/app/api/admin/**'
+      - 'apps/web/app/api/clients/**'
+      - 'apps/web/app/api/projects/**'
+      - 'apps/web/src/components/clients/**'
+      - 'packages/auth/**'
+      - 'packages/db/prisma/schema.prisma'
+      - 'packages/db/seed.ts'
+      - 'packages/db/seed-e2e.ts'
+      - 'e2e/**'
+      - 'playwright.config.ts'
+      - '.github/workflows/e2e-write.yml'
+  schedule:
+    - cron: '0 17 * * *'  # 02:00 KST (17:00 UTC prior day)
+  workflow_dispatch:
 
 permissions:
   contents: read
   issues: write
 
 jobs:
-  e2e:
+  write:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: axle_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     env:
       NODE_OPTIONS: '--max-old-space-size=4096'
+      # Ephemeral DB — safe to mutate
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/axle_e2e
+      DIRECT_URL: postgres://postgres:postgres@localhost:5432/axle_e2e
+      # CI-only secret — only needs to sign JWT sessions for this run
+      NEXTAUTH_SECRET: axle-write-e2e-ci-only-secret-do-not-use-in-prod
+      AUTH_SECRET: axle-write-e2e-ci-only-secret-do-not-use-in-prod
+      NEXTAUTH_URL: http://localhost:3000
+      AUTH_URL: http://localhost:3000
+      E2E_BASE_URL: http://localhost:3000
+      # E2E account fixtures (seeded by seed-e2e.ts into the ephemeral DB)
+      E2E_PLATFORM_EMAIL: platform@e2e.axleai.io
+      E2E_PLATFORM_PASSWORD: test1234
+      E2E_ORG1_OWNER_EMAIL: owner1@e2e.axleai.io
+      E2E_ORG1_OWNER_PASSWORD: test1234
+      E2E_ORG1_MEMBER_EMAIL: member1@e2e.axleai.io
+      E2E_ORG1_MEMBER_PASSWORD: test1234
+      E2E_ORG2_OWNER_EMAIL: owner2@e2e.axleai.io
+      E2E_ORG2_OWNER_PASSWORD: test1234
+      # Intentionally do NOT set E2E_USER_EMAIL/PASSWORD — the legacy smoke specs
+      # gate on `hasTestCreds` and skip when these are unset. This preserves the
+      # prior (prod) e2e.yml behavior and avoids re-enabling specs that have
+      # not yet been ported to the ephemeral-DB fixtures.
     steps:
       - uses: actions/checkout@v4
 
@@ -32,41 +88,51 @@ jobs:
 
       - run: npm ci
 
-      - name: Build
-        run: npm run build
+      - name: Enable pgvector extension
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          NEXTAUTH_URL: http://localhost:3000
+          PGPASSWORD: postgres
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          psql -h localhost -U postgres -d axle_e2e -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
-      - name: Install Playwright
+      - name: Prisma generate
+        working-directory: packages/db
+        run: npx prisma generate
+
+      - name: Prisma db push
+        working-directory: packages/db
+        run: npx prisma db push --accept-data-loss
+
+      # NOTE: skip packages/db/seed.ts — it has stale fixture data (AiJob.orgId
+      # is now NOT NULL but the seed predates that migration). The E2E tests only
+      # need the minimal fixtures in seed-e2e.ts.
+      - name: Seed E2E fixtures
+        run: npx tsx packages/db/seed-e2e.ts
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run E2E tests
+      - name: Start web server
         run: |
           npm -w apps/web run start &
           npx wait-on http://localhost:3000 --timeout 60000
-          # PR: surface failures via exit code. Push: always continue so regression issues get filed.
+
+      - name: Run @write + @smoke tests
+        run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            npx playwright test --grep @smoke --reporter=json > e2e-results.json
+            npx playwright test --grep "@write|@smoke" --reporter=json > e2e-results.json
           else
-            npx playwright test --grep @smoke --reporter=json > e2e-results.json 2>&1 || true
+            npx playwright test --grep "@write|@smoke" --reporter=json > e2e-results.json 2>&1 || true
           fi
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          NEXTAUTH_URL: http://localhost:3000
-          # Optional: authenticated CRUD scenarios skip when unset
-          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
-          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
 
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-${{ github.run_id }}
+          name: playwright-write-report-${{ github.run_id }}
           path: |
             playwright-report/
             test-results/
@@ -75,15 +141,16 @@ jobs:
           if-no-files-found: ignore
 
       - name: Check results and create regression issues
-        # Regression issues are only meaningful for main pushes; skip on PRs.
-        if: always() && github.event_name == 'push'
+        # Only on main push / schedule — PR failures surface via exit code above.
+        if: always() && (github.event_name == 'push' || github.event_name == 'schedule')
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ ! -f e2e-results.json ]; then
             echo "No e2e results file found"
             exit 0
           fi
 
-          # 실패한 테스트 추출
           FAILED_TESTS=$(cat e2e-results.json | node -e "
             const fs = require('fs');
             const data = JSON.parse(fs.readFileSync('/dev/stdin', 'utf8'));
@@ -118,7 +185,6 @@ jobs:
           echo "$FAILED_TESTS" | node -e "
             const failures = JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8'));
             for (const f of failures) {
-              // describe 블록에서 WI 번호 추출 (예: 'WI-063: 휴가 신청 폼')
               const wiMatch = f.title.match(/WI-\d+/);
               const wiNum = wiMatch ? wiMatch[0] : 'UNKNOWN';
               console.log(JSON.stringify({ wi: wiNum, title: f.title, file: f.file, error: f.error }));
@@ -129,7 +195,6 @@ jobs:
             ERROR=$(echo "$line" | node -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).error)")
             FILE=$(echo "$line" | node -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).file)")
 
-            # 같은 WI의 open regression issue가 있으면 스킵 (정확 매칭)
             EXISTING=$(gh issue list --label regression --search "$WI_NUM" --state open --json number,title --jq "[.[] | select(.title | test(\"^${WI_NUM}[^0-9]\"))] | length" 2>/dev/null || echo "0")
             if [ "$EXISTING" != "0" ]; then
               echo "Skipping $WI_NUM - regression issue already exists"
@@ -144,5 +209,3 @@ jobs:
 
             echo "Created regression issue for $WI_NUM"
           done
-        env:
-          GH_TOKEN: ${{ github.token }}
