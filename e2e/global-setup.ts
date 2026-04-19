@@ -49,11 +49,16 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
         await ctx.storageState({ path: storageStatePath(role) });
         console.log(`[global-setup] Saved storage state for ${role}`);
       } catch (err) {
-        // Capture screenshot for diagnosis when login fails (stored alongside storage state).
+        // Capture diagnostics when login fails.
         try {
+          const url = page.url();
+          const title = await page.title().catch(() => "<title unavailable>");
+          const content = await page.content().catch(() => "<content unavailable>");
+          console.error(`[global-setup] Login failed for ${role}. url=${url} title=${title}`);
+          console.error(`[global-setup] HTML (first 2000 chars):\n${content.slice(0, 2000)}`);
           await page.screenshot({ path: `.playwright-auth/error-${role}.png`, fullPage: true });
         } catch {
-          // screenshot best-effort; do not mask original error
+          // diagnostics best-effort; do not mask original error
         }
         throw err;
       } finally {
