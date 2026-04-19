@@ -87,6 +87,13 @@ jobs:
 
       - run: npm ci
 
+      - name: Enable pgvector extension
+        env:
+          PGPASSWORD: postgres
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          psql -h localhost -U postgres -d axle_e2e -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
       - name: Prisma generate
         working-directory: packages/db
         run: npx prisma generate
