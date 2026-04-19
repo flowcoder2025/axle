@@ -23,8 +23,9 @@ jobs:
       # Prod Supabase — boundary tests are read-only and use dedicated E2E fixtures.
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DIRECT_URL: ${{ secrets.DIRECT_URL }}
-      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-      AUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+      # CI-only secret (not a real prod secret — just needs to sign JWT sessions for this run).
+      NEXTAUTH_SECRET: axle-boundary-e2e-ci-only-secret-do-not-use-in-prod
+      AUTH_SECRET: axle-boundary-e2e-ci-only-secret-do-not-use-in-prod
       NEXTAUTH_URL: http://localhost:3000
       AUTH_URL: http://localhost:3000
       E2E_PLATFORM_EMAIL: ${{ secrets.E2E_PLATFORM_EMAIL }}
