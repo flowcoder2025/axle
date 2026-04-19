@@ -31,14 +31,22 @@ test.describe("role boundary: platform admin routes @boundary", () => {
       expect(page.url()).not.toMatch(/\/platform-admin/);
     });
 
-    test("GET /api/admin/users returns 403", async ({ request }) => {
-      const res = await request.get("/api/admin/users");
-      expect(res.status()).toBe(403);
+    test("GET /api/admin/users is blocked by middleware", async ({ request }) => {
+      const res = await request.get("/api/admin/users", { maxRedirects: 0 });
+      const status = res.status();
+      if (status === 403) return; // node-level block (if middleware ever passes through)
+      expect([302, 307, 308]).toContain(status);
+      const location = res.headers()["location"] ?? "";
+      expect(location).toMatch(/\/dashboard|\/login/);
     });
 
-    test("GET /api/admin/stats returns 403", async ({ request }) => {
-      const res = await request.get("/api/admin/stats");
-      expect(res.status()).toBe(403);
+    test("GET /api/admin/stats is blocked by middleware", async ({ request }) => {
+      const res = await request.get("/api/admin/stats", { maxRedirects: 0 });
+      const status = res.status();
+      if (status === 403) return;
+      expect([302, 307, 308]).toContain(status);
+      const location = res.headers()["location"] ?? "";
+      expect(location).toMatch(/\/dashboard|\/login/);
     });
   });
 
@@ -53,9 +61,13 @@ test.describe("role boundary: platform admin routes @boundary", () => {
       expect(page.url()).not.toMatch(/\/platform-admin/);
     });
 
-    test("GET /api/admin/organizations returns 403", async ({ request }) => {
-      const res = await request.get("/api/admin/organizations");
-      expect(res.status()).toBe(403);
+    test("GET /api/admin/organizations is blocked by middleware", async ({ request }) => {
+      const res = await request.get("/api/admin/organizations", { maxRedirects: 0 });
+      const status = res.status();
+      if (status === 403) return;
+      expect([302, 307, 308]).toContain(status);
+      const location = res.headers()["location"] ?? "";
+      expect(location).toMatch(/\/dashboard|\/login/);
     });
   });
 
