@@ -1,21 +1,37 @@
 import { type Page, expect } from "@playwright/test";
+import { type E2ERole, getAccount } from "./roles";
 
+// Legacy single-account envs (kept for backward-compat).
 export const TEST_USER_EMAIL = process.env.E2E_USER_EMAIL ?? "";
 export const TEST_USER_PASSWORD = process.env.E2E_USER_PASSWORD ?? "";
-
 export const hasTestCreds = Boolean(TEST_USER_EMAIL && TEST_USER_PASSWORD);
 
+/** Sign in as a specific E2E role. */
+export async function signInAs(page: Page, role: E2ERole): Promise<void> {
+  const { email, password } = getAccount(role);
+  await page.goto("/login");
+  await page.getByLabel(/이메일|email/i).fill(email);
+  await page.getByLabel(/비밀번호|password/i).fill(password);
+  await page.getByRole("button", { name: /로그인|sign in/i }).click();
+  // Platform admin lands on /platform-admin; others on /dashboard.
+  await page.waitForURL(/\/(dashboard|platform-admin|clients|projects)/, { timeout: 15_000 });
+}
+
 /**
- * Sign in via the public /login form. Fails the test if credentials are missing
- * or the login does not land on a dashboard URL.
+ * Legacy wrapper — equivalent to signInAs(page, "org1-owner").
+ * Preserved for existing smoke tests that still use E2E_USER_EMAIL.
+ * If E2E_ORG1_OWNER_* is set, use it; otherwise fall back to legacy envs.
  */
 export async function signInAsTestUser(page: Page): Promise<void> {
+  if (process.env.E2E_ORG1_OWNER_EMAIL) {
+    await signInAs(page, "org1-owner");
+    return;
+  }
   if (!hasTestCreds) {
     throw new Error(
-      "E2E_USER_EMAIL / E2E_USER_PASSWORD must be set to run authenticated E2E tests",
+      "E2E_USER_EMAIL / E2E_USER_PASSWORD (or E2E_ORG1_OWNER_*) must be set",
     );
   }
-
   await page.goto("/login");
   await page.getByLabel(/이메일|email/i).fill(TEST_USER_EMAIL);
   await page.getByLabel(/비밀번호|password/i).fill(TEST_USER_PASSWORD);
