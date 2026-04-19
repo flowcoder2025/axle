@@ -39,13 +39,23 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
       const ctx = await browser.newContext({ baseURL });
       const page = await ctx.newPage();
       try {
-        await page.goto("/login");
-        await page.getByLabel(/이메일|email/i).fill(email);
-        await page.getByLabel(/비밀번호|password/i).fill(password);
-        await page.getByRole("button", { name: /로그인|sign in/i }).click();
-        await page.waitForURL(/\/(dashboard|platform-admin|clients|projects)/, { timeout: 15_000 });
+        await page.goto("/login", { waitUntil: "domcontentloaded" });
+        // Use direct id selectors (robust against hydration/label-association timing).
+        await page.locator("#email").waitFor({ state: "visible", timeout: 20_000 });
+        await page.locator("#email").fill(email);
+        await page.locator("#password").fill(password);
+        await page.locator('button[type="submit"]').click();
+        await page.waitForURL(/\/(dashboard|platform-admin|clients|projects)/, { timeout: 20_000 });
         await ctx.storageState({ path: storageStatePath(role) });
         console.log(`[global-setup] Saved storage state for ${role}`);
+      } catch (err) {
+        // Capture screenshot for diagnosis when login fails (stored alongside storage state).
+        try {
+          await page.screenshot({ path: `.playwright-auth/error-${role}.png`, fullPage: true });
+        } catch {
+          // screenshot best-effort; do not mask original error
+        }
+        throw err;
       } finally {
         await ctx.close();
       }
