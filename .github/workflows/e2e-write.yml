@@ -102,9 +102,9 @@ jobs:
         working-directory: packages/db
         run: npx prisma db push --accept-data-loss
 
-      - name: Seed main fixtures
-        run: npx tsx packages/db/seed.ts
-
+      # NOTE: skip packages/db/seed.ts — it has stale fixture data (AiJob.orgId
+      # is now NOT NULL but the seed predates that migration). The E2E tests only
+      # need the minimal fixtures in seed-e2e.ts.
       - name: Seed E2E fixtures
         run: npx tsx packages/db/seed-e2e.ts
 
