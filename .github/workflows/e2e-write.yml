@@ -1,0 +1,201 @@
+# .github/workflows/e2e-write.yml
+# Write (DB-mutating) E2E tests — run against an ephemeral Postgres service so we can
+# freely create/update/delete without touching prod. Also absorbs the @smoke run that
+# previously lived in e2e.yml, and keeps the regression-issue automation on main push.
+name: E2E Write Tests (ephemeral)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'
+      - 'e2e/**'
+      - 'playwright.config.ts'
+      - 'package-lock.json'
+      - '.github/workflows/e2e-write.yml'
+  pull_request:
+    paths:
+      - 'apps/web/app/(admin)/**'
+      - 'apps/web/app/api/admin/**'
+      - 'apps/web/app/api/clients/**'
+      - 'apps/web/app/api/projects/**'
+      - 'apps/web/src/components/clients/**'
+      - 'packages/auth/**'
+      - 'packages/db/prisma/schema.prisma'
+      - 'packages/db/seed.ts'
+      - 'packages/db/seed-e2e.ts'
+      - 'e2e/**'
+      - 'playwright.config.ts'
+      - '.github/workflows/e2e-write.yml'
+  schedule:
+    - cron: '0 17 * * *'  # 02:00 KST (17:00 UTC prior day)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: axle_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_OPTIONS: '--max-old-space-size=4096'
+      # Ephemeral DB — safe to mutate
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/axle_e2e
+      DIRECT_URL: postgres://postgres:postgres@localhost:5432/axle_e2e
+      # CI-only secret — only needs to sign JWT sessions for this run
+      NEXTAUTH_SECRET: axle-write-e2e-ci-only-secret-do-not-use-in-prod
+      AUTH_SECRET: axle-write-e2e-ci-only-secret-do-not-use-in-prod
+      NEXTAUTH_URL: http://localhost:3000
+      AUTH_URL: http://localhost:3000
+      E2E_BASE_URL: http://localhost:3000
+      # E2E account fixtures (seeded by seed-e2e.ts into the ephemeral DB)
+      E2E_PLATFORM_EMAIL: platform@e2e.axleai.io
+      E2E_PLATFORM_PASSWORD: test1234
+      E2E_ORG1_OWNER_EMAIL: owner1@e2e.axleai.io
+      E2E_ORG1_OWNER_PASSWORD: test1234
+      E2E_ORG1_MEMBER_EMAIL: member1@e2e.axleai.io
+      E2E_ORG1_MEMBER_PASSWORD: test1234
+      E2E_ORG2_OWNER_EMAIL: owner2@e2e.axleai.io
+      E2E_ORG2_OWNER_PASSWORD: test1234
+      # Legacy smoke fallback (signInAsTestUser reads these when ORG1_OWNER envs exist it uses those first)
+      E2E_USER_EMAIL: owner1@e2e.axleai.io
+      E2E_USER_PASSWORD: test1234
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Prisma generate
+        run: npx prisma generate --schema=packages/db/prisma/schema.prisma
+
+      - name: Prisma db push
+        run: npx prisma db push --schema=packages/db/prisma/schema.prisma --skip-generate
+
+      - name: Seed main fixtures
+        run: npx tsx packages/db/seed.ts
+
+      - name: Seed E2E fixtures
+        run: npx tsx packages/db/seed-e2e.ts
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start web server
+        run: |
+          npm -w apps/web run start &
+          npx wait-on http://localhost:3000 --timeout 60000
+
+      - name: Run @write + @smoke tests
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            npx playwright test --grep "@write|@smoke" --reporter=json > e2e-results.json
+          else
+            npx playwright test --grep "@write|@smoke" --reporter=json > e2e-results.json 2>&1 || true
+          fi
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-write-report-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+            e2e-results.json
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Check results and create regression issues
+        # Only on main push / schedule — PR failures surface via exit code above.
+        if: always() && (github.event_name == 'push' || github.event_name == 'schedule')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ ! -f e2e-results.json ]; then
+            echo "No e2e results file found"
+            exit 0
+          fi
+
+          FAILED_TESTS=$(cat e2e-results.json | node -e "
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('/dev/stdin', 'utf8'));
+            const suites = data.suites || [];
+            const failures = [];
+            function walk(suite, parentTitle) {
+              const suiteTitle = parentTitle ? parentTitle + ' > ' + (suite.title || '') : (suite.title || '');
+              for (const spec of (suite.specs || [])) {
+                for (const test of (spec.tests || [])) {
+                  if (test.status === 'unexpected' || test.status === 'failed') {
+                    failures.push({
+                      title: suiteTitle + ' > ' + spec.title,
+                      file: suite.file || '',
+                      error: (test.results?.[0]?.error?.message || '').substring(0, 500)
+                    });
+                  }
+                }
+              }
+              for (const child of (suite.suites || [])) { walk(child, suiteTitle); }
+            }
+            suites.forEach(s => walk(s, ''));
+            console.log(JSON.stringify(failures));
+          " 2>/dev/null || echo "[]")
+
+          if [ "$FAILED_TESTS" = "[]" ] || [ -z "$FAILED_TESTS" ]; then
+            echo "All E2E tests passed"
+            exit 0
+          fi
+
+          echo "E2E failures detected, creating regression issues..."
+
+          echo "$FAILED_TESTS" | node -e "
+            const failures = JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8'));
+            for (const f of failures) {
+              const wiMatch = f.title.match(/WI-\d+/);
+              const wiNum = wiMatch ? wiMatch[0] : 'UNKNOWN';
+              console.log(JSON.stringify({ wi: wiNum, title: f.title, file: f.file, error: f.error }));
+            }
+          " | while IFS= read -r line; do
+            WI_NUM=$(echo "$line" | node -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).wi)")
+            TITLE=$(echo "$line" | node -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).title)")
+            ERROR=$(echo "$line" | node -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).error)")
+            FILE=$(echo "$line" | node -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).file)")
+
+            EXISTING=$(gh issue list --label regression --search "$WI_NUM" --state open --json number,title --jq "[.[] | select(.title | test(\"^${WI_NUM}[^0-9]\"))] | length" 2>/dev/null || echo "0")
+            if [ "$EXISTING" != "0" ]; then
+              echo "Skipping $WI_NUM - regression issue already exists"
+              continue
+            fi
+
+            ISSUE_BODY="E2E 테스트 실패: WI=${WI_NUM}, 테스트=${TITLE}, 파일=${FILE}, 커밋=${{ github.sha }}. 에러: ${ERROR}"
+            gh issue create \
+              --label regression \
+              --title "${WI_NUM} e2e 실패: ${TITLE}" \
+              --body "$ISSUE_BODY" || true
+
+            echo "Created regression issue for $WI_NUM"
+          done
