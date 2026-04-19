@@ -43,7 +43,9 @@ test.describe("meeting CRUD (authenticated) @smoke", () => {
     await page.getByLabel(/^제목/).fill(title);
     await page.getByLabel(/^날짜/).fill(todayDateInput());
 
-    await page.getByRole("button", { name: /미팅 생성|생성|추가|저장|등록/ }).click();
+    // The form also contains a "참석자 추가" button, so match the submit
+    // button exactly instead of a permissive regex.
+    await page.getByRole("button", { name: "미팅 생성" }).click();
 
     // Wait for redirect to detail page — exclude /meetings/new itself.
     await page.waitForURL(/\/meetings\/(?!new$)[a-z0-9]+$/i, { timeout: 10_000 });
@@ -59,7 +61,8 @@ test.describe("meeting CRUD (authenticated) @smoke", () => {
     const updatedTitle = `${title}-UPDATED`;
     await page.goto(`/meetings/${meetingId}/edit`);
     await page.getByLabel(/^제목/).fill(updatedTitle);
-    await page.getByRole("button", { name: /변경 저장|저장|수정|업데이트/ }).click();
+    // The edit form also contains "참석자 추가"; match the submit button exactly.
+    await page.getByRole("button", { name: "변경 저장" }).click();
     await page.waitForURL(new RegExp(`/meetings/${meetingId}$`), { timeout: 10_000 });
     await expect(page.getByText(updatedTitle).first()).toBeVisible();
   });

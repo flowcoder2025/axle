@@ -35,15 +35,17 @@ test.describe("client CRUD (authenticated) @smoke", () => {
     await page.waitForURL(new RegExp(`/clients/${clientId}$`), { timeout: 10_000 });
     await expect(page.getByText(updatedName).first()).toBeVisible();
 
-    // --- DELETE ---
-    // The delete action lives on the /clients list row dropdown (detail page
-    // has no delete button). Open the row's menu, click 삭제, accept the
-    // native confirm dialog, then verify the row is gone.
+    // --- DELETE (soft) ---
+    // The DELETE /api/clients/[id] route is a soft-delete by default
+    // (status → INACTIVE); the row stays in the list with a 비활성 badge.
+    // We exercise the UI flow (row dropdown → 삭제 → confirm) and assert
+    // the status changed, not that the row disappeared.
     await page.goto("/clients");
     const row = page.locator("tr", { hasText: updatedName }).first();
     await row.getByRole("button", { name: /메뉴 열기/ }).click();
     page.once("dialog", (dialog) => dialog.accept());
     await page.getByRole("menuitem", { name: /^삭제$/ }).click();
-    await expect(page.getByText(updatedName)).toHaveCount(0);
+    const deletedRow = page.locator("tr", { hasText: updatedName }).first();
+    await expect(deletedRow.getByText("비활성")).toBeVisible();
   });
 });

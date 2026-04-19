@@ -122,11 +122,17 @@ jobs:
           npx wait-on http://localhost:3000 --timeout 60000
 
       - name: Run @write + @smoke tests
+        # Use PLAYWRIGHT_JSON_OUTPUT_NAME so the JSON reporter writes directly to
+        # the file, keeping stdout (globalSetup logs, progress) out of the JSON —
+        # otherwise JSON.parse in the regression step fails silently on main and
+        # every failure gets reported as "All E2E tests passed".
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: e2e-results.json
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            npx playwright test --grep "@write|@smoke" --reporter=json > e2e-results.json
+            npx playwright test --grep "@write|@smoke" --reporter=json
           else
-            npx playwright test --grep "@write|@smoke" --reporter=json > e2e-results.json 2>&1 || true
+            npx playwright test --grep "@write|@smoke" --reporter=json || true
           fi
 
       - name: Upload Playwright report
