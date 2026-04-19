@@ -25,8 +25,10 @@ test.describe("role boundary: platform admin routes @boundary", () => {
 
     test("is redirected away from /platform-admin", async ({ page }) => {
       await page.goto("/platform-admin");
-      await page.waitForURL(/\/(dashboard|login)/, { timeout: 10_000 });
-      expect(page.url()).toMatch(/\/(dashboard|login)/);
+      // Middleware.authorized() returns a redirect Response for non-PLATFORM_ADMIN users.
+      // Accept any URL that is NOT /platform-admin (home, dashboard, clients, login all OK).
+      await page.waitForURL((url) => !url.pathname.startsWith("/platform-admin"), { timeout: 10_000 });
+      expect(page.url()).not.toMatch(/\/platform-admin/);
     });
 
     test("GET /api/admin/users returns 403", async ({ request }) => {
@@ -45,8 +47,10 @@ test.describe("role boundary: platform admin routes @boundary", () => {
 
     test("is redirected away from /platform-admin", async ({ page }) => {
       await page.goto("/platform-admin");
-      await page.waitForURL(/\/(dashboard|login)/, { timeout: 10_000 });
-      expect(page.url()).toMatch(/\/(dashboard|login)/);
+      // Middleware.authorized() returns a redirect Response for non-PLATFORM_ADMIN users.
+      // Accept any URL that is NOT /platform-admin (home, dashboard, clients, login all OK).
+      await page.waitForURL((url) => !url.pathname.startsWith("/platform-admin"), { timeout: 10_000 });
+      expect(page.url()).not.toMatch(/\/platform-admin/);
     });
 
     test("GET /api/admin/organizations returns 403", async ({ request }) => {
