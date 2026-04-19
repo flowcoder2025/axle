@@ -13,6 +13,7 @@ export default defineConfig({
   reporter: process.env.CI ? [["json"], ["list"]] : "list",
   timeout: 30_000,
   expect: { timeout: 10_000 },
+  globalSetup: "./e2e/global-setup.ts",
   use: {
     baseURL: BASE_URL,
     trace: "retain-on-failure",
