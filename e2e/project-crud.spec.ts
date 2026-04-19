@@ -8,7 +8,9 @@ function uniqueProjectTitle(prefix = "E2E-Project"): string {
 test.describe("project CRUD (authenticated) @smoke", () => {
   test.skip(!hasTestCreds, "Set E2E_USER_EMAIL + E2E_USER_PASSWORD to run");
 
-  test("create project → verify in list → edit → delete", async ({ page }) => {
+  // No DELETE step: project-table has no delete UI (neither row-level menu nor
+  // a detail-page button). The @write spec exercises DELETE via the API.
+  test("create project → verify in list → edit", async ({ page }) => {
     await signInAsTestUser(page);
 
     await page.goto("/projects/new");
@@ -33,10 +35,12 @@ test.describe("project CRUD (authenticated) @smoke", () => {
     const updatedTitle = `${title}-UPDATED`;
     await page.getByLabel(/프로젝트명/).fill(title);
 
-    await page.getByRole("button", { name: /저장|생성|등록/ }).click();
+    await page.getByRole("button", { name: /프로젝트 추가|추가|저장|등록|생성/ }).click();
 
-    // Landed on list or detail
-    await page.waitForURL(/\/projects(\/|$)/, { timeout: 10_000 });
+    // Wait for redirect to detail page — exclude /projects/new itself.
+    await page.waitForURL(/\/projects\/(?!new$)[a-z0-9]+$/i, { timeout: 10_000 });
+    const projectId = page.url().split("/").pop()!;
+    expect(projectId).not.toBe("new");
     await expect(page.getByText(title).first()).toBeVisible();
 
     // --- LIST verify ---
@@ -44,22 +48,10 @@ test.describe("project CRUD (authenticated) @smoke", () => {
     await expect(page.getByText(title).first()).toBeVisible();
 
     // --- EDIT ---
-    await page.getByText(title).first().click();
-    await page.waitForURL(/\/projects\/[a-z0-9]+/i);
-    await page.getByRole("link", { name: /편집|수정|edit/i }).first().click();
-    await page.waitForURL(/\/projects\/[a-z0-9]+\/edit/i);
+    await page.goto(`/projects/${projectId}/edit`);
     await page.getByLabel(/프로젝트명/).fill(updatedTitle);
-    await page.getByRole("button", { name: /저장|수정|업데이트/ }).click();
-    await page.waitForURL(/\/projects\/[a-z0-9]+$/i, { timeout: 10_000 });
+    await page.getByRole("button", { name: /변경 저장|저장|수정|업데이트/ }).click();
+    await page.waitForURL(new RegExp(`/projects/${projectId}$`), { timeout: 10_000 });
     await expect(page.getByText(updatedTitle).first()).toBeVisible();
-
-    // --- DELETE ---
-    page.once("dialog", (dialog) => dialog.accept());
-    await page
-      .getByRole("button", { name: /삭제|delete/i })
-      .first()
-      .click();
-    await page.waitForURL(/\/projects$/i, { timeout: 10_000 });
-    await expect(page.getByText(updatedTitle)).toHaveCount(0);
   });
 });

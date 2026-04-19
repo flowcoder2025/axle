@@ -16,7 +16,9 @@ function todayDateInput(): string {
 test.describe("meeting CRUD (authenticated) @smoke", () => {
   test.skip(!hasTestCreds, "Set E2E_USER_EMAIL + E2E_USER_PASSWORD to run");
 
-  test("create meeting → verify in list → edit → delete", async ({ page }) => {
+  // No DELETE step: meeting-table has no delete UI. The API-level delete is
+  // covered by route-handler tests; @smoke focuses on the UI happy path.
+  test("create meeting → verify in list → edit", async ({ page }) => {
     await signInAsTestUser(page);
 
     await page.goto("/meetings/new");
@@ -41,10 +43,12 @@ test.describe("meeting CRUD (authenticated) @smoke", () => {
     await page.getByLabel(/^제목/).fill(title);
     await page.getByLabel(/^날짜/).fill(todayDateInput());
 
-    await page.getByRole("button", { name: /저장|생성|등록/ }).click();
+    await page.getByRole("button", { name: /미팅 생성|생성|추가|저장|등록/ }).click();
 
-    // Landed on list or detail
-    await page.waitForURL(/\/meetings(\/|$)/, { timeout: 10_000 });
+    // Wait for redirect to detail page — exclude /meetings/new itself.
+    await page.waitForURL(/\/meetings\/(?!new$)[a-z0-9]+$/i, { timeout: 10_000 });
+    const meetingId = page.url().split("/").pop()!;
+    expect(meetingId).not.toBe("new");
     await expect(page.getByText(title).first()).toBeVisible();
 
     // --- LIST verify ---
@@ -53,22 +57,10 @@ test.describe("meeting CRUD (authenticated) @smoke", () => {
 
     // --- EDIT ---
     const updatedTitle = `${title}-UPDATED`;
-    await page.getByText(title).first().click();
-    await page.waitForURL(/\/meetings\/[a-z0-9]+/i);
-    await page.getByRole("link", { name: /편집|수정|edit/i }).first().click();
-    await page.waitForURL(/\/meetings\/[a-z0-9]+\/edit/i);
+    await page.goto(`/meetings/${meetingId}/edit`);
     await page.getByLabel(/^제목/).fill(updatedTitle);
-    await page.getByRole("button", { name: /저장|수정|업데이트/ }).click();
-    await page.waitForURL(/\/meetings\/[a-z0-9]+$/i, { timeout: 10_000 });
+    await page.getByRole("button", { name: /변경 저장|저장|수정|업데이트/ }).click();
+    await page.waitForURL(new RegExp(`/meetings/${meetingId}$`), { timeout: 10_000 });
     await expect(page.getByText(updatedTitle).first()).toBeVisible();
-
-    // --- DELETE ---
-    page.once("dialog", (dialog) => dialog.accept());
-    await page
-      .getByRole("button", { name: /삭제|delete/i })
-      .first()
-      .click();
-    await page.waitForURL(/\/meetings$/i, { timeout: 10_000 });
-    await expect(page.getByText(updatedTitle)).toHaveCount(0);
   });
 });
