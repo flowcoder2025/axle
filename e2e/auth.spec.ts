@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("auth: invalid credentials", () => {
+test.describe("auth: invalid credentials @smoke", () => {
   test("shows error when login fails", async ({ page }) => {
     await page.goto("/login");
 

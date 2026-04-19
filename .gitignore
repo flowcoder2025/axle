@@ -62,3 +62,6 @@ htmlcov/
 # Dev tools
 .playwright-cli/
 .superpowers/
+
+# Playwright auth storage
+.playwright-auth/

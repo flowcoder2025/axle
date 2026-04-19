@@ -5,7 +5,7 @@ function uniqueProjectTitle(prefix = "E2E-Project"): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 }
 
-test.describe("project CRUD (authenticated)", () => {
+test.describe("project CRUD (authenticated) @smoke", () => {
   test.skip(!hasTestCreds, "Set E2E_USER_EMAIL + E2E_USER_PASSWORD to run");
 
   test("create project → verify in list → edit → delete", async ({ page }) => {

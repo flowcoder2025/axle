@@ -13,7 +13,7 @@ function todayDateInput(): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-test.describe("meeting CRUD (authenticated)", () => {
+test.describe("meeting CRUD (authenticated) @smoke", () => {
   test.skip(!hasTestCreds, "Set E2E_USER_EMAIL + E2E_USER_PASSWORD to run");
 
   test("create meeting → verify in list → edit → delete", async ({ page }) => {
