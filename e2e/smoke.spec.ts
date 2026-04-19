@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("smoke: public pages render", () => {
+test.describe("smoke: public pages render @smoke", () => {
   test("login page renders without JS errors", async ({ page }) => {
     const consoleErrors: string[] = [];
     page.on("pageerror", (err) => consoleErrors.push(err.message));

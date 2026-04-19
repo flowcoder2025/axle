@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { hasTestCreds, signInAsTestUser, uniqueClientName } from "./helpers/auth";
 
-test.describe("client CRUD (authenticated)", () => {
+test.describe("client CRUD (authenticated) @smoke", () => {
   test.skip(!hasTestCreds, "Set E2E_USER_EMAIL + E2E_USER_PASSWORD to run");
 
   test("create → verify in list → edit → delete", async ({ page }) => {
