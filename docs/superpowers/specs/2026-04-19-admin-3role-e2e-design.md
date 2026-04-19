@@ -25,19 +25,28 @@
 
 | 역할 | 시스템 | 조직 멤버십 | 용도 |
 |------|--------|------------|------|
-| **platform** | `SystemRole.PLATFORM_ADMIN` | 없음 | 전체 조직/사용자 관리 |
-| **admin** | `SystemRole.USER` | `MemberRole.OWNER` | 자기 조직 관리 |
-| **employee** | `SystemRole.USER` | `MemberRole.MEMBER` | 자기 담당 업무만 |
+| **platform** | `PlatformRole.PLATFORM_ADMIN` | 없음 | 전체 조직/사용자 관리 |
+| **admin** | `PlatformRole.USER` | `MemberRole.OWNER` | 자기 조직 관리 |
+| **employee** | `PlatformRole.USER` | `MemberRole.MEMBER` | 자기 담당 업무만 |
 
-### Seed 확장 (`packages/db/seed.ts`)
+> 실제 스키마 필드: `user.platformRole` (enum `PlatformRole { USER, PLATFORM_ADMIN }`, schema.prisma:34).
 
-기존 `org-1`(플로우코더 컨설팅) 유지, 하단에 E2E 섹션 추가.
+### Seed 분리 (`packages/db/seed-e2e.ts` 신규)
+
+**중요**: 기존 `packages/db/seed.ts`는 실행 시 `cleanDatabase()`로 전체 데이터를 삭제하므로 **프로덕션에 직접 주입 불가**.
+E2E 전용 idempotent 스크립트를 신규 파일로 분리.
+
+**원칙**
+- `upsert` 기반 — 기존 엔티티 존재 시 갱신, 없으면 생성
+- 실 데이터 절대 건드리지 않음 — E2E prefix(`*-e2e-*`)가 붙은 row만 관리
+- 로컬 ephemeral에서는 `seed.ts` 이후 `seed-e2e.ts` 순차 실행으로 함께 주입
+- 프로덕션에는 `seed-e2e.ts`만 실행
 
 **User 4명** (email 도메인 `@e2e.axleai.io`, password `test1234`)
-- `e2e-platform` — `platform@e2e.axleai.io`, `systemRole: PLATFORM_ADMIN`, 조직 소속 없음
-- `e2e-org1-owner` — `owner1@e2e.axleai.io`, org-e2e-1 OWNER
-- `e2e-org1-member` — `member1@e2e.axleai.io`, org-e2e-1 MEMBER
-- `e2e-org2-owner` — `owner2@e2e.axleai.io`, org-e2e-2 OWNER
+- `e2e-platform` — `platform@e2e.axleai.io`, `platformRole: PLATFORM_ADMIN`, 조직 소속 없음
+- `e2e-org1-owner` — `owner1@e2e.axleai.io`, `platformRole: USER`, org-e2e-1 OWNER
+- `e2e-org1-member` — `member1@e2e.axleai.io`, `platformRole: USER`, org-e2e-1 MEMBER
+- `e2e-org2-owner` — `owner2@e2e.axleai.io`, `platformRole: USER`, org-e2e-2 OWNER
 
 **Organization 2개**
 - `org-e2e-1` — "E2E 컨설팅 A" (slug: `e2e-consulting-a`)
@@ -130,11 +139,16 @@ export const E2E_IDS = {
 | 1 | org1-member | 다른 사람 LEAD 프로젝트 `DELETE /api/projects/project-e2e-2` | 403 |
 | 2 | org1-member | `POST /api/admin/organizations/{org}/members` | 403 |
 | 3 | org1-owner | 자기 조직 client CRUD (create → edit → delete) | 모두 성공, UI 반영 |
-| 4 | platform | 신규 조직 생성 폼 제출 (`/platform-admin/organizations/new`) | 목록에 반영 |
-| 5 | platform | 사용자 suspend (`POST /api/admin/users/bulk` action=suspend) | 해당 사용자 로그인 차단 |
-| 6 | platform | 사용자 unsuspend | 로그인 복구 |
+| 4 | platform | 신규 조직 생성 — `POST /api/admin/organizations` (UI 폼 있으면 UI, 없으면 API 직접) | 목록에 반영 |
+| 5 | platform | 사용자 비활성화 (`POST /api/admin/users/bulk` action=`deactivate`) | `isActive=false`, 해당 사용자 로그인 차단 |
+| 6 | platform | 사용자 재활성화 (`action=activate`) | `isActive=true`, 로그인 복구 |
 | 7 | platform | 다른 조직 상세 진입 (`/platform-admin/organizations/org-e2e-1`) | 조직 메타/멤버 표시 |
 | 8 | platform | 사용자 bulk export CSV (`/api/admin/users/export`) | CSV 다운로드 성공, 행 수 > 0 |
+
+**플랜 단계 사전 검증 필요**
+- C-4 (`PATCH /api/projects/[projectId]`) handler 메서드 존재 여부 — 없으면 ReBAC 쓰기 검증을 `DELETE` 또는 form submit으로 대체
+- D-4 — `/platform-admin/organizations`에 인라인 생성 다이얼로그 존재 여부. 없으면 API 직접 호출로 fallback
+- 기존 API 응답 코드 관례(403 vs 404) — ReBAC 차단 시 어떤 코드를 반환하는지 확인 후 어설션 정렬
 
 **시나리오 총 합계**: @boundary 17개 / @write 8개 = 25개
 
@@ -254,6 +268,13 @@ jobs:
 - 내용을 `e2e-write.yml`에 흡수
 - 삭제 또는 주석 처리 후 deprecate — 동일 스펙이 `@smoke` 태그로 이전
 
+#### Regression issue 자동 생성 (`e2e-write.yml`로 carry forward)
+기존 `e2e.yml`에는 `main push` 시 실패 테스트를 `regression` 라벨 GitHub Issue로 자동 등록하는 스텝이 있음(e2e.yml:77-148). 이 로직을 **`e2e-write.yml`에 그대로 이식**.
+
+- PR 실행: 실패 시 즉시 fail (issue 생성 안 함)
+- main push / schedule 실행: 실패 시 WI 번호 추출 → `gh issue create --label regression` (기존 동일 WI의 open issue 존재 시 skip)
+- `e2e-boundary.yml`은 보안 경계 검증이 목적이라 main push에서도 즉시 fail만 — issue 생성 불필요 (검증이 깨졌으면 즉시 롤백해야 함)
+
 ### 장애/플래키 대응
 
 **storageState 만료**
@@ -274,17 +295,21 @@ jobs:
 
 ## 수용 기준 (Acceptance Criteria)
 
-- [ ] `packages/db/seed.ts` 실행 시 E2E 섹션 4 users / 2 orgs / 3 projects / relation tuples 생성
+- [ ] `packages/db/seed-e2e.ts` 신규 — idempotent upsert 기반 4 users / 2 orgs / 3 projects / relation tuples 주입 (실 데이터 불변)
+- [ ] `packages/db/seed.ts`는 E2E 데이터 삽입 안 함 (기존 동작 유지)
+- [ ] `user.platformRole` 필드 정확히 세팅 — `PlatformRole.PLATFORM_ADMIN` 또는 `USER`
 - [ ] `e2e/helpers/roles.ts` + `signInAs()` 구현, 기존 `signInAsTestUser` 후방 호환 유지
 - [ ] `playwright.config.ts` globalSetup에서 4역할 storageState 저장
 - [ ] @boundary 17개 시나리오 작성 및 로컬 통과
 - [ ] @write 8개 시나리오 작성 및 ephemeral DB에서 통과
 - [ ] `.github/workflows/e2e-boundary.yml` 신규 — PR에서 ~90초 내 완료
 - [ ] `.github/workflows/e2e-write.yml` 신규 — path filter + nightly + manual, ~5분 내 완료
+- [ ] `e2e-write.yml`에 main push / schedule 시 regression issue 자동 생성 로직 포함 (기존 e2e.yml에서 이식)
 - [ ] 기존 `e2e.yml` 제거 또는 흡수
-- [ ] prod Supabase에 E2E seed 주입 완료 (owner1/member1/owner2/platform 계정 로그인 가능 확인)
+- [ ] prod Supabase에 `seed-e2e.ts` 주입 완료 (owner1/member1/owner2/platform 계정 로그인 가능 확인, 실 데이터 0건 영향)
 - [ ] GitHub secrets 8개 등록 (`E2E_{ROLE}_EMAIL/PASSWORD`)
 - [ ] PR 브랜치 보호 규칙에 `e2e-boundary` 필수 체크 추가
+- [ ] 플랜 단계 사전 검증 완료: PATCH /api/projects, `/platform-admin/organizations` 생성 UI, ReBAC 응답 코드 관례
 
 ## 범위 외 (Out of Scope)
 
