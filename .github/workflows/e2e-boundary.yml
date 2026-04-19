@@ -1,0 +1,51 @@
+# .github/workflows/e2e-boundary.yml
+name: E2E Boundary Tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NODE_OPTIONS: '--max-old-space-size=4096'
+      E2E_BASE_URL: https://axleai.io
+      E2E_PLATFORM_EMAIL: ${{ secrets.E2E_PLATFORM_EMAIL }}
+      E2E_PLATFORM_PASSWORD: ${{ secrets.E2E_PLATFORM_PASSWORD }}
+      E2E_ORG1_OWNER_EMAIL: ${{ secrets.E2E_ORG1_OWNER_EMAIL }}
+      E2E_ORG1_OWNER_PASSWORD: ${{ secrets.E2E_ORG1_OWNER_PASSWORD }}
+      E2E_ORG1_MEMBER_EMAIL: ${{ secrets.E2E_ORG1_MEMBER_EMAIL }}
+      E2E_ORG1_MEMBER_PASSWORD: ${{ secrets.E2E_ORG1_MEMBER_PASSWORD }}
+      E2E_ORG2_OWNER_EMAIL: ${{ secrets.E2E_ORG2_OWNER_EMAIL }}
+      E2E_ORG2_OWNER_PASSWORD: ${{ secrets.E2E_ORG2_OWNER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run @boundary tests against prod
+        run: npx playwright test --grep @boundary
+
+      - name: Upload trace on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-boundary-trace-${{ github.run_id }}
+          path: |
+            test-results/
+            .playwright-auth/
+          retention-days: 7
+          if-no-files-found: ignore
