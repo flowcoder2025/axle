@@ -8,13 +8,25 @@ import { E2E_ROLES, getAccount, storageStatePath } from "./helpers/roles";
  * Tests then reuse these via `test.use({ storageState: ... })` — no per-test login.
  */
 export default async function globalSetup(config: FullConfig): Promise<void> {
-  // Skip gracefully if E2E account envs are missing — individual tests that need
-  // storage state will fail with a clear message instead of a confusing crash here.
-  const anyAccountEnvSet = process.env.E2E_PLATFORM_EMAIL
-    || process.env.E2E_ORG1_OWNER_EMAIL;
-  if (!anyAccountEnvSet) {
+  // Either all 8 E2E envs are set (CI or properly sourced .env.e2e) or none are (existing smoke suite).
+  // Partial configuration is misconfiguration — fail loudly up front with actionable message
+  // instead of crashing mid-loop at requireEnv().
+  const REQUIRED_ENVS = [
+    "E2E_PLATFORM_EMAIL", "E2E_PLATFORM_PASSWORD",
+    "E2E_ORG1_OWNER_EMAIL", "E2E_ORG1_OWNER_PASSWORD",
+    "E2E_ORG1_MEMBER_EMAIL", "E2E_ORG1_MEMBER_PASSWORD",
+    "E2E_ORG2_OWNER_EMAIL", "E2E_ORG2_OWNER_PASSWORD",
+  ] as const;
+  const missing = REQUIRED_ENVS.filter((name) => !process.env[name]);
+  if (missing.length === REQUIRED_ENVS.length) {
     console.warn("[global-setup] No E2E_* account envs found. Skipping storageState generation.");
     return;
+  }
+  if (missing.length > 0) {
+    throw new Error(
+      `[global-setup] Partial E2E env config. Missing: ${missing.join(", ")}. ` +
+      `Set all 8 envs or none. For local runs: copy .env.e2e.example → .env.e2e and source it.`,
+    );
   }
 
   const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
