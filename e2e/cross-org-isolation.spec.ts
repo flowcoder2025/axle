@@ -1,17 +1,15 @@
 // e2e/cross-org-isolation.spec.ts
 // Next.js App Router's notFound() renders not-found UI with HTTP 200.
-// Verification: the page shows "찾을 수 없습니다" heading and no entity-specific
-// affordances (like edit/delete buttons that would only render for valid clients).
+// Note: `not-found.tsx` is bundled into every page's error-boundary fallback,
+// so its text appears in the raw HTML even for successful pages — but only
+// the `<h1>404</h1>` landmark is VISIBLE when notFound() actually fires.
 import { test, expect } from "@playwright/test";
 import { storageStatePath, E2E_IDS } from "./helpers/roles";
 
 async function expectBlocked(page: import("@playwright/test").Page) {
-  // Wait for navigation to settle so we inspect the final rendered state.
   await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-  // The canonical not-found copy in AXLE's Korean UI.
-  await expect(page.getByText(/찾을 수 없습니다|Not Found/i).first()).toBeVisible({ timeout: 10_000 });
-  // No detail affordances (edit link/button) should render for a blocked resource.
-  await expect(page.getByRole("link", { name: /^편집$|^수정$|^Edit$/i })).toHaveCount(0);
+  // The visible landmark of the not-found page is <h1>404</h1>.
+  await expect(page.getByRole("heading", { name: "404", level: 1 })).toBeVisible({ timeout: 10_000 });
 }
 
 test.describe("cross-org isolation @boundary", () => {

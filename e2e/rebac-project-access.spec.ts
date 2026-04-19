@@ -12,7 +12,8 @@ test.describe("ReBAC project access @boundary", () => {
 
     test("can view shared project detail (MEMBER role)", async ({ page }) => {
       await page.goto(`/projects/${E2E_IDS.projects.memberShared}`);
-      await expect(page.getByText(/E2E Project — member shared/)).toBeVisible({ timeout: 10_000 });
+      // Project title appears in multiple DOM nodes; assert the H1 landmark specifically.
+      await expect(page.getByRole("heading", { name: /E2E Project — member shared/, level: 1 })).toBeVisible({ timeout: 10_000 });
     });
 
     test("PATCH on owner-only project is blocked", async ({ request }) => {
@@ -30,9 +31,10 @@ test.describe("ReBAC project access @boundary", () => {
 
     test("can view shared project and see edit affordances", async ({ page }) => {
       await page.goto(`/projects/${E2E_IDS.projects.memberShared}`);
-      await expect(page.getByText(/E2E Project — member shared/)).toBeVisible({ timeout: 10_000 });
-      const editBtn = page.getByRole("link", { name: /수정|Edit/i }).or(
-        page.getByRole("button", { name: /수정|Edit/i }),
+      // Project title appears in multiple DOM nodes; assert the H1 landmark specifically.
+      await expect(page.getByRole("heading", { name: /E2E Project — member shared/, level: 1 })).toBeVisible({ timeout: 10_000 });
+      const editBtn = page.getByRole("link", { name: /편집|수정|Edit/i }).or(
+        page.getByRole("button", { name: /편집|수정|Edit/i }),
       );
       await expect(editBtn.first()).toBeVisible();
     });
