@@ -14,10 +14,13 @@ test.describe("client CRUD (authenticated) @smoke", () => {
     await page.goto("/clients/new");
     await expect(page.getByRole("heading", { name: /고객사 추가/ })).toBeVisible();
     await page.getByLabel(/고객사명/).fill(name);
-    await page.getByRole("button", { name: /저장|생성|등록/ }).click();
+    await page.getByRole("button", { name: /고객사 추가|추가|저장|등록|생성/ }).click();
 
-    // Expect landing on list or detail page with the new name
-    await page.waitForURL(/\/clients(\/|$)/, { timeout: 10_000 });
+    // Wait for redirect to detail page — exclude /clients/new itself, which would
+    // otherwise match `[^/]+$` and make clientId="new".
+    await page.waitForURL(/\/clients\/(?!new$)[a-z0-9]+$/i, { timeout: 10_000 });
+    const clientId = page.url().split("/").pop()!;
+    expect(clientId).not.toBe("new");
     await expect(page.getByText(name).first()).toBeVisible();
 
     // --- LIST verify ---
@@ -25,23 +28,22 @@ test.describe("client CRUD (authenticated) @smoke", () => {
     await expect(page.getByText(name).first()).toBeVisible();
 
     // --- EDIT ---
-    await page.getByText(name).first().click();
-    await page.waitForURL(/\/clients\/[a-z0-9]+/i);
-    await page.getByRole("link", { name: /편집|수정|edit/i }).first().click();
-    await page.waitForURL(/\/clients\/[a-z0-9]+\/edit/i);
-    const nameInput = page.getByLabel(/고객사명/);
-    await nameInput.fill(updatedName);
-    await page.getByRole("button", { name: /저장|수정|업데이트/ }).click();
-    await page.waitForURL(/\/clients\/[a-z0-9]+$/i, { timeout: 10_000 });
+    await page.goto(`/clients/${clientId}/edit`);
+    await expect(page.getByRole("heading", { name: /고객사 수정/ })).toBeVisible();
+    await page.getByLabel(/고객사명/).fill(updatedName);
+    await page.getByRole("button", { name: /변경 저장|저장|수정|업데이트/ }).click();
+    await page.waitForURL(new RegExp(`/clients/${clientId}$`), { timeout: 10_000 });
     await expect(page.getByText(updatedName).first()).toBeVisible();
 
     // --- DELETE ---
+    // The delete action lives on the /clients list row dropdown (detail page
+    // has no delete button). Open the row's menu, click 삭제, accept the
+    // native confirm dialog, then verify the row is gone.
+    await page.goto("/clients");
+    const row = page.locator("tr", { hasText: updatedName }).first();
+    await row.getByRole("button", { name: /메뉴 열기/ }).click();
     page.once("dialog", (dialog) => dialog.accept());
-    await page
-      .getByRole("button", { name: /삭제|delete/i })
-      .first()
-      .click();
-    await page.waitForURL(/\/clients$/i, { timeout: 10_000 });
+    await page.getByRole("menuitem", { name: /^삭제$/ }).click();
     await expect(page.getByText(updatedName)).toHaveCount(0);
   });
 });
