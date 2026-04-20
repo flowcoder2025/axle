@@ -38,6 +38,16 @@ const PROJECTS = {
   p3: { id: "project-e2e-3", clientId: CLIENTS.client2.id, type: "BUSINESS_PLAN" as const, title: "E2E Project — org2",          status: "IN_PROGRESS" as const, priority: "MEDIUM" as const, assignedToId: USERS.org2Owner.id },
 };
 
+// Fixture for AI summary failure UI — a meeting whose transcript has a FAILED
+// AiJob. Used by e2e/meeting-ai-summary-failure.spec.ts to regression-test the
+// user-facing failure state introduced by PR #25.
+const FAILED_SUMMARY_FIXTURE = {
+  meetingId: "meeting-e2e-failed-summary",
+  transcriptId: "transcript-e2e-failed-summary",
+  aiJobId: "aijob-e2e-failed-summary",
+  errorMessage: "E2E seeded failure — AI provider returned 500.",
+} as const;
+
 async function main() {
   console.log("[seed-e2e] Starting idempotent E2E seed...");
   const hashed = await bcrypt.hash(E2E_PASSWORD, 10);
@@ -133,6 +143,57 @@ async function main() {
     ],
   });
   console.log(`[seed-e2e] Created 9 relation tuples`);
+
+  // 8. AI summary failure fixture (Meeting + Transcript + FAILED AiJob).
+  // Idempotent: we upsert the AiJob first (to re-use the fixed id), then
+  // the Meeting, then the MeetingTranscript with aiJobId pointing at it.
+  await prisma.aiJob.upsert({
+    where: { id: FAILED_SUMMARY_FIXTURE.aiJobId },
+    update: {
+      status: "FAILED",
+      errorMessage: FAILED_SUMMARY_FIXTURE.errorMessage,
+    },
+    create: {
+      id: FAILED_SUMMARY_FIXTURE.aiJobId,
+      orgId: ORGS.org1.id,
+      type: "SUMMARY",
+      tier: "API_HAIKU",
+      status: "FAILED",
+      input: { source: "e2e-seed" },
+      errorMessage: FAILED_SUMMARY_FIXTURE.errorMessage,
+    },
+  });
+
+  await prisma.meeting.upsert({
+    where: { id: FAILED_SUMMARY_FIXTURE.meetingId },
+    update: {
+      clientId: CLIENTS.client1.id,
+      title: "E2E — AI Summary Failure Fixture",
+    },
+    create: {
+      id: FAILED_SUMMARY_FIXTURE.meetingId,
+      clientId: CLIENTS.client1.id,
+      title: "E2E — AI Summary Failure Fixture",
+      date: new Date("2026-04-01T10:00:00Z"),
+    },
+  });
+
+  await prisma.meetingTranscript.upsert({
+    where: { id: FAILED_SUMMARY_FIXTURE.transcriptId },
+    update: {
+      rawTranscript: "E2E transcript body for failed-summary fixture.",
+      summary: null,
+      aiJobId: FAILED_SUMMARY_FIXTURE.aiJobId,
+    },
+    create: {
+      id: FAILED_SUMMARY_FIXTURE.transcriptId,
+      meetingId: FAILED_SUMMARY_FIXTURE.meetingId,
+      rawTranscript: "E2E transcript body for failed-summary fixture.",
+      summary: null,
+      aiJobId: FAILED_SUMMARY_FIXTURE.aiJobId,
+    },
+  });
+  console.log(`[seed-e2e] Upserted AI summary failure fixture`);
 
   console.log("[seed-e2e] Done. No real data was modified.");
 }
