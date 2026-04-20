@@ -58,8 +58,10 @@ test.describe("client CRUD (authenticated) @smoke", () => {
     // Submit without filling the required name field.
     await page.getByRole("button", { name: /^고객사 추가$/ }).click();
 
-    // Inline role="alert" announces the validation error and submit is blocked.
-    await expect(page.getByRole("alert")).toContainText("고객사명은 필수입니다.");
+    // Next.js App Router injects a global <div role="alert" id="__next-route-announcer__">
+    // which collides with getByRole("alert") under strict mode. Target the
+    // form-level error paragraph by its stable id instead.
+    await expect(page.locator("#name-error")).toHaveText("고객사명은 필수입니다.");
     await expect(page).toHaveURL(/\/clients\/new$/);
   });
 
