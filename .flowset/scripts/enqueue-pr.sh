@@ -45,6 +45,37 @@ for _rid in $(gh api repos/"$OWNER"/"$REPO"/rulesets --jq '.[].id' 2>/dev/null);
   fi
 done
 
+# Pre-merge gate: 레포에 branch protection이 없으면 (GitHub Pro 미가입 등)
+# gh pr merge --auto가 required check 없이 즉시 통과해버리므로, 여기서
+# 직접 모든 체크가 종료(PENDING 탈출)될 때까지 기다린 뒤 FAILURE가 있으면
+# 중단. Issue #35 참고. 최대 20분 대기.
+GATE_TIMEOUT_SEC=$((20 * 60))
+GATE_ELAPSED=0
+GATE_INTERVAL=15
+echo "🚦 CI 체크 종료 대기 (pre-merge gate, 최대 20분)..."
+while [[ $GATE_ELAPSED -lt $GATE_TIMEOUT_SEC ]]; do
+  PENDING_COUNT=$(gh pr checks "$PR_NUMBER" --json state --jq '[.[] | select(.state=="PENDING")] | length' 2>/dev/null || echo "0")
+  FAILURE_COUNT=$(gh pr checks "$PR_NUMBER" --json state --jq '[.[] | select(.state=="FAILURE")] | length' 2>/dev/null || echo "0")
+  # 실패가 먼저 드러나면 남은 PENDING 기다릴 필요 없이 중단 (fail-fast)
+  if [[ "$FAILURE_COUNT" -gt 0 ]]; then
+    FAILED_NAMES=$(gh pr checks "$PR_NUMBER" --json name,state --jq '.[] | select(.state=="FAILURE") | .name' 2>/dev/null || echo "(이름 조회 실패)")
+    echo "❌ PR #$PR_NUMBER CI FAILURE 감지 — 머지 중단"
+    echo "   실패 체크:"
+    echo "$FAILED_NAMES" | sed 's/^/     - /'
+    exit 1
+  fi
+  if [[ "$PENDING_COUNT" -eq 0 ]]; then
+    echo "✅ CI 체크 전부 종료 — FAILURE 없음, 머지 진행"
+    break
+  fi
+  sleep "$GATE_INTERVAL"
+  GATE_ELAPSED=$((GATE_ELAPSED + GATE_INTERVAL))
+done
+if [[ $GATE_ELAPSED -ge $GATE_TIMEOUT_SEC ]]; then
+  echo "⚠️ pre-merge gate timeout — CI가 20분 안에 끝나지 않음"
+  exit 2
+fi
+
 # merge queue에 등록 시도
 RESULT=$(gh api graphql -f query="mutation { enqueuePullRequest(input: { pullRequestId: \"$PR_NODE_ID\" }) { mergeQueueEntry { position } } }" 2>&1 || true)
 
