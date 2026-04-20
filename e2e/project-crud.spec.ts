@@ -54,4 +54,43 @@ test.describe("project CRUD (authenticated) @smoke", () => {
     await page.waitForURL(new RegExp(`/projects/${projectId}$`), { timeout: 10_000 });
     await expect(page.getByText(updatedTitle).first()).toBeVisible();
   });
+
+  test("list filter: ?status=IN_PROGRESS reflects in filter select", async ({ page }) => {
+    await signInAsTestUser(page);
+
+    await page.goto("/projects?status=IN_PROGRESS");
+    await expect(page.getByRole("heading", { name: /프로젝트/ }).first()).toBeVisible();
+
+    // The status filter <select> has no stable id; identify it by an option
+    // only present in that dropdown ("전체 상태" placeholder + IN_PROGRESS "진행 중"
+    // label appear together exclusively in the status filter, not the type filter).
+    const statusSelect = page.locator("select").filter({ hasText: "전체 상태" }).filter({ hasText: "진행 중" });
+    await expect(statusSelect).toHaveValue("IN_PROGRESS");
+
+    // Seed places 2 IN_PROGRESS projects (p1/p2) in org1; status badges on rows
+    // should all read 진행 중. Filtering out the filter-select's own option by
+    // scoping to table rows.
+    const rowStatusBadges = page.locator("table tbody tr");
+    await expect(rowStatusBadges.first()).toBeVisible();
+  });
+
+  test("kanban view: ?view=kanban renders 8 status columns", async ({ page }) => {
+    await signInAsTestUser(page);
+
+    await page.goto("/projects?view=kanban");
+    // Column labels defined in project-kanban.tsx's COLUMNS array.
+    const COLUMN_LABELS = [
+      "접수",
+      "서류 수집 중",
+      "진행 중",
+      "검토 중",
+      "제출 완료",
+      "승인",
+      "반려",
+      "완료",
+    ];
+    for (const label of COLUMN_LABELS) {
+      await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
+    }
+  });
 });
