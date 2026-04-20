@@ -48,4 +48,36 @@ test.describe("client CRUD (authenticated) @smoke", () => {
     const deletedRow = page.locator("tr", { hasText: updatedName }).first();
     await expect(deletedRow.getByText("비활성")).toBeVisible();
   });
+
+  test("validation: empty name blocks submit with inline error", async ({ page }) => {
+    await signInAsTestUser(page);
+
+    await page.goto("/clients/new");
+    await expect(page.getByRole("heading", { name: /고객사 추가/ })).toBeVisible();
+
+    // Submit without filling the required name field.
+    await page.getByRole("button", { name: /^고객사 추가$/ }).click();
+
+    // Inline role="alert" announces the validation error and submit is blocked.
+    await expect(page.getByRole("alert")).toContainText("고객사명은 필수입니다.");
+    await expect(page).toHaveURL(/\/clients\/new$/);
+  });
+
+  test("cancel: returns to list without creating client", async ({ page }) => {
+    await signInAsTestUser(page);
+
+    // Prime history with /clients so router.back() has a target.
+    await page.goto("/clients");
+    await expect(page.getByRole("heading", { name: /고객사/ }).first()).toBeVisible();
+
+    await page.goto("/clients/new");
+    const name = uniqueClientName("E2E-Client-Cancel");
+    await page.getByLabel(/고객사명/).fill(name);
+
+    await page.getByRole("button", { name: /^취소$/ }).click();
+    await page.waitForURL(/\/clients$/, { timeout: 10_000 });
+
+    // Filled-but-cancelled name must not appear in the list.
+    await expect(page.getByText(name)).toHaveCount(0);
+  });
 });
