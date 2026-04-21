@@ -102,7 +102,7 @@ describe("sendEmail", () => {
     ).rejects.toThrow("Rate limit exceeded");
   });
 
-  it("uses default from when not specified", async () => {
+  it("uses fallback from when RESEND_FROM_EMAIL unset", async () => {
     stubEnvKey();
     mockEmailsSend.mockResolvedValue({ data: { id: "email-def" }, error: null });
 
@@ -110,6 +110,47 @@ describe("sendEmail", () => {
 
     expect(mockEmailsSend).toHaveBeenCalledWith(
       expect.objectContaining({ from: "AXLE <noreply@axle.app>" })
+    );
+  });
+
+  it("respects RESEND_FROM_EMAIL env with bare address", async () => {
+    stubEnvKey();
+    vi.stubEnv("RESEND_FROM_EMAIL", "noreply@flow-coder.com");
+    mockEmailsSend.mockResolvedValue({ data: { id: "email-env" }, error: null });
+
+    await sendEmail({ to: "user@example.com", subject: "Env from", text: "Hi" });
+
+    expect(mockEmailsSend).toHaveBeenCalledWith(
+      expect.objectContaining({ from: "AXLE <noreply@flow-coder.com>" })
+    );
+  });
+
+  it("uses RESEND_FROM_EMAIL as-is when already formatted", async () => {
+    stubEnvKey();
+    vi.stubEnv("RESEND_FROM_EMAIL", "Brand <noreply@flow-coder.com>");
+    mockEmailsSend.mockResolvedValue({ data: { id: "email-env2" }, error: null });
+
+    await sendEmail({ to: "user@example.com", subject: "Env formatted", text: "Hi" });
+
+    expect(mockEmailsSend).toHaveBeenCalledWith(
+      expect.objectContaining({ from: "Brand <noreply@flow-coder.com>" })
+    );
+  });
+
+  it("explicit from option still wins over RESEND_FROM_EMAIL", async () => {
+    stubEnvKey();
+    vi.stubEnv("RESEND_FROM_EMAIL", "env@flow-coder.com");
+    mockEmailsSend.mockResolvedValue({ data: { id: "email-explicit" }, error: null });
+
+    await sendEmail({
+      to: "user@example.com",
+      subject: "Explicit",
+      text: "Hi",
+      from: "ad-hoc@axleai.io",
+    });
+
+    expect(mockEmailsSend).toHaveBeenCalledWith(
+      expect.objectContaining({ from: "ad-hoc@axleai.io" })
     );
   });
 });
