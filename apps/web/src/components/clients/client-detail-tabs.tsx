@@ -6,6 +6,8 @@ import { CertificateList } from "../certificates/certificate-list";
 import { ClientProjectList } from "./client-project-list";
 import { ClientAchievementList } from "./client-achievement-list";
 import { GapAnalysisPanel } from "./gap-analysis-panel";
+import { DocumentRequestTab } from "./document-request-tab";
+import { MasterProfileTab } from "./master-profile-tab";
 
 // ---------------------------------------------------------------------------
 // Minimal Client shape passed from server component
@@ -71,9 +73,11 @@ interface ClientDetailTabsProps {
 // ---------------------------------------------------------------------------
 const TABS = [
   { id: "info", label: "기본 정보" },
+  { id: "profile", label: "마스터 프로필" },
   { id: "contacts", label: "인물" },
-  { id: "certificates", label: "인증서" },
   { id: "projects", label: "프로젝트" },
+  { id: "documents", label: "서류 요청" },
+  { id: "certificates", label: "인증서" },
   { id: "achievements", label: "성과" },
   { id: "gap", label: "Gap 분석" },
 ] as const;
@@ -111,15 +115,19 @@ export function ClientDetailTabs({ clientId, client }: ClientDetailTabsProps) {
         </nav>
       </div>
 
-      {/* Tab panels */}
+      {/* Tab panels — lazy-rendered by activeTab to avoid fetching all APIs upfront */}
       <div role="tabpanel">
         {activeTab === "info" && <ClientInfoPanel client={client} />}
+        {activeTab === "profile" && <MasterProfileTab clientId={clientId} />}
         {activeTab === "contacts" && <ContactList clientId={clientId} />}
-        {activeTab === "certificates" && (
-          <CertificateList clientId={clientId} />
-        )}
         {activeTab === "projects" && (
           <ClientProjectList clientId={clientId} />
+        )}
+        {activeTab === "documents" && (
+          <DocumentRequestTab clientId={clientId} />
+        )}
+        {activeTab === "certificates" && (
+          <CertificateList clientId={clientId} />
         )}
         {activeTab === "achievements" && (
           <ClientAchievementList clientId={clientId} />

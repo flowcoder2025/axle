@@ -6,6 +6,7 @@ import { Button } from "@axle/ui";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { ClientStatusBadge } from "../../../../src/components/clients/client-status-badge";
 import { ClientDetailTabs } from "../../../../src/components/clients/client-detail-tabs";
+import { ClientOnboardButton } from "../../../../src/components/clients/client-onboard-button";
 
 export async function generateMetadata({
   params,
@@ -73,12 +74,20 @@ export default async function ClientDetailPage({ params }: PageProps) {
             <span>프로젝트 {client._count.projects}건</span>
           </div>
         </div>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/clients/${clientId}/edit`}>
-            <Pencil className="mr-1.5 h-3.5 w-3.5" />
-            편집
-          </Link>
-        </Button>
+        <div className="flex flex-col items-end gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/clients/${clientId}/edit`}>
+              <Pencil className="mr-1.5 h-3.5 w-3.5" />
+              편집
+            </Link>
+          </Button>
+          <ClientOnboardButton
+            clientId={clientId}
+            initialOnboardedAt={
+              client.onboardedAt ? client.onboardedAt.toISOString() : null
+            }
+          />
+        </div>
       </div>
 
       {/* Tabs — client component handles active tab state */}
