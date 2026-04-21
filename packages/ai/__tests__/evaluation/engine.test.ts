@@ -4,15 +4,20 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mocks
 // ---------------------------------------------------------------------------
 
-const { mockProgramInfo } = vi.hoisted(() => {
+const { mockProgramInfo, mockCompleteWithFallback } = vi.hoisted(() => {
   const mockProgramInfo = { findUnique: vi.fn() };
-  return { mockProgramInfo };
+  const mockCompleteWithFallback = vi.fn();
+  return { mockProgramInfo, mockCompleteWithFallback };
 });
 
 vi.mock("@axle/db", () => ({
   prisma: {
     programInfo: mockProgramInfo,
   },
+}));
+
+vi.mock("../../src/providers/index.js", () => ({
+  completeWithFallback: mockCompleteWithFallback,
 }));
 
 import { evaluate, DEFAULT_CRITERIA } from "../../src/evaluation/engine.js";
@@ -77,6 +82,9 @@ const SPARSE_PLAN = "사업 계획입니다.";
 beforeEach(() => {
   vi.clearAllMocks();
   mockProgramInfo.findUnique.mockResolvedValue(null);
+  // By default: no AI env vars so completeWithFallback is not invoked
+  delete process.env.ANTHROPIC_API_KEY;
+  delete process.env.OPENROUTER_API_KEY;
 });
 
 // ---------------------------------------------------------------------------
@@ -299,5 +307,67 @@ describe("evaluate — keyword-based scoring", () => {
       r.criteria.find((c) => c.name === "문서 완성도")!;
 
     expect(completeness(long).score).toBeGreaterThan(completeness(short).score);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// evaluate — AI provider fallback integration
+// ---------------------------------------------------------------------------
+
+describe("evaluate — AI provider fallback", () => {
+  it("invokes completeWithFallback with EVALUATION jobType when AI enabled", async () => {
+    process.env.ANTHROPIC_API_KEY = "sk-test";
+    mockCompleteWithFallback.mockResolvedValue({
+      text: JSON.stringify({
+        improvements: ["구체적 제안 1"],
+        detailedFeedback: "전반적으로 보완이 필요합니다.",
+      }),
+      usage: { inputTokens: 100, outputTokens: 50 },
+      model: "claude-haiku-4-5",
+    });
+
+    const result = await evaluate({ documentContent: SPARSE_PLAN });
+
+    expect(mockCompleteWithFallback).toHaveBeenCalledTimes(1);
+    expect(mockCompleteWithFallback).toHaveBeenCalledWith(
+      "EVALUATION",
+      expect.objectContaining({
+        system: expect.stringContaining("Korean government"),
+        prompt: expect.stringContaining("business plan"),
+      })
+    );
+    expect(result.improvements[0]).toContain("[AI 분석]");
+    expect(result.improvements).toContain("구체적 제안 1");
+  });
+
+  it("falls back silently when all providers fail", async () => {
+    process.env.OPENROUTER_API_KEY = "or-test";
+    mockCompleteWithFallback.mockRejectedValue(
+      new Error("all providers unavailable")
+    );
+
+    const result = await evaluate({ documentContent: RICH_PLAN });
+
+    // Should still return valid rule-based result
+    expect(result.criteria).toHaveLength(8);
+    expect(result.totalScore).toBeGreaterThan(0);
+  });
+
+  it("does not invoke AI when no provider env var set", async () => {
+    // beforeEach deletes both keys
+    await evaluate({ documentContent: RICH_PLAN });
+    expect(mockCompleteWithFallback).not.toHaveBeenCalled();
+  });
+
+  it("tolerates malformed AI JSON response", async () => {
+    process.env.ANTHROPIC_API_KEY = "sk-test";
+    mockCompleteWithFallback.mockResolvedValue({
+      text: "not valid json {{{",
+      usage: { inputTokens: 10, outputTokens: 5 },
+      model: "claude-haiku-4-5",
+    });
+
+    const result = await evaluate({ documentContent: SPARSE_PLAN });
+    expect(result.criteria).toHaveLength(8);
   });
 });
