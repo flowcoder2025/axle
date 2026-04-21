@@ -31,9 +31,11 @@ export async function POST(request: Request): Promise<Response> {
     let processed = 0;
 
     for (const client of clients) {
-      // Fetch all programs for this client's org
+      // Fetch programs: client's org + crawled platform programs (orgId=null)
       const programs = await prisma.programInfo.findMany({
-        where: { orgId: client.orgId },
+        where: {
+          OR: [{ orgId: client.orgId }, { orgId: null }],
+        },
         select: {
           id: true,
           name: true,

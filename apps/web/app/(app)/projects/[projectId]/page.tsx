@@ -72,7 +72,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   const availablePrograms = linkedProgram
     ? []
     : await prisma.programInfo.findMany({
-        where: { orgId: user.orgId },
+        where: { OR: [{ orgId: user.orgId }, { orgId: null }] },
         select: { id: true, name: true, agency: true },
         orderBy: { applicationEnd: "asc" },
         take: 50,

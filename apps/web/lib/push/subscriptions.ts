@@ -48,10 +48,26 @@ export async function setPushSubscription(
 }
 
 /**
- * Remove a single push subscription identified by its push-service endpoint.
+ * Remove a single push subscription identified by endpoint.
+ * Defense-in-depth: requires userId binding so an authenticated user cannot
+ * remove another user's endpoint even if they somehow learned it.
  * Called when the browser unsubscribes or reports the endpoint is gone (410).
  */
-export async function deletePushSubscription(endpoint: string): Promise<void> {
+export async function deletePushSubscription(
+  userId: string,
+  endpoint: string
+): Promise<void> {
+  await prisma.pushSubscription.deleteMany({ where: { userId, endpoint } });
+}
+
+/**
+ * Remove a subscription by endpoint only — for server-initiated cleanup
+ * (e.g. web-push library reports 410 Gone during dispatch). Safe here because
+ * only internal server code reaches this path.
+ */
+export async function deletePushSubscriptionByEndpoint(
+  endpoint: string
+): Promise<void> {
   await prisma.pushSubscription.deleteMany({ where: { endpoint } });
 }
 

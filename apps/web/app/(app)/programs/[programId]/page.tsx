@@ -62,8 +62,12 @@ export default async function ProgramDetailPage({ params }: PageProps) {
     notFound();
   }
 
+  // 조직 프로그램 + crawled 플랫폼 프로그램(orgId=null) 모두 조회 허용
   const program = await prisma.programInfo.findFirst({
-    where: { id: programId, orgId: user.orgId },
+    where: {
+      id: programId,
+      OR: [{ orgId: user.orgId }, { orgId: null }],
+    },
     include: {
       schedules: {
         orderBy: { startDate: "asc" },

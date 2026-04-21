@@ -187,6 +187,25 @@ describe("GET /api/programs", () => {
       })
     );
   });
+
+  it("includes crawled platform programs (orgId=null) alongside org programs", async () => {
+    // WI-229 regression: before this, crawled programs were invisible because
+    // the filter was strict orgId=user.orgId. They should now match via OR.
+    vi.mocked(getCurrentUser).mockResolvedValue(authedUser);
+    mockPrismaProgram.findMany.mockResolvedValue([]);
+    mockPrismaProgram.count.mockResolvedValue(0);
+
+    const { GET } = await import("../../app/api/programs/route");
+    await GET(makeRequest("GET", "http://localhost/api/programs") as never);
+
+    expect(mockPrismaProgram.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: [{ orgId: "org-1" }, { orgId: null }],
+        }),
+      })
+    );
+  });
 });
 
 // --- POST /api/programs ---

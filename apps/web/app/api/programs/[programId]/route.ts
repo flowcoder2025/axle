@@ -30,8 +30,12 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
 
     const { programId } = await ctx.params;
 
+    // GET: Crawled 플랫폼 프로그램(orgId=null)과 조직 프로그램 모두 조회 가능
     const program = await prisma.programInfo.findFirst({
-      where: { id: programId, orgId: user.orgId },
+      where: {
+        id: programId,
+        OR: [{ orgId: user.orgId }, { orgId: null }],
+      },
       include: {
         schedules: {
           orderBy: { startDate: "asc" },
@@ -73,6 +77,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
 
     const { programId } = await ctx.params;
 
+    // PATCH는 조직 소유 프로그램만 수정 허용 (플랫폼 프로그램은 읽기 전용)
     const existing = await prisma.programInfo.findFirst({
       where: { id: programId, orgId: user.orgId },
       select: { id: true, name: true, applicationEnd: true },

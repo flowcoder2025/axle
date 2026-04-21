@@ -150,7 +150,9 @@ describe("DELETE /api/push/subscribe", () => {
     expect(mockPushSubscription.deleteMany).not.toHaveBeenCalled();
   });
 
-  it("deletes by endpoint and returns 200", async () => {
+  it("deletes by endpoint bound to userId and returns 200", async () => {
+    // WI-229 H1: DELETE must scope by userId so user A cannot remove user B's
+    // endpoint even if they learn the URL.
     const { DELETE } = await import("../../app/api/push/subscribe/route");
     const res = await DELETE(
       makeRequest("DELETE", {
@@ -160,7 +162,7 @@ describe("DELETE /api/push/subscribe", () => {
 
     expect(res.status).toBe(200);
     expect(mockPushSubscription.deleteMany).toHaveBeenCalledWith({
-      where: { endpoint: "https://push.example/ep-abc" },
+      where: { userId: "user-1", endpoint: "https://push.example/ep-abc" },
     });
   });
 });

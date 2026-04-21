@@ -90,7 +90,9 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    await deletePushSubscription(endpoint);
+    // Bind to userId so a user cannot remove another user's endpoint even if
+    // they somehow learned the endpoint URL.
+    await deletePushSubscription(user.id, endpoint);
 
     return NextResponse.json({ ok: true });
   } catch (err) {

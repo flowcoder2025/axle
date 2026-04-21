@@ -52,9 +52,12 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
       return notFoundResponse("Client");
     }
 
-    // Boundary: program must also belong to the user's org
+    // Boundary: program은 조직 전용 + 크롤링된 플랫폼 프로그램(orgId=null) 모두 허용
     const program = await prisma.programInfo.findFirst({
-      where: { id: programId, orgId: user.orgId },
+      where: {
+        id: programId,
+        OR: [{ orgId: user.orgId }, { orgId: null }],
+      },
       select: { id: true },
     });
     if (!program) {
