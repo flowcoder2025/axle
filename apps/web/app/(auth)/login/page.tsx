@@ -1,14 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Button, Input, Label } from "@axle/ui";
 
-export default function LoginPage() {
+// Auth.js OAuth error codes → user-facing Korean messages
+function getOAuthErrorMessage(code: string | null): string | null {
+  if (!code) return null;
+  switch (code) {
+    case "OAuthAccountNotLinked":
+      return "이 이메일은 이미 다른 방식(이메일/비밀번호)으로 가입되어 있습니다. 아래 이메일 로그인으로 진행해 주세요. 계정 보안을 위해 Google 연결은 로그인 후 설정에서 진행할 수 있습니다.";
+    case "OAuthCallback":
+    case "OAuthSignin":
+      return "Google 로그인 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.";
+    case "AccessDenied":
+      return "접근이 거부되었습니다. 다른 계정으로 시도하거나 관리자에게 문의해 주세요.";
+    case "Verification":
+      return "인증 링크가 만료되었거나 유효하지 않습니다. 다시 요청해 주세요.";
+    case "Configuration":
+      return "로그인 구성에 문제가 있습니다. 지원팀에 문의해 주세요.";
+    default:
+      return "로그인 중 오류가 발생했습니다. 다시 시도해 주세요.";
+  }
+}
+
+function LoginForm() {
+  const searchParams = useSearchParams();
+  const urlErrorCode = searchParams.get("error");
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string>("");
+  const [noticeDismissed, setNoticeDismissed] = useState(false);
+  const oauthNotice = noticeDismissed ? null : getOAuthErrorMessage(urlErrorCode);
 
   async function handleCredentials(e: React.FormEvent) {
     e.preventDefault();
@@ -32,6 +57,7 @@ export default function LoginPage() {
 
   async function handleGoogle() {
     setLoading(true);
+    setNoticeDismissed(true);
     await signIn("google", { callbackUrl: "/dashboard" });
   }
 
@@ -49,6 +75,17 @@ export default function LoginPage() {
         <h1 className="text-xl font-bold text-foreground">로그인</h1>
         <p className="text-sm text-muted-foreground">계정에 로그인하세요</p>
       </div>
+
+      {/* OAuth redirect error notice — 계정 탈취 방지로 차단된 경우 포함 */}
+      {oauthNotice && (
+        <div
+          role="status"
+          data-testid="oauth-error-notice"
+          className="mb-4 rounded-md border border-amber-300 bg-amber-50 px-3 py-3 text-sm text-amber-900"
+        >
+          {oauthNotice}
+        </div>
+      )}
 
       {/* Google OAuth */}
       <Button
@@ -89,9 +126,12 @@ export default function LoginPage() {
         <div className="space-y-1.5">
           <div className="flex justify-between items-center">
             <Label htmlFor="password" className="text-xs font-medium">비밀번호</Label>
-            <button type="button" className="text-xs text-accent hover:underline">
+            <a
+              href="/forgot-password"
+              className="text-xs text-accent hover:underline"
+            >
               비밀번호 찾기
-            </button>
+            </a>
           </div>
           <Input
             id="password"
@@ -120,6 +160,14 @@ export default function LoginPage() {
         </a>
       </p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
 
