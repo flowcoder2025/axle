@@ -13,8 +13,12 @@ export type {
 } from "./types.js";
 export { REQUIRED_SECTIONS } from "./types.js";
 
-// ── RAG Draft Engine (WI-063) ─────────────────────────────────────────────────
-export { generateRagDraft } from "./engines/rag-draft.js";
+// ── RAG Draft Engine (WI-063 / WI-201) ───────────────────────────────────────
+export {
+  generateRagDraft,
+  searchClientDocuments,
+  searchPastPlans,
+} from "./engines/rag-draft.js";
 
 // ── Precision Editor Engine (WI-064) ─────────────────────────────────────────
 export { generatePrecisionDocx } from "./engines/precision-editor.js";
