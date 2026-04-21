@@ -567,6 +567,8 @@ model Document {
   autoRenew         Boolean     @default(false)
   version           Int         @default(1)
   parentDocId       String?
+  verifyResult      Json?
+  verifiedAt        DateTime?
 
   client            Client   @relation(fields: [clientId], references: [id])
   project           Project? @relation(fields: [projectId], references: [id])

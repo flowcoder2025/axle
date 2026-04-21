@@ -5,6 +5,7 @@ import { ContactList } from "../contacts/contact-list";
 import { CertificateList } from "../certificates/certificate-list";
 import { ClientProjectList } from "./client-project-list";
 import { ClientAchievementList } from "./client-achievement-list";
+import { GapAnalysisPanel } from "./gap-analysis-panel";
 
 // ---------------------------------------------------------------------------
 // Minimal Client shape passed from server component
@@ -74,6 +75,7 @@ const TABS = [
   { id: "certificates", label: "인증서" },
   { id: "projects", label: "프로젝트" },
   { id: "achievements", label: "성과" },
+  { id: "gap", label: "Gap 분석" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -122,6 +124,7 @@ export function ClientDetailTabs({ clientId, client }: ClientDetailTabsProps) {
         {activeTab === "achievements" && (
           <ClientAchievementList clientId={clientId} />
         )}
+        {activeTab === "gap" && <GapAnalysisPanel clientId={clientId} />}
       </div>
     </div>
   );
