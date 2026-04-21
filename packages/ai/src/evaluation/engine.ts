@@ -217,12 +217,17 @@ export async function evaluate(
     .sort((a, b) => b.weight - a.weight) // highest weight first
     .map((c) => c.feedback);
 
-  // Claude AI deep analysis — enhances rule-based results when API key is available
-  if (process.env.ANTHROPIC_API_KEY) {
+  // AI deep analysis — enhances rule-based results via provider fallback chain
+  // (Anthropic → OpenRouter → Haiku). Non-fatal if all providers unavailable.
+  const aiEnabled =
+    !!process.env.ANTHROPIC_API_KEY || !!process.env.OPENROUTER_API_KEY;
+  if (aiEnabled) {
     try {
-      const { complete } = await import("../claude.js");
-      const aiResponse = await complete({
-        system: "You are an expert Korean government subsidy proposal reviewer. Respond in JSON format only.",
+      const { completeWithFallback } = await import("../providers/index.js");
+      const lowScoringCriteria = criteria.filter((c) => c.score < 3);
+      const aiResponse = await completeWithFallback("EVALUATION", {
+        system:
+          "You are an expert Korean government subsidy proposal reviewer. Respond in JSON format only.",
         prompt: `Analyze this business plan and provide specific improvement suggestions.
 ${programContext ? `Target program: ${programContext}` : ""}
 
@@ -232,6 +237,14 @@ ${documentContent.slice(0, 3000)}
 Rule-based scores:
 ${criteria.map((c) => `- ${c.name}: ${c.score}/10`).join("\n")}
 
+${
+  lowScoringCriteria.length > 0
+    ? `Focus specifically on these low-scoring criteria: ${lowScoringCriteria
+        .map((c) => c.name)
+        .join(", ")}`
+    : ""
+}
+
 Respond as JSON:
 {
   "improvements": ["specific suggestion 1", "specific suggestion 2"],
@@ -240,7 +253,7 @@ Respond as JSON:
         maxTokens: 1024,
       });
 
-      const parsed = JSON.parse(aiResponse);
+      const parsed = JSON.parse(aiResponse.text);
       if (Array.isArray(parsed.improvements)) {
         improvements.push(...parsed.improvements);
       }

@@ -371,29 +371,41 @@ export async function analyzeGaps(input: GapAnalysisInput): Promise<GapResult> {
     ...detectTechnicalGaps(client, eligibility),
   ];
 
-  // Claude AI deep analysis for enriched gap recommendations
-  if (process.env.ANTHROPIC_API_KEY && gaps.length > 0) {
+  // AI deep analysis for enriched gap recommendations + overall summary
+  // via provider fallback chain (Anthropic → OpenRouter → Haiku).
+  const aiEnabled =
+    !!process.env.ANTHROPIC_API_KEY || !!process.env.OPENROUTER_API_KEY;
+  let aiSummary: string | null = null;
+  if (aiEnabled && gaps.length > 0) {
     try {
-      const { complete } = await import("../claude.js");
-      const aiResponse = await complete({
-        system: "You are an expert Korean government subsidy eligibility advisor. Respond in JSON format only.",
+      const { completeWithFallback } = await import("../providers/index.js");
+      const aiResponse = await completeWithFallback("GAP_DIAGNOSIS", {
+        system:
+          "You are an expert Korean government subsidy eligibility advisor. Respond in JSON format only.",
         prompt: `A client "${client.name}" is applying for "${program.name}".
 
 Detected gaps:
 ${gaps.map((g) => `- [${g.severity}] ${g.category}: ${g.item} — ${g.description}`).join("\n")}
 
 For each gap, provide a specific actionable recommendation in Korean.
+Also provide a 1-2 sentence overall summary in Korean.
 Respond as JSON:
-{ "recommendations": { "<item>": "recommendation in Korean", ... } }`,
+{
+  "recommendations": { "<item>": "recommendation in Korean", ... },
+  "summary": "1-2 sentence summary in Korean"
+}`,
         maxTokens: 1024,
       });
 
-      const parsed = JSON.parse(aiResponse);
+      const parsed = JSON.parse(aiResponse.text);
       if (parsed.recommendations) {
         for (const gap of gaps) {
           const rec = parsed.recommendations[gap.item];
           if (rec) gap.recommendation = rec;
         }
+      }
+      if (typeof parsed.summary === "string" && parsed.summary.length > 0) {
+        aiSummary = parsed.summary;
       }
     } catch {
       // Non-fatal: AI enrichment is optional
@@ -408,8 +420,13 @@ Respond as JSON:
   let summary: string;
   if (gaps.length === 0) {
     summary = `${client.name}은(는) '${program.name}' 신청 요건을 모두 충족합니다.`;
+  } else if (aiSummary) {
+    summary =
+      `${client.name}의 '${program.name}' 준비도: ${readiness}점. ` +
+      `중요 미충족 ${criticalCount}건, 주요 미충족 ${majorCount}건. ${aiSummary}`;
   } else {
-    summary = `${client.name}의 '${program.name}' 준비도: ${readiness}점. ` +
+    summary =
+      `${client.name}의 '${program.name}' 준비도: ${readiness}점. ` +
       `중요 미충족 항목 ${criticalCount}건, 주요 미충족 항목 ${majorCount}건이 있습니다.`;
   }
 

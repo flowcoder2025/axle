@@ -4,11 +4,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mocks — must be hoisted before imports
 // ---------------------------------------------------------------------------
 
-const { mockClient, mockProgramInfo } = vi.hoisted(() => {
-  const mockClient = { findUnique: vi.fn() };
-  const mockProgramInfo = { findUnique: vi.fn() };
-  return { mockClient, mockProgramInfo };
-});
+const { mockClient, mockProgramInfo, mockCompleteWithFallback } = vi.hoisted(
+  () => {
+    const mockClient = { findUnique: vi.fn() };
+    const mockProgramInfo = { findUnique: vi.fn() };
+    const mockCompleteWithFallback = vi.fn();
+    return { mockClient, mockProgramInfo, mockCompleteWithFallback };
+  }
+);
 
 vi.mock("@axle/db", () => ({
   prisma: {
@@ -19,6 +22,10 @@ vi.mock("@axle/db", () => ({
 
 vi.mock("../../src/rag/index.js", () => ({
   semanticSearch: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock("../../src/providers/index.js", () => ({
+  completeWithFallback: mockCompleteWithFallback,
 }));
 
 import { analyzeGaps } from "../../src/diagnosis/gap-analyzer.js";
@@ -79,6 +86,8 @@ function baseProgram(overrides: object = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  delete process.env.ANTHROPIC_API_KEY;
+  delete process.env.OPENROUTER_API_KEY;
 });
 
 // ---------------------------------------------------------------------------
@@ -328,5 +337,75 @@ describe("analyzeGaps — not found cases", () => {
 
     expect(result.readiness).toBe(0);
     expect(result.gaps[0].item).toBe("프로그램 없음");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AI provider fallback integration
+// ---------------------------------------------------------------------------
+
+describe("analyzeGaps — AI provider fallback", () => {
+  it("invokes completeWithFallback with GAP_DIAGNOSIS jobType when AI enabled", async () => {
+    process.env.ANTHROPIC_API_KEY = "sk-test";
+    mockClient.findUnique.mockResolvedValue(makeClient({ documents: [] }));
+    mockProgramInfo.findUnique.mockResolvedValue(
+      baseProgram({
+        requirements: { requiredDocuments: ["사업계획서"] },
+      })
+    );
+    mockCompleteWithFallback.mockResolvedValue({
+      text: JSON.stringify({
+        recommendations: {
+          사업계획서: "사업계획서를 AXLE 템플릿 기반으로 작성하세요.",
+        },
+        summary: "핵심 서류 누락으로 우선 보완이 필요합니다.",
+      }),
+      usage: { inputTokens: 80, outputTokens: 40 },
+      model: "claude-haiku-4-5",
+    });
+
+    const result = await analyzeGaps({
+      clientId: "client-1",
+      programId: "prog-1",
+    });
+
+    expect(mockCompleteWithFallback).toHaveBeenCalledTimes(1);
+    expect(mockCompleteWithFallback).toHaveBeenCalledWith(
+      "GAP_DIAGNOSIS",
+      expect.objectContaining({
+        system: expect.stringContaining("Korean"),
+      })
+    );
+
+    const docGap = result.gaps.find((g) => g.item === "사업계획서");
+    expect(docGap?.recommendation).toContain("AXLE 템플릿");
+    expect(result.summary).toContain("핵심 서류 누락");
+  });
+
+  it("does not invoke AI when no gaps detected", async () => {
+    process.env.ANTHROPIC_API_KEY = "sk-test";
+    mockClient.findUnique.mockResolvedValue(makeClient());
+    mockProgramInfo.findUnique.mockResolvedValue(baseProgram());
+
+    await analyzeGaps({ clientId: "client-1", programId: "prog-1" });
+    expect(mockCompleteWithFallback).not.toHaveBeenCalled();
+  });
+
+  it("falls back silently when all providers fail", async () => {
+    process.env.OPENROUTER_API_KEY = "or-test";
+    mockClient.findUnique.mockResolvedValue(makeClient({ financials: [] }));
+    mockProgramInfo.findUnique.mockResolvedValue(baseProgram());
+    mockCompleteWithFallback.mockRejectedValue(
+      new Error("all providers unavailable")
+    );
+
+    const result = await analyzeGaps({
+      clientId: "client-1",
+      programId: "prog-1",
+    });
+
+    // Rule-based gap still present, fallback summary used
+    expect(result.gaps.length).toBeGreaterThan(0);
+    expect(result.summary).toContain("준비도");
   });
 });
