@@ -6,6 +6,7 @@ export const autoTypeSchema = z.enum([
   "INSURANCE_ISSUE",
   "PORTAL_UPLOAD",
   "DART_FETCH",
+  "CRAWL",
 ]);
 
 export const jobStatusSchema = z.enum([

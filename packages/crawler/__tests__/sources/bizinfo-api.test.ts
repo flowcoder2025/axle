@@ -87,4 +87,74 @@ describe("BizinfoApiSource", () => {
     const source = new BizinfoApiSource("test-key");
     await expect(source.crawl()).rejects.toThrow("Bizinfo API error: 500");
   });
+
+  it("fetchAllPrograms paginates until a short page and caps at maxItems", async () => {
+    const pageUnit = 2;
+    const page1 = [
+      { pblancNm: "A", pblancId: "1", link: "https://b/1" },
+      { pblancNm: "B", pblancId: "2", link: "https://b/2" },
+    ];
+    const page2 = [{ pblancNm: "C", pblancId: "3", link: "https://b/3" }];
+
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ jsonArray: page1 }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ jsonArray: page2 }),
+      });
+
+    const { BizinfoApiSource } = await import(
+      "../../src/sources/bizinfo-api.js"
+    );
+    const source = new BizinfoApiSource("test-key");
+    const programs = await source.fetchAllPrograms(500, pageUnit);
+
+    expect(programs).toHaveLength(3);
+    expect(programs.map((p) => p.externalId)).toEqual(["1", "2", "3"]);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("fetchAllPrograms stops when maxItems is reached", async () => {
+    const page1 = Array.from({ length: 5 }, (_, i) => ({
+      pblancNm: `P${i}`,
+      pblancId: String(i),
+    }));
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ jsonArray: page1 }),
+    });
+
+    const { BizinfoApiSource } = await import(
+      "../../src/sources/bizinfo-api.js"
+    );
+    const source = new BizinfoApiSource("test-key");
+    const programs = await source.fetchAllPrograms(3, 5);
+
+    expect(programs).toHaveLength(3);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("derives externalId from link when pblancId is missing", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          jsonArray: [
+            { pblancNm: "name", link: "https://b.go.kr/detail/9876" },
+          ],
+        }),
+    });
+
+    const { BizinfoApiSource } = await import(
+      "../../src/sources/bizinfo-api.js"
+    );
+    const source = new BizinfoApiSource("test-key");
+    const programs = await source.crawl();
+
+    expect(programs[0].externalId).toBe("link-9876");
+  });
 });

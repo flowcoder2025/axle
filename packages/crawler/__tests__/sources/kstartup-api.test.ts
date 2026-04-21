@@ -108,4 +108,56 @@ describe("KStartupApiSource", () => {
     const programs = await source.crawl();
     expect(programs).toHaveLength(0);
   });
+
+  it("fetchAllPrograms paginates and uses pbanc_sn as externalId", async () => {
+    const pageUnit = 2;
+    const page1 = {
+      data: {
+        data: [
+          { biz_pbanc_nm: "A", pbanc_sn: 11 },
+          { biz_pbanc_nm: "B", pbanc_sn: 22 },
+        ],
+      },
+    };
+    const page2 = {
+      data: {
+        data: [{ biz_pbanc_nm: "C", pbanc_sn: 33 }],
+      },
+    };
+
+    mockFetch
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(page1) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(page2) });
+
+    const { KStartupApiSource } = await import(
+      "../../src/sources/kstartup-api.js"
+    );
+    const source = new KStartupApiSource("test-key");
+    const programs = await source.fetchAllPrograms(500, pageUnit);
+
+    expect(programs).toHaveLength(3);
+    expect(programs.map((p) => p.externalId)).toEqual(["11", "22", "33"]);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("fetchAllPrograms caps at maxItems", async () => {
+    const items = Array.from({ length: 5 }, (_, i) => ({
+      biz_pbanc_nm: `P${i}`,
+      pbanc_sn: i + 1,
+    }));
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ data: { data: items } }),
+    });
+
+    const { KStartupApiSource } = await import(
+      "../../src/sources/kstartup-api.js"
+    );
+    const source = new KStartupApiSource("test-key");
+    const programs = await source.fetchAllPrograms(2, 5);
+
+    expect(programs).toHaveLength(2);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
 });

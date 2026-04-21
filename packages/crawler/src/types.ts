@@ -21,6 +21,7 @@ export interface CrawledProgram {
   region?: string;
   announcementUrl?: string;
   rawText?: string;
+  externalId?: string;
 }
 
 export interface CrawlError {

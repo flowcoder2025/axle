@@ -490,14 +490,18 @@ describe("POST /api/cron/schedule-sync", () => {
   });
 });
 
-// --- WI-137: crawler-execute ---
+// --- WI-137/211-213: crawler-execute ---
+//
+// Detailed tests (pagination, retries, upsert, AutomationLog) live in
+// __tests__/api/cron/crawler-execute.test.ts with fully mocked @axle/crawler
+// and @axle/db. Here we only keep the auth gate + "no keys configured"
+// behaviour so this file does not need to mock the crawler package.
 
 describe("POST /api/cron/crawler-execute", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    delete process.env.QSTASH_URL;
-    delete process.env.QSTASH_TOKEN;
-    delete process.env.CRAWLER_ENDPOINT;
+    delete process.env.BIZINFO_API_KEY;
+    delete process.env.KSTARTUP_API_KEY;
   });
 
   it("returns 401 for missing auth", async () => {
@@ -508,7 +512,7 @@ describe("POST /api/cron/crawler-execute", () => {
     expect(res.status).toBe(401);
   });
 
-  it("logs trigger and returns success when QStash is not configured", async () => {
+  it("returns empty sources when no API keys are configured", async () => {
     const { POST } = await import(
       "../../../app/api/cron/crawler-execute/route"
     );
@@ -516,8 +520,8 @@ describe("POST /api/cron/crawler-execute", () => {
     const body = await res.json();
 
     expect(body.success).toBe(true);
-    expect(body.processed).toBe(1);
-    expect(body.method).toBe("log");
+    expect(body.sources).toEqual([]);
+    expect(typeof body.totalDuration).toBe("number");
   });
 });
 

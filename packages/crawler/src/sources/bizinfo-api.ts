@@ -8,10 +8,13 @@ import { BaseSource } from "./base-source.js";
 import type { CrawledProgram } from "../types.js";
 
 const API_URL = "https://www.bizinfo.go.kr/uss/rss/bizinfoApi.do";
+const DEFAULT_PAGE_UNIT = 100;
+const DEFAULT_MAX_ITEMS = 500;
 
 interface BizinfoItem {
   title?: string;
   pblancNm?: string;
+  pblancId?: string;
   jrsdInsttNm?: string;
   author?: string;
   bsnsSumryCn?: string;
@@ -35,26 +38,54 @@ export class BizinfoApiSource extends BaseSource {
   }
 
   async crawl(): Promise<CrawledProgram[]> {
+    return this.fetchAllPrograms();
+  }
+
+  /**
+   * Fetches up to `maxItems` programs across multiple pages.
+   *
+   * Stops early when a page returns fewer items than pageUnit (end of data)
+   * or when the cumulative item count reaches `maxItems`.
+   */
+  async fetchAllPrograms(
+    maxItems: number = DEFAULT_MAX_ITEMS,
+    pageUnit: number = DEFAULT_PAGE_UNIT,
+  ): Promise<CrawledProgram[]> {
     if (!this.apiKey) {
       throw new Error("BIZINFO_API_KEY is required");
     }
 
-    const url = new URL(API_URL);
-    url.searchParams.set("crtfcKey", this.apiKey);
-    url.searchParams.set("dataType", "json");
-    url.searchParams.set("pageUnit", "100");
-    url.searchParams.set("pageIndex", "1");
+    const out: CrawledProgram[] = [];
+    let pageIndex = 1;
 
-    const res = await fetch(url.toString());
-    if (!res.ok) {
-      throw new Error(`Bizinfo API error: ${res.status}`);
+    while (out.length < maxItems) {
+      const url = new URL(API_URL);
+      url.searchParams.set("crtfcKey", this.apiKey);
+      url.searchParams.set("dataType", "json");
+      url.searchParams.set("pageUnit", String(pageUnit));
+      url.searchParams.set("pageIndex", String(pageIndex));
+
+      const res = await fetch(url.toString());
+      if (!res.ok) {
+        throw new Error(`Bizinfo API error: ${res.status}`);
+      }
+
+      const json = (await res.json()) as Record<string, unknown>;
+      const items: BizinfoItem[] =
+        (json?.jsonArray as BizinfoItem[]) ?? (json?.items as BizinfoItem[]) ?? [];
+
+      if (items.length === 0) break;
+
+      for (const item of items) {
+        out.push(this.toProgram(item));
+        if (out.length >= maxItems) break;
+      }
+
+      if (items.length < pageUnit) break;
+      pageIndex += 1;
     }
 
-    const json = (await res.json()) as Record<string, unknown>;
-    const items: BizinfoItem[] =
-      (json?.jsonArray as BizinfoItem[]) ?? (json?.items as BizinfoItem[]) ?? [];
-
-    return items.map((item) => this.toProgram(item));
+    return out;
   }
 
   private toProgram(item: BizinfoItem): CrawledProgram {
@@ -71,6 +102,8 @@ export class BizinfoApiSource extends BaseSource {
     const applicationStart = this.parseDate(startStr);
     const applicationEnd = this.parseDate(endStr);
 
+    const externalId = item.pblancId ?? this.deriveExternalId(item.link, name);
+
     return {
       name,
       agency,
@@ -80,7 +113,23 @@ export class BizinfoApiSource extends BaseSource {
       eligibility: item.trgetNm ?? undefined,
       announcementUrl: item.link ?? undefined,
       rawText: item.bsnsSumryCn ?? item.description ?? undefined,
+      externalId,
     };
+  }
+
+  /**
+   * Derives a stable externalId from link or name when pblancId is missing.
+   * Links typically contain a numeric id (e.g. /detail/1234).
+   */
+  private deriveExternalId(link?: string, name?: string): string | undefined {
+    if (link) {
+      const match = link.match(/(\d+)(?!.*\d)/);
+      if (match) return `link-${match[1]}`;
+    }
+    if (name) {
+      return `name-${name.replace(/\s+/g, "-").slice(0, 80)}`;
+    }
+    return undefined;
   }
 
   private parseDate(dateStr?: string): string | undefined {

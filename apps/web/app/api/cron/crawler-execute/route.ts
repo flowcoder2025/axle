@@ -1,43 +1,65 @@
 import { NextResponse } from "next/server";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { handleInternalError } from "@/lib/api-helpers";
+import { BizinfoApiSource, KStartupApiSource } from "@axle/crawler";
+import {
+  runAndPersistSource,
+  type CrawlerSourceResult,
+} from "@/lib/services/crawler-persist";
 
 // POST /api/cron/crawler-execute
 // Scheduled: 0 6 * * * (daily at 06:00 UTC)
-// Trigger crawl job via QStash or log the trigger for the OCI VM worker.
-// Phase 16: log the trigger only — actual crawl executes on OCI VM.
+//
+// Executes bizinfo + kstartup public-API crawlers, upserts each result into
+// ProgramInfo (unique by source + externalId) and writes one AutomationLog
+// row per source. A failure in one source does NOT block the other.
+//
+// WI-211-212-213
 export async function POST(request: Request): Promise<Response> {
   if (!verifyCronAuth(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const qstashUrl = process.env.QSTASH_URL;
-    const qstashToken = process.env.QSTASH_TOKEN;
-    const crawlerEndpoint = process.env.CRAWLER_ENDPOINT;
+    const startedAt = Date.now();
+    const results: CrawlerSourceResult[] = [];
 
-    if (qstashUrl && qstashToken && crawlerEndpoint) {
-      // Enqueue crawl job via QStash
-      const res = await fetch(`${qstashUrl}/v2/publish/${crawlerEndpoint}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${qstashToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ triggeredAt: new Date().toISOString() }),
-      });
+    const bizinfoKey = process.env.BIZINFO_API_KEY;
+    const kstartupKey = process.env.KSTARTUP_API_KEY;
 
-      if (!res.ok) {
-        console.error(`crawler-execute: QStash enqueue failed — ${res.status}`);
-      } else {
-        console.log(`crawler-execute: crawl job enqueued via QStash`);
-        return NextResponse.json({ success: true, processed: 1, method: "qstash" });
-      }
+    if (bizinfoKey) {
+      const bizinfo = new BizinfoApiSource(bizinfoKey);
+      results.push(
+        await runAndPersistSource({
+          source: "bizinfo",
+          fetch: () => bizinfo.fetchAllPrograms(),
+        }),
+      );
+    } else {
+      console.warn("crawler-execute: BIZINFO_API_KEY not set, skipping bizinfo");
     }
 
-    // Fallback: log the trigger (OCI VM polls or uses its own scheduler)
-    console.log(`crawler-execute: crawl trigger logged at ${new Date().toISOString()}`);
-    return NextResponse.json({ success: true, processed: 1, method: "log" });
+    if (kstartupKey) {
+      const kstartup = new KStartupApiSource(kstartupKey);
+      results.push(
+        await runAndPersistSource({
+          source: "kstartup",
+          fetch: () => kstartup.fetchAllPrograms(),
+        }),
+      );
+    } else {
+      console.warn(
+        "crawler-execute: KSTARTUP_API_KEY not set, skipping kstartup",
+      );
+    }
+
+    const totalDuration = Date.now() - startedAt;
+
+    return NextResponse.json({
+      success: true,
+      sources: results,
+      totalDuration,
+    });
   } catch (err) {
     return handleInternalError(err);
   }
