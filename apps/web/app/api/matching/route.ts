@@ -58,9 +58,9 @@ export async function POST(req: NextRequest) {
       certifications: client.certificates.map((c) => c.type),
     };
 
-    // Fetch programs
+    // Fetch programs (crawled 플랫폼 프로그램 + 조직 프로그램 모두 매칭 대상)
     const programWhere = {
-      orgId: user.orgId,
+      OR: [{ orgId: user.orgId }, { orgId: null }],
       ...(programIds && programIds.length > 0 ? { id: { in: programIds } } : {}),
     };
     const programs = await prisma.programInfo.findMany({

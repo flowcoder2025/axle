@@ -33,8 +33,9 @@ export async function GET(req: NextRequest) {
     const cacheKey = `programs:list:${user.orgId}:${JSON.stringify(filters)}`;
 
     const result = await cacheGet(cacheKey, 900, async () => {
+      // Crawled 플랫폼 프로그램(orgId=null)과 조직 전용 프로그램 모두 노출
       const where: Prisma.ProgramInfoWhereInput = {
-        orgId: user.orgId!,
+        OR: [{ orgId: user.orgId! }, { orgId: null }],
         ...(category ? { category } : {}),
         ...(region ? { region } : {}),
         ...(hasDeadline === true ? { applicationEnd: { not: null } } : {}),

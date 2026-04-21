@@ -43,7 +43,10 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
     }),
     prisma.programInfo.findMany({
-      where: { orgId, name: { contains, mode: "insensitive" } },
+      where: {
+        OR: [{ orgId }, { orgId: null }],
+        name: { contains, mode: "insensitive" },
+      },
       select: { id: true, name: true, category: true },
       take,
       orderBy: { name: "asc" },

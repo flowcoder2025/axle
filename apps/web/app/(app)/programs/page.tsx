@@ -70,8 +70,9 @@ export default async function ProgramsPage({
   const sortOrder: "asc" | "desc" =
     params.sortOrder === "desc" ? "desc" : "asc";
 
+  // Crawled 플랫폼 프로그램(orgId=null) + 조직 프로그램 모두 노출
   const where = {
-    orgId: user.orgId,
+    OR: [{ orgId: user.orgId }, { orgId: null }],
     ...(category ? { category } : {}),
     ...(region ? { region: { contains: region, mode: "insensitive" as const } } : {}),
     ...(hasDeadlineFilter === true ? { applicationEnd: { not: null } } : {}),
