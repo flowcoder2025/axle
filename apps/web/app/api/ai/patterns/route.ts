@@ -14,6 +14,21 @@ const querySchema = z.object({
     .enum(["true", "false"])
     .transform((v) => v === "true")
     .optional(),
+  status: z
+    .enum([
+      "IDLE",
+      "CANDIDATE",
+      "QUEUED",
+      "FINE_TUNING",
+      "COMPLETED",
+      "PROMOTED",
+      "FAILED",
+    ])
+    .optional(),
+  candidatesOnly: z
+    .enum(["true", "false"])
+    .transform((v) => v === "true")
+    .optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
@@ -31,18 +46,32 @@ export async function GET(req: NextRequest) {
     const parsed = querySchema.safeParse({
       taskType: searchParams.get("taskType") ?? undefined,
       isFineTuned: searchParams.get("isFineTuned") ?? undefined,
+      status: searchParams.get("status") ?? undefined,
+      candidatesOnly: searchParams.get("candidatesOnly") ?? undefined,
       page: searchParams.get("page") ?? undefined,
       pageSize: searchParams.get("pageSize") ?? undefined,
     });
     if (!parsed.success) return handleZodError(parsed.error);
 
-    const { taskType, isFineTuned, page, pageSize } = parsed.data;
+    const {
+      taskType,
+      isFineTuned,
+      status,
+      candidatesOnly,
+      page,
+      pageSize,
+    } = parsed.data;
     const skip = (page - 1) * pageSize;
 
-    const where = {
+    const where: Record<string, unknown> = {
       ...(taskType ? { taskType } : {}),
       ...(isFineTuned !== undefined ? { isFineTuned } : {}),
+      ...(status ? { status } : {}),
     };
+    if (candidatesOnly) {
+      where.successCount = { gte: 10 };
+      where.isFineTuned = false;
+    }
 
     const [patterns, total] = await Promise.all([
       prisma.skillPattern.findMany({
@@ -57,6 +86,12 @@ export async function GET(req: NextRequest) {
           successCount: true,
           lastUsedAt: true,
           isFineTuned: true,
+          status: true,
+          errorMessage: true,
+          loraAdapterUrl: true,
+          fineTuneStartedAt: true,
+          fineTuneCompletedAt: true,
+          promotedAt: true,
           createdAt: true,
         },
       }),

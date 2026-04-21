@@ -518,16 +518,33 @@ model ProjectMember {
 
 model ChecklistTemplate {
   id                String      @id @default(cuid())
-  orgId             String
+  orgId             String?     /// Null = platform-wide shared template
   projectType       ProjectType
   name              String
   description       String?
   isRequired        Boolean     @default(true)
   sortOrder         Int         @default(0)
 
-  organization      Organization @relation(fields: [orgId], references: [id])
+  organization      Organization? @relation(fields: [orgId], references: [id])
+  items             ChecklistTemplateItem[]
 
   @@index([orgId, projectType])
+  @@index([projectType])
+}
+
+model ChecklistTemplateItem {
+  id                String            @id @default(cuid())
+  templateId        String
+  name              String
+  description       String?
+  isRequired        Boolean           @default(true)
+  sortOrder         Int               @default(0)
+  itemType          ChecklistItemType @default(DOCUMENT)
+  certificateType   String?
+
+  template          ChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
 }
 
 model ChecklistItem {
@@ -814,9 +831,30 @@ model SkillPattern {
   successCount      Int      @default(0)
   lastUsedAt        DateTime?
   isFineTuned       Boolean  @default(false)
+  status            FineTuneStatus @default(IDLE)
+  errorMessage      String?
+  sampleInput       Json?
+  sampleOutput      Json?
+  loraAdapterUrl    String?
+  fineTuneStartedAt DateTime?
+  fineTuneCompletedAt DateTime?
+  promotedAt        DateTime?
 
   aiJobs            AiJob[]
   createdAt         DateTime @default(now())
+
+  @@index([status])
+  @@index([taskType, status])
+}
+
+enum FineTuneStatus {
+  IDLE
+  CANDIDATE
+  QUEUED
+  FINE_TUNING
+  COMPLETED
+  PROMOTED
+  FAILED
 }
 
 model AutomationLog {
