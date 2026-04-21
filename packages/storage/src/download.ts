@@ -51,6 +51,29 @@ export function getPublicUrl(bucket: BucketName, path: string): string {
 }
 
 /**
+ * Download a file from Supabase Storage and return it as a Buffer.
+ *
+ * @param bucket Source bucket
+ * @param path   Storage path of the file
+ */
+export async function downloadFile(
+  bucket: BucketName,
+  path: string
+): Promise<Buffer> {
+  const supabase = createStorageClient();
+  const { data, error } = await supabase.storage.from(bucket).download(path);
+
+  if (error || !data) {
+    throw new Error(
+      `Failed to download file: ${error?.message ?? "unknown error"}`
+    );
+  }
+
+  const arrayBuffer = await data.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+}
+
+/**
  * Delete a file from Supabase Storage.
  *
  * @param bucket Source bucket

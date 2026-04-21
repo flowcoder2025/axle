@@ -25,6 +25,7 @@ export {
 export {
   getSignedUrl,
   getPublicUrl,
+  downloadFile,
   deleteFile,
   getFileMetadata,
 } from "./download.js";

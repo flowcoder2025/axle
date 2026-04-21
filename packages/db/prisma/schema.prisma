@@ -43,6 +43,7 @@ model User {
   assignedClients  Client[]  @relation("ClientAssignee")
   assignedProjects Project[] @relation("ProjectAssignee")
   pushSubscriptions PushSubscription[]
+  hwpxTemplates    HwpxTemplate[] @relation("HwpxTemplateCreator")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -129,6 +130,7 @@ model Organization {
   programs    ProgramInfo[]
   templates   ChecklistTemplate[]
   aiJobs      AiJob[]
+  hwpxTemplates HwpxTemplate[]
 
   plan         String  @default("free")
   quotaAiJobs  Int     @default(100)
@@ -1085,4 +1087,35 @@ model DailyActionMetric {
   @@unique([date, orgId, action])
   @@index([orgId, date])
   @@index([action, date])
+}
+
+// ── HWPX Templates (WI-208/WI-209) ───────────────────────────────────────────
+// Government form templates stored in Supabase Storage with structured
+// field→edit mappings used by POST /api/hwpx/edit to fill values.
+
+enum HwpxTemplateCategory {
+  VENTURE
+  SOBOOJANG
+  KOITA
+  OTHER
+}
+
+model HwpxTemplate {
+  id          String               @id @default(cuid())
+  orgId       String?
+  name        String
+  description String?
+  category    HwpxTemplateCategory @default(OTHER)
+  storageKey  String
+  fieldMap    Json
+  version     Int                  @default(1)
+  createdById String
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  org         Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  createdBy   User          @relation("HwpxTemplateCreator", fields: [createdById], references: [id])
+
+  @@index([orgId, category])
+  @@index([createdById])
 }
