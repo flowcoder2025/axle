@@ -21,13 +21,16 @@ export function ReportSection({ clientId, reports, availableYears }: ReportSecti
     availableYears[0] ?? null
   );
   const [loading, setLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [generated, setGenerated] = useState<Report[]>(reports);
 
   const handleGenerate = async () => {
     if (!selectedYear) return;
     setLoading(true);
     setError(null);
+    setNotice(null);
 
     try {
       const res = await fetch(`/api/clients/${clientId}/financial-reports`, {
@@ -50,6 +53,49 @@ export function ReportSection({ clientId, reports, availableYears }: ReportSecti
     }
   };
 
+  const handleGenerateAi = async () => {
+    if (!selectedYear) return;
+    setAiLoading(true);
+    setError(null);
+    setNotice(null);
+
+    try {
+      const res = await fetch(`/api/clients/${clientId}/financial-report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ year: selectedYear }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(
+          data.error?.message ?? "AI 재무 분석 리포트 생성에 실패했습니다.",
+        );
+      }
+
+      const { data } = await res.json();
+      const newReport: Report = {
+        id: data.reportId,
+        year: selectedYear,
+        reportUrl: data.url,
+        createdAt: new Date().toISOString(),
+      };
+      setGenerated((prev) => [
+        newReport,
+        ...prev.filter((r) => r.id !== newReport.id),
+      ]);
+      setNotice(
+        data.fallbackUsed
+          ? "AI 응답이 없어 자동 요약 템플릿으로 리포트를 생성했습니다."
+          : "AI 재무 분석 리포트가 생성되었습니다.",
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Generate panel */}
@@ -66,13 +112,26 @@ export function ReportSection({ clientId, reports, availableYears }: ReportSecti
               </option>
             ))}
           </select>
-          <Button onClick={handleGenerate} disabled={loading || !selectedYear} size="sm">
+          <Button
+            onClick={handleGenerate}
+            disabled={loading || aiLoading || !selectedYear}
+            size="sm"
+          >
             {loading ? "생성 중..." : "DOCX 보고서 생성"}
+          </Button>
+          <Button
+            onClick={handleGenerateAi}
+            disabled={loading || aiLoading || !selectedYear}
+            size="sm"
+            variant="outline"
+          >
+            {aiLoading ? "AI 분석 중..." : "AI 재무 분석 리포트 생성"}
           </Button>
         </div>
       )}
 
       {error && <p className="text-sm text-red-500">{error}</p>}
+      {notice && <p className="text-sm text-emerald-600">{notice}</p>}
 
       {/* Reports list */}
       {generated.length === 0 ? (
