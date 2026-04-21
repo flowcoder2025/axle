@@ -10,6 +10,7 @@ import {
   unauthorizedResponse,
 } from "@/lib/api-helpers";
 import { assertAiJobQuota, QuotaExceededError } from "@/lib/quota/ai-jobs";
+import { runJob } from "@/lib/ai-dispatcher";
 
 // GET /api/ai/jobs — list AI jobs with filters and pagination
 export async function GET(req: NextRequest) {
@@ -130,6 +131,10 @@ export async function POST(req: NextRequest) {
         skillPatternId,
       },
     });
+
+    // Fire-and-forget dispatch. runJob handles all persistence updates
+    // (RUNNING → COMPLETED/FAILED) and never rejects.
+    void runJob({ id: job.id, type: job.type, input: job.input });
 
     return NextResponse.json({ data: job }, { status: 201 });
   } catch (err) {
