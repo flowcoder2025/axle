@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Building2, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, Users, Building2, ArrowLeft, FileStack } from "lucide-react";
 import { cn } from "@axle/ui";
 
 const NAV_ITEMS = [
   { href: "/platform-admin", label: "대시보드", icon: LayoutDashboard },
   { href: "/platform-admin/users", label: "사용자", icon: Users },
   { href: "/platform-admin/organizations", label: "조직", icon: Building2 },
+  { href: "/platform-admin/hwpx-templates", label: "HWPX 템플릿", icon: FileStack },
 ];
 
 export function AdminSidebar() {
