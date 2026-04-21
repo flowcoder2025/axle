@@ -36,6 +36,14 @@ export interface FinancialReportInput {
   };
   analysis?: string;
   adjustments?: string;
+  recommendations?: string[];
+  metrics?: {
+    revenueGrowth?: number;
+    operatingProfitGrowth?: number;
+    netProfitGrowth?: number;
+  };
+  aiModel?: string | null;
+  fallbackUsed?: boolean;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -170,6 +178,44 @@ function buildRatiosTable(ratios: NonNullable<FinancialReportInput["ratios"]>): 
   });
 }
 
+function buildGrowthTable(metrics: NonNullable<FinancialReportInput["metrics"]>): Table {
+  const rows: [string, string][] = [
+    ["매출 성장률", pct(metrics.revenueGrowth)],
+    ["영업이익 성장률", pct(metrics.operatingProfitGrowth)],
+    ["순이익 성장률", pct(metrics.netProfitGrowth)],
+  ];
+
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [
+      new TableRow({
+        tableHeader: true,
+        children: [
+          tableCell("지표", { bold: true, shade: HEADER_FILL, textColor: "FFFFFF", widthPct: 50 }),
+          tableCell("값", { bold: true, shade: HEADER_FILL, textColor: "FFFFFF", widthPct: 50 }),
+        ],
+      }),
+      ...rows.map(
+        ([label, value], idx) =>
+          new TableRow({
+            children: [
+              tableCell(label, { bold: true, shade: idx % 2 === 0 ? ROW_FILL : undefined, widthPct: 50 }),
+              tableCell(value, { align: AlignmentType.RIGHT, widthPct: 50 }),
+            ],
+          }),
+      ),
+    ],
+    borders: {
+      insideHorizontal: THIN_BORDER,
+      insideVertical: THIN_BORDER,
+      top: THIN_BORDER,
+      bottom: THIN_BORDER,
+      left: THIN_BORDER,
+      right: THIN_BORDER,
+    },
+  });
+}
+
 // ── Public API ─────────────────────────────────────────────────────────────────
 
 export async function generateFinancialReportDocx(input: FinancialReportInput): Promise<Buffer> {
@@ -192,24 +238,64 @@ export async function generateFinancialReportDocx(input: FinancialReportInput): 
     children.push(para("", { spacingAfter: 300 }));
   }
 
-  if (input.analysis) {
-    children.push(para("3. 종합 의견", { bold: true, size: 28, spacingAfter: 160 }));
+  if (
+    input.metrics &&
+    (input.metrics.revenueGrowth != null ||
+      input.metrics.operatingProfitGrowth != null ||
+      input.metrics.netProfitGrowth != null)
+  ) {
     children.push(
-      new Paragraph({
-        children: [run(input.analysis, { size: 20 })],
-        spacing: { before: 60, after: 60, line: 360 },
-      })
+      para("3. 성장성 지표 (전년 대비)", { bold: true, size: 28, spacingAfter: 160 }),
     );
+    children.push(buildGrowthTable(input.metrics));
+    children.push(para("", { spacingAfter: 300 }));
+  }
+
+  if (input.analysis) {
+    const title = input.fallbackUsed ? "4. 종합 의견 (자동 요약)" : "4. 종합 의견 (AI 분석)";
+    children.push(para(title, { bold: true, size: 28, spacingAfter: 160 }));
+    for (const paragraph of input.analysis.split(/\r?\n\s*\r?\n/)) {
+      const text = paragraph.trim();
+      if (!text) continue;
+      children.push(
+        new Paragraph({
+          children: [run(text, { size: 20 })],
+          spacing: { before: 60, after: 60, line: 360 },
+        }),
+      );
+    }
+    children.push(para("", { spacingAfter: 300 }));
+  }
+
+  if (input.recommendations && input.recommendations.length > 0) {
+    children.push(para("5. 개선 컨설팅 제언", { bold: true, size: 28, spacingAfter: 160 }));
+    for (const rec of input.recommendations) {
+      children.push(
+        new Paragraph({
+          children: [run(`• ${rec}`, { size: 20 })],
+          spacing: { before: 40, after: 40, line: 340 },
+        }),
+      );
+    }
     children.push(para("", { spacingAfter: 300 }));
   }
 
   if (input.adjustments) {
-    children.push(para("4. 조정 사항", { bold: true, size: 28, spacingAfter: 160 }));
+    children.push(para("6. 조정 사항", { bold: true, size: 28, spacingAfter: 160 }));
     children.push(
       new Paragraph({
         children: [run(input.adjustments, { size: 20 })],
         spacing: { before: 60, after: 60, line: 360 },
-      })
+      }),
+    );
+  }
+
+  if (input.aiModel) {
+    children.push(
+      new Paragraph({
+        children: [run(`AI 모델: ${input.aiModel}`, { size: 16, color: "888888" })],
+        spacing: { before: 200, after: 60 },
+      }),
     );
   }
 
