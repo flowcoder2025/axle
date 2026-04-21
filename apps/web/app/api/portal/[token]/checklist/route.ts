@@ -15,7 +15,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 
     const portalToken = await prisma.portalToken.findUnique({
       where: { token },
-      select: { projectId: true, scope: true, expiresAt: true },
+      select: { projectId: true, clientId: true, scope: true, expiresAt: true },
     });
 
     if (!portalToken) {
@@ -39,8 +39,13 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
       );
     }
 
+    // Client-level tokens (projectId = null) expose checklist items for every
+    // project that belongs to the client; project-scoped tokens stay restricted
+    // to just that project.
     const items = await prisma.checklistItem.findMany({
-      where: { projectId: portalToken.projectId },
+      where: portalToken.projectId
+        ? { projectId: portalToken.projectId }
+        : { project: { clientId: portalToken.clientId } },
       select: {
         id: true,
         name: true,

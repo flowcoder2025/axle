@@ -239,6 +239,7 @@ model Client {
   financialsSyncedAt DateTime?
   masterProfile     Json?
   profileBlocks     Json?
+  onboardedAt       DateTime?
 
   contacts          Contact[]
   financials        ClientFinancial[]
@@ -253,6 +254,7 @@ model Client {
   emailLogs         EmailLog[]
   estimates         Estimate[]
   contracts         Contract[]
+  portalTokens      PortalToken[]
 
   organization      Organization @relation(fields: [orgId], references: [id])
   createdAt         DateTime     @default(now())
@@ -978,17 +980,19 @@ enum PortalTokenScope {
 model PortalToken {
   id          String           @id @default(cuid())
   token       String           @unique @default(cuid())
-  projectId   String
+  projectId   String?
   clientId    String
   scope       PortalTokenScope @default(FULL)
   expiresAt   DateTime?
   createdBy   String
 
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   journals    PortalJournal[]
   createdAt   DateTime @default(now())
 
   @@index([projectId])
+  @@index([clientId])
 }
 
 model PortalJournal {
