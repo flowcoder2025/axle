@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Badge,
+  Button,
   Table,
   TableBody,
   TableCell,
@@ -10,8 +11,9 @@ import {
   TableHeader,
   TableRow,
 } from "@axle/ui";
-import { FileText } from "lucide-react";
+import { FileText, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { VerificationPanel } from "../documents/verification-panel";
 
 interface Document {
   id: string;
@@ -58,6 +60,7 @@ export function ProjectDocumentList({ projectId }: ProjectDocumentListProps) {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expandedDocId, setExpandedDocId] = useState<string | null>(null);
 
   const fetchDocuments = useCallback(async () => {
     setLoading(true);
@@ -137,6 +140,7 @@ export function ProjectDocumentList({ projectId }: ProjectDocumentListProps) {
             <TableHead>OCR</TableHead>
             <TableHead>만료일</TableHead>
             <TableHead>등록일</TableHead>
+            <TableHead className="text-right">작업</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -145,34 +149,58 @@ export function ProjectDocumentList({ projectId }: ProjectDocumentListProps) {
               label: doc.ocrStatus,
               variant: "secondary" as const,
             };
+            const isExpanded = expandedDocId === doc.id;
             return (
-              <TableRow key={doc.id}>
-                <TableCell className="font-medium max-w-[250px] truncate">
-                  {doc.name}
-                  {doc.version > 1 && (
-                    <span className="ml-1 text-xs text-muted-foreground">
-                      v{doc.version}
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">
-                    {CATEGORY_LABEL[doc.category] ?? doc.category}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground text-xs uppercase">
-                  {doc.fileType ?? "-"}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={ocr.variant}>{ocr.label}</Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDate(doc.expiresAt)}
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDate(doc.createdAt)}
-                </TableCell>
-              </TableRow>
+              <>
+                <TableRow key={doc.id}>
+                  <TableCell className="font-medium max-w-[250px] truncate">
+                    {doc.name}
+                    {doc.version > 1 && (
+                      <span className="ml-1 text-xs text-muted-foreground">
+                        v{doc.version}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {CATEGORY_LABEL[doc.category] ?? doc.category}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-xs uppercase">
+                    {doc.fileType ?? "-"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={ocr.variant}>{ocr.label}</Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {formatDate(doc.expiresAt)}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {formatDate(doc.createdAt)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      data-testid={`verify-toggle-${doc.id}`}
+                      onClick={() =>
+                        setExpandedDocId(isExpanded ? null : doc.id)
+                      }
+                    >
+                      <Sparkles className="mr-1 h-3.5 w-3.5" />
+                      {isExpanded ? "닫기" : "평가 보기"}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+                {isExpanded && (
+                  <TableRow key={`${doc.id}-verify`}>
+                    <TableCell colSpan={7} className="bg-muted/30 p-4">
+                      <VerificationPanel documentId={doc.id} />
+                    </TableCell>
+                  </TableRow>
+                )}
+              </>
             );
           })}
         </TableBody>
