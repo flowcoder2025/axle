@@ -6,6 +6,10 @@ import { Button } from "@axle/ui";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { ProjectStatusBadge } from "../../../../src/components/projects/project-status-badge";
 import { ProjectDetailTabs } from "../../../../src/components/projects/project-detail-tabs";
+import {
+  BusinessPlanWizard,
+  SUPPORTED_PROJECT_TYPES,
+} from "../../../../src/components/projects/business-plan-wizard";
 import type { FeeType, Priority, ProjectStatus, ProjectType } from "@prisma/client";
 
 export async function generateMetadata({
@@ -54,6 +58,25 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   if (!project) {
     notFound();
   }
+
+  // Resolve program metadata + the org's program catalog for the wizard's
+  // selector. Only one of these is surfaced: if the project is pre-linked to a
+  // program, we skip the catalog fetch.
+  const linkedProgram = project.programId
+    ? await prisma.programInfo.findFirst({
+        where: { id: project.programId },
+        select: { id: true, name: true },
+      })
+    : null;
+
+  const availablePrograms = linkedProgram
+    ? []
+    : await prisma.programInfo.findMany({
+        where: { orgId: user.orgId },
+        select: { id: true, name: true, agency: true },
+        orderBy: { applicationEnd: "asc" },
+        take: 50,
+      });
 
   // Serialize for client components
   const serialized = {
@@ -109,12 +132,22 @@ export default async function ProjectDetailPage({ params }: PageProps) {
             <span>멤버 {project._count.members}명</span>
           </div>
         </div>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/projects/${projectId}/edit`}>
-            <Pencil className="mr-1.5 h-3.5 w-3.5" />
-            편집
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          {SUPPORTED_PROJECT_TYPES.has(project.type as ProjectType) && (
+            <BusinessPlanWizard
+              projectId={project.id}
+              projectType={project.type as ProjectType}
+              linkedProgram={linkedProgram}
+              availablePrograms={availablePrograms}
+            />
+          )}
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/projects/${projectId}/edit`}>
+              <Pencil className="mr-1.5 h-3.5 w-3.5" />
+              편집
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}
