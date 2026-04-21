@@ -462,7 +462,7 @@
 - [ ] WI-211-feat crawler-execute cron → ProgramInfo upsert (기업마당 API) | L1:Phase17 > L2:Crawler > L3:DB Save
 - [ ] WI-212-feat crawler-execute cron → ProgramInfo upsert (K-Startup API) | L1:Phase17 > L2:Crawler > L3:DB Save
 - [ ] WI-213-feat 크롤링 이력 AutomationLog 기록 + 실패 재시도 | L1:Phase17 > L2:Crawler > L3:Resilience
-- [ ] WI-214-feat Playwright bizinfo 크롤러 → self-repair AI 복구 루프 agent-bridge 위임 | L1:Phase17 > L2:Crawler > L3:SelfRepair
+- [x] WI-214-chore 레거시 Playwright BizinfoSource 제거 (프로덕션 crawler는 공공 API 사용 — Playwright 경로 dead code) | L1:Phase17 > L2:Crawler > L3:Cleanup
 
 ### L2: 고객사 서류 요청 > L3: UI/메뉴 노출
 - [ ] WI-215-feat Client 상세에 "서류 요청" 탭 추가 (체크리스트 기반 + 포털 토큰 UI 통합) | L1:Phase17 > L2:Client > L3:서류요청
