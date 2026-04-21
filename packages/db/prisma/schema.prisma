@@ -233,6 +233,8 @@ model Client {
   isMainBiz         Boolean      @default(false)
   isSocial          Boolean      @default(false)
   ventureValidUntil DateTime?
+  businessStatus     String?
+  businessVerifiedAt DateTime?
   masterProfile     Json?
   profileBlocks     Json?
 

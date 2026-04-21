@@ -88,6 +88,10 @@ export default async function ClientDetailPage({ params }: PageProps) {
           id: client.id,
           name: client.name,
           businessNumber: client.businessNumber,
+          businessStatus: client.businessStatus,
+          businessVerifiedAt: client.businessVerifiedAt
+            ? client.businessVerifiedAt.toISOString()
+            : null,
           ceoName: client.ceoName,
           industry: client.industry,
           address: client.address,
