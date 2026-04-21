@@ -12,13 +12,28 @@ import {
   SheetTrigger,
   cn,
 } from "@axle/ui";
-import { LayoutDashboard, Users, Building2, ArrowLeft, Menu, FileStack } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  Building2,
+  ArrowLeft,
+  Menu,
+  FileStack,
+  ClipboardList,
+  Brain,
+} from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/platform-admin", label: "대시보드", icon: LayoutDashboard },
   { href: "/platform-admin/users", label: "사용자", icon: Users },
   { href: "/platform-admin/organizations", label: "조직", icon: Building2 },
   { href: "/platform-admin/hwpx-templates", label: "HWPX 템플릿", icon: FileStack },
+  {
+    href: "/platform-admin/checklist-templates",
+    label: "체크리스트 템플릿",
+    icon: ClipboardList,
+  },
+  { href: "/platform-admin/ai-patterns", label: "AI 패턴", icon: Brain },
 ];
 
 export function AdminMobileNav() {

@@ -7,22 +7,33 @@ import {
   handleInternalError,
   unauthorizedResponse,
   notFoundResponse,
+  forbiddenResponse,
 } from "@/lib/api-helpers";
 
 type RouteContext = { params: Promise<{ templateId: string }> };
 
 /**
- * Verifies the template exists and belongs to the user's org.
+ * Verifies the template exists and the caller may access it.
+ * - Platform templates (orgId=null) are readable by anyone, writable only by PLATFORM_ADMIN.
+ * - Org templates require the caller to be in the same org.
  */
 async function resolveTemplate(
   templateId: string,
   orgId: string,
 ): Promise<
-  | { ok: true; template: NonNullable<Awaited<ReturnType<typeof prisma.checklistTemplate.findFirst>>> }
+  | {
+      ok: true;
+      template: NonNullable<
+        Awaited<ReturnType<typeof prisma.checklistTemplate.findFirst>>
+      >;
+    }
   | { ok: false; response: NextResponse }
 > {
   const template = await prisma.checklistTemplate.findFirst({
-    where: { id: templateId, orgId },
+    where: {
+      id: templateId,
+      OR: [{ orgId }, { orgId: null }],
+    },
   });
 
   if (!template) {
@@ -34,8 +45,9 @@ async function resolveTemplate(
 
 /**
  * GET /api/checklist-templates/[templateId]
+ * Includes items by default. Pass ?withItems=false to skip.
  */
-export async function GET(_req: NextRequest, { params }: RouteContext) {
+export async function GET(req: NextRequest, { params }: RouteContext) {
   const user = await getCurrentUser();
   if (!user?.orgId) {
     return unauthorizedResponse();
@@ -43,10 +55,24 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 
   try {
     const { templateId } = await params;
-    const result = await resolveTemplate(templateId, user.orgId);
-    if (!result.ok) return result.response;
+    const { searchParams } = new URL(req.url);
+    const withItems = searchParams.get("withItems") !== "false";
 
-    return NextResponse.json({ data: result.template });
+    const template = await prisma.checklistTemplate.findFirst({
+      where: {
+        id: templateId,
+        OR: [{ orgId: user.orgId }, { orgId: null }],
+      },
+      include: withItems
+        ? { items: { orderBy: { sortOrder: "asc" } } }
+        : undefined,
+    });
+
+    if (!template) {
+      return notFoundResponse("ChecklistTemplate");
+    }
+
+    return NextResponse.json({ data: template });
   } catch (error) {
     return handleInternalError(error);
   }
@@ -54,7 +80,8 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 
 /**
  * PATCH /api/checklist-templates/[templateId]
- * Partial update.
+ * Partial update. Platform-wide templates require PLATFORM_ADMIN.
+ * `scope` in the body can move a template between org/platform (platform admin only).
  */
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
   const user = await getCurrentUser();
@@ -66,6 +93,13 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     const { templateId } = await params;
     const result = await resolveTemplate(templateId, user.orgId);
     if (!result.ok) return result.response;
+
+    const isPlatformAdmin = user.platformRole === "PLATFORM_ADMIN";
+    if (result.template.orgId === null && !isPlatformAdmin) {
+      return forbiddenResponse(
+        "Only platform admins can modify platform-wide templates",
+      );
+    }
 
     let body: unknown;
     try {
@@ -82,9 +116,20 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       return handleZodError(parsed.error);
     }
 
+    const { scope, ...fields } = parsed.data;
+    const data: Record<string, unknown> = { ...fields };
+    if (scope !== undefined) {
+      if (!isPlatformAdmin) {
+        return forbiddenResponse(
+          "Only platform admins can change template scope",
+        );
+      }
+      data.orgId = scope === "platform" ? null : user.orgId;
+    }
+
     const updated = await prisma.checklistTemplate.update({
       where: { id: templateId },
-      data: parsed.data,
+      data,
     });
 
     return NextResponse.json({ data: updated });
@@ -95,7 +140,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
 
 /**
  * DELETE /api/checklist-templates/[templateId]
- * Hard delete.
+ * Hard delete. Platform templates → PLATFORM_ADMIN only.
  */
 export async function DELETE(_req: NextRequest, { params }: RouteContext) {
   const user = await getCurrentUser();
@@ -107,6 +152,13 @@ export async function DELETE(_req: NextRequest, { params }: RouteContext) {
     const { templateId } = await params;
     const result = await resolveTemplate(templateId, user.orgId);
     if (!result.ok) return result.response;
+
+    const isPlatformAdmin = user.platformRole === "PLATFORM_ADMIN";
+    if (result.template.orgId === null && !isPlatformAdmin) {
+      return forbiddenResponse(
+        "Only platform admins can delete platform-wide templates",
+      );
+    }
 
     await prisma.checklistTemplate.delete({ where: { id: templateId } });
 

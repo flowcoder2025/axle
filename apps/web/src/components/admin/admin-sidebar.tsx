@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Building2, ArrowLeft, FileStack } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  Building2,
+  ArrowLeft,
+  FileStack,
+  ClipboardList,
+  Brain,
+} from "lucide-react";
 import { cn } from "@axle/ui";
 
 const NAV_ITEMS = [
@@ -10,6 +18,12 @@ const NAV_ITEMS = [
   { href: "/platform-admin/users", label: "사용자", icon: Users },
   { href: "/platform-admin/organizations", label: "조직", icon: Building2 },
   { href: "/platform-admin/hwpx-templates", label: "HWPX 템플릿", icon: FileStack },
+  {
+    href: "/platform-admin/checklist-templates",
+    label: "체크리스트 템플릿",
+    icon: ClipboardList,
+  },
+  { href: "/platform-admin/ai-patterns", label: "AI 패턴", icon: Brain },
 ];
 
 export function AdminSidebar() {

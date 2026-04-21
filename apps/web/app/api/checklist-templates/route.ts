@@ -1,17 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@axle/auth";
 import { prisma } from "@axle/db";
+import { ProjectType } from "@prisma/client";
 import { checklistTemplateCreateSchema } from "@/lib/validations/checklist";
 import {
   handleZodError,
   handleInternalError,
   unauthorizedResponse,
+  forbiddenResponse,
 } from "@/lib/api-helpers";
 
 /**
  * GET /api/checklist-templates
- * Returns all checklist templates for the user's org.
- * Query params: ?projectType=<ProjectType>
+ * Returns checklist templates visible to the caller:
+ * - platform-wide templates (orgId=null) + the caller's org templates
+ * Query params:
+ *   ?projectType=<ProjectType>
+ *   ?scope=org|platform|all (default: all)
+ *   ?withItems=true          — include ChecklistTemplateItem rows
+ *   ?page, ?pageSize
  */
 export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
@@ -22,15 +29,31 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const projectTypeParam = searchParams.get("projectType");
+    const scopeParam = (searchParams.get("scope") ?? "all") as
+      | "org"
+      | "platform"
+      | "all";
+    const withItems = searchParams.get("withItems") === "true";
     const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
     const pageSize = Math.min(
       100,
-      Math.max(1, Number(searchParams.get("pageSize") ?? "20") || 20),
+      Math.max(1, Number(searchParams.get("pageSize") ?? "50") || 50),
     );
 
-    const where: Record<string, unknown> = { orgId: user.orgId };
+    let orgFilter: Record<string, unknown>;
+    if (scopeParam === "org") {
+      orgFilter = { orgId: user.orgId };
+    } else if (scopeParam === "platform") {
+      orgFilter = { orgId: null };
+    } else {
+      orgFilter = { OR: [{ orgId: user.orgId }, { orgId: null }] };
+    }
+
+    const where: Record<string, unknown> = { ...orgFilter };
     if (projectTypeParam) {
-      where.projectType = projectTypeParam;
+      if (Object.values(ProjectType).includes(projectTypeParam as ProjectType)) {
+        where.projectType = projectTypeParam;
+      }
     }
 
     const [data, total] = await Promise.all([
@@ -39,6 +62,9 @@ export async function GET(req: NextRequest) {
         orderBy: [{ projectType: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
         skip: (page - 1) * pageSize,
         take: pageSize,
+        include: withItems
+          ? { items: { orderBy: { sortOrder: "asc" } } }
+          : undefined,
       }),
       prisma.checklistTemplate.count({ where }),
     ]);
@@ -51,7 +77,9 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/checklist-templates
- * Creates a new checklist template for the user's org.
+ * Creates a new checklist template.
+ * - scope="org"      → orgId = current user's org (any org member)
+ * - scope="platform" → orgId = null (platform admin only)
  */
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
@@ -75,10 +103,19 @@ export async function POST(req: NextRequest) {
       return handleZodError(parsed.error);
     }
 
+    const { scope, ...fields } = parsed.data;
+    const isPlatformAdmin = user.platformRole === "PLATFORM_ADMIN";
+
+    if (scope === "platform" && !isPlatformAdmin) {
+      return forbiddenResponse(
+        "Only platform admins can create platform-wide templates",
+      );
+    }
+
     const template = await prisma.checklistTemplate.create({
       data: {
-        ...parsed.data,
-        orgId: user.orgId,
+        ...fields,
+        orgId: scope === "platform" ? null : user.orgId,
       },
     });
 

@@ -68,15 +68,25 @@ export async function extractAndStorePattern(
 
   if (existing) {
     const newCount = existing.successCount + 1;
+    // Promote IDLE → CANDIDATE when we cross the threshold and the pattern
+    // isn't already in the fine-tune pipeline or promoted.
+    const shouldFlagCandidate =
+      newCount >= 10 &&
+      existing.status === "IDLE" &&
+      !existing.isFineTuned;
+
     await prisma.skillPattern.update({
       where: { id: existing.id },
       data: {
         successCount: newCount,
         lastUsedAt: new Date(),
-        // Promote to fine-tuning candidate once threshold is reached
-        ...(newCount >= 10 && !existing.isFineTuned
-          ? { isFineTuned: false } // keep isFineTuned false — it means "candidate", markAsFineTuned sets true
+        ...(existing.sampleInput === null
+          ? { sampleInput: data.input as object }
           : {}),
+        ...(existing.sampleOutput === null
+          ? { sampleOutput: data.output as object }
+          : {}),
+        ...(shouldFlagCandidate ? { status: "CANDIDATE" as const } : {}),
       },
     });
   } else {
@@ -89,6 +99,8 @@ export async function extractAndStorePattern(
         successCount: 1,
         lastUsedAt: new Date(),
         isFineTuned: false,
+        sampleInput: data.input as object,
+        sampleOutput: data.output as object,
       },
     });
   }

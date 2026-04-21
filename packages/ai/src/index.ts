@@ -1,8 +1,20 @@
 export { complete } from "./claude.js";
 export type { ClaudeCompletionInput } from "./claude.js";
 
-export { resolveAiTier } from "./router.js";
+export { resolveAiTier, resolveAiTierAsync } from "./router.js";
 export type { RouterConfig } from "./router.js";
+
+// SkillPattern — LOCAL_MLX promotion state machine
+export {
+  postAdapterToBridge,
+  canTransition,
+  transitionStatus,
+  queueForFineTune,
+  promoteToLocalMlx,
+  markFineTuneComplete,
+  hasPromotedPatternFor,
+  InvalidTransitionError,
+} from "./skill-pattern/promotion.js";
 
 export {
   createAiJob,
