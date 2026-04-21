@@ -29,6 +29,7 @@
     "@upstash/redis": "^1.37.0",
     "bcryptjs": "^3.0.3",
     "googleapis": "^171.4.0",
+    "jszip": "^3.10.1",
     "lucide-react": "*",
     "next": "^16.0.0",
     "next-auth": "*",

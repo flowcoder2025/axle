@@ -235,6 +235,8 @@ model Client {
   ventureValidUntil DateTime?
   businessStatus     String?
   businessVerifiedAt DateTime?
+  corpCode          String?
+  financialsSyncedAt DateTime?
   masterProfile     Json?
   profileBlocks     Json?
 
@@ -336,7 +338,7 @@ model Certificate {
 
 model ProgramInfo {
   id                String          @id @default(cuid())
-  orgId             String
+  orgId             String?
   name              String
   agency            String?
   category          ProgramCategory
@@ -351,13 +353,17 @@ model ProgramInfo {
   memo              String?
   isCrawled         Boolean         @default(false)
   crawledAt         DateTime?
+  source            String?
+  externalId        String?
 
   matchingResults   MatchingResult[]
   schedules         Schedule[]
 
-  organization      Organization @relation(fields: [orgId], references: [id])
+  organization      Organization? @relation(fields: [orgId], references: [id])
 
+  @@unique([source, externalId])
   @@index([orgId])
+  @@index([source])
 }
 
 model MatchingResult {
@@ -651,6 +657,7 @@ enum AutoType {
   INSURANCE_ISSUE
   PORTAL_UPLOAD
   DART_FETCH
+  CRAWL
 }
 
 enum NotificationType {
@@ -814,7 +821,11 @@ model AutomationLog {
   status            JobStatus
   resultUrl         String?
   errorMessage      String?
+  detail            Json?
   executedAt        DateTime  @default(now())
+
+  @@index([type, status])
+  @@index([executedAt])
 }
 
 model Notification {
