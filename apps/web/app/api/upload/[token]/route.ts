@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@axle/db";
 import { uploadFromFormData, BUCKETS, StorageValidationError } from "@axle/storage";
 import { handleInternalError } from "@/lib/api-helpers";
+import { eventBus } from "@/lib/events/event-bus";
 
 /**
  * POST /api/upload/[token]
@@ -93,6 +94,44 @@ export async function POST(
           uploadedAt: new Date(),
         },
       });
+
+      // If every REQUIRED checklist item for this project is now
+      // UPLOADED/VERIFIED, the portal submission is effectively complete.
+      // Emit PORTAL_COMPLETE so downstream channels can notify the
+      // consultant assigned to the client.
+      const remainingRequired = await prisma.checklistItem.count({
+        where: {
+          projectId: linkedItem.projectId,
+          isRequired: true,
+          status: { in: ["PENDING", "REQUESTED"] },
+        },
+      });
+
+      if (remainingRequired === 0) {
+        const project = await prisma.project.findUnique({
+          where: { id: linkedItem.projectId },
+          select: {
+            id: true,
+            clientId: true,
+            client: { select: { assignedToId: true } },
+          },
+        });
+        const assigneeId = project?.client?.assignedToId;
+        if (project && assigneeId) {
+          eventBus
+            .emit("PORTAL_COMPLETE", {
+              portalId: project.id,
+              clientId: project.clientId,
+              assigneeId,
+            })
+            .catch((err: unknown) => {
+              console.error(
+                `upload: PORTAL_COMPLETE emit failed for project ${project.id}`,
+                err,
+              );
+            });
+        }
+      }
     }
 
     // 6. Return result

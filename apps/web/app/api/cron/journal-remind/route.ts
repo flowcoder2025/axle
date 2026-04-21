@@ -3,6 +3,7 @@ import { prisma } from "@axle/db";
 import { sendEmail, journalReminderEmail } from "@axle/email";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { handleInternalError } from "@/lib/api-helpers";
+import { eventBus } from "@/lib/events/event-bus";
 
 // POST /api/cron/journal-remind
 // Scheduled: 0 9 25 * * (25th of each month at 09:00 UTC)
@@ -34,7 +35,7 @@ export async function POST(request: Request): Promise<Response> {
         id: true,
         name: true,
         email: true,
-        client: { select: { name: true } },
+        client: { select: { id: true, name: true } },
       },
     });
 
@@ -58,6 +59,23 @@ export async function POST(request: Request): Promise<Response> {
       }).catch((err: unknown) => {
         console.error(`journal-remind: email failed for contact ${researcher.id}`, err);
       });
+
+      // Emit JOURNAL_DUE so downstream typed-event channels (push, in-app)
+      // can fire. journalId is synthesized from the contact + month because
+      // no ResearchJournal row exists yet — the reminder is precisely for
+      // the missing one.
+      eventBus
+        .emit("JOURNAL_DUE", {
+          journalId: `reminder-${researcher.id}-${now.getFullYear()}-${now.getMonth() + 1}`,
+          clientId: researcher.client.id,
+          dueAt: monthEnd,
+        })
+        .catch((err: unknown) => {
+          console.error(
+            `journal-remind: JOURNAL_DUE emit failed for contact ${researcher.id}`,
+            err,
+          );
+        });
 
       processed++;
     }
