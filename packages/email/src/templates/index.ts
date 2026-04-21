@@ -28,3 +28,6 @@ export type { MatchingDigestEmailProps, MatchItem } from "./matching-digest.js";
 
 export { onboardingEmail } from "./onboarding.js";
 export type { OnboardingEmailProps } from "./onboarding.js";
+
+export { passwordResetEmail } from "./password-reset.js";
+export type { PasswordResetEmailProps } from "./password-reset.js";

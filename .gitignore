@@ -25,6 +25,12 @@ out/
 .next/
 .turbo/
 
+# Playwright / E2E transient state
+e2e/.manual-screenshots-state.json
+
+# Claude scheduled tasks lock
+.claude/scheduled_tasks.lock
+
 # IDE
 .idea/
 .vscode/

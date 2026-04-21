@@ -66,6 +66,7 @@ export {
   deadlineAlertEmail,
   matchingDigestEmail,
   onboardingEmail,
+  passwordResetEmail,
 } from "./templates/index.js";
 export type {
   DocRequestEmailProps,
@@ -79,4 +80,5 @@ export type {
   MatchingDigestEmailProps,
   MatchItem,
   OnboardingEmailProps,
+  PasswordResetEmailProps,
 } from "./templates/index.js";
