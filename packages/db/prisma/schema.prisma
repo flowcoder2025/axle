@@ -235,6 +235,8 @@ model Client {
   ventureValidUntil DateTime?
   businessStatus     String?
   businessVerifiedAt DateTime?
+  corpCode          String?
+  financialsSyncedAt DateTime?
   masterProfile     Json?
   profileBlocks     Json?
 
