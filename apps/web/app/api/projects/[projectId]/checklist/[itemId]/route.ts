@@ -8,6 +8,7 @@ import {
   unauthorizedResponse,
   notFoundResponse,
 } from "@/lib/api-helpers";
+import { eventBus } from "@/lib/events/event-bus";
 
 type RouteContext = { params: Promise<{ projectId: string; itemId: string }> };
 
@@ -19,13 +20,17 @@ async function resolveItem(
   itemId: string,
   orgId: string,
 ): Promise<
-  | { ok: true; item: NonNullable<Awaited<ReturnType<typeof prisma.checklistItem.findFirst>>> }
+  | {
+      ok: true;
+      item: NonNullable<Awaited<ReturnType<typeof prisma.checklistItem.findFirst>>>;
+      clientId: string;
+    }
   | { ok: false; response: NextResponse }
 > {
   // Verify project belongs to org
   const project = await prisma.project.findFirst({
     where: { id: projectId, client: { orgId } },
-    select: { id: true },
+    select: { id: true, clientId: true },
   });
 
   if (!project) {
@@ -40,7 +45,7 @@ async function resolveItem(
     return { ok: false, response: notFoundResponse("ChecklistItem") };
   }
 
-  return { ok: true, item };
+  return { ok: true, item, clientId: project.clientId };
 }
 
 /**
@@ -119,6 +124,19 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
         ...statusData,
       },
     });
+
+    // Emit DOC_REQUESTED when the item transitions from PENDING to REQUESTED
+    // so downstream notification handlers (email/push/in-app) can fire.
+    if (status === "REQUESTED" && result.item.status === "PENDING") {
+      eventBus
+        .emit("DOC_REQUESTED", {
+          checklistItemId: itemId,
+          clientId: result.clientId,
+        })
+        .catch((err: unknown) => {
+          console.error("[checklist PATCH] DOC_REQUESTED emit failed", err);
+        });
+    }
 
     return NextResponse.json({ data: updated });
   } catch (error) {

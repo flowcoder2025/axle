@@ -4,6 +4,7 @@ import { create, sendTelegramToDefault } from "@axle/notification";
 import { sendEmail, deadlineAlertEmail } from "@axle/email";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { handleInternalError } from "@/lib/api-helpers";
+import { eventBus } from "@/lib/events/event-bus";
 
 // POST /api/cron/deadline-alert
 // Scheduled: 0 8 * * * (daily at 08:00 UTC)
@@ -66,6 +67,32 @@ export async function POST(request: Request): Promise<Response> {
 
       const consultantId = client.assignedToId;
 
+      // Emit DEADLINE_APPROACHING on the typed event bus. Requires a
+      // Project for the client to satisfy the EventMap contract; if none
+      // exists we still keep the existing Notification/Telegram path.
+      if (consultantId) {
+        const project = await prisma.project.findFirst({
+          where: { clientId: client.id },
+          select: { id: true },
+          orderBy: { createdAt: "desc" },
+        });
+
+        if (project) {
+          eventBus
+            .emit("DEADLINE_APPROACHING", {
+              projectId: project.id,
+              deadlineAt: program.applicationEnd,
+              assigneeIds: [consultantId],
+            })
+            .catch((err: unknown) => {
+              console.error(
+                `deadline-alert: DEADLINE_APPROACHING emit failed for program ${program.id}`,
+                err,
+              );
+            });
+        }
+      }
+
       if (consultantId) {
         await create({
           userId: consultantId,
@@ -110,7 +137,51 @@ export async function POST(request: Request): Promise<Response> {
       processed++;
     }
 
-    return NextResponse.json({ success: true, processed });
+    // ── ActionItem due-soon sweep ─────────────────────────────────────────
+    // Emit ACTION_ITEM_DUE for any OPEN action item whose dueDate falls in
+    // the next 7 days. This runs alongside the program deadline sweep so
+    // cron ops stay co-located.
+    const in7Days = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const dueItems = await prisma.actionItem.findMany({
+      where: {
+        status: "OPEN",
+        dueDate: { gte: now, lte: in7Days },
+        assigneeUserId: { not: null },
+      },
+      select: {
+        id: true,
+        assigneeUserId: true,
+        dueDate: true,
+        meeting: { select: { projectId: true } },
+      },
+    });
+
+    let actionItemsProcessed = 0;
+    for (const item of dueItems) {
+      if (!item.assigneeUserId || !item.dueDate || !item.meeting?.projectId) {
+        continue;
+      }
+      eventBus
+        .emit("ACTION_ITEM_DUE", {
+          actionItemId: item.id,
+          projectId: item.meeting.projectId,
+          assigneeId: item.assigneeUserId,
+          dueAt: item.dueDate,
+        })
+        .catch((err: unknown) => {
+          console.error(
+            `deadline-alert: ACTION_ITEM_DUE emit failed for ${item.id}`,
+            err,
+          );
+        });
+      actionItemsProcessed++;
+    }
+
+    return NextResponse.json({
+      success: true,
+      processed,
+      actionItemsProcessed,
+    });
   } catch (err) {
     return handleInternalError(err);
   }
