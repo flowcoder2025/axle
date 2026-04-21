@@ -73,3 +73,17 @@ export type {
   VerificationResult,
   VerificationIssue,
 } from "./verification/types.js";
+
+// AiJob dispatcher — type → handler registry
+export {
+  dispatch,
+  getHandler,
+  hasHandler,
+  listRegisteredTypes,
+  registerHandler,
+  resetRegistry,
+  registerBuiltinHandlers,
+  UnknownJobTypeError,
+  InvalidJobInputError,
+} from "./dispatcher/index.js";
+export type { AiJobHandler } from "./dispatcher/index.js";
