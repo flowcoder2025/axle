@@ -1,5 +1,25 @@
 # Fix Plan (Work Items)
 
+---
+
+## 🚦 EXECUTION ORDER (2026-04-21 확정)
+
+**우선순위:** Phase 17 → Phase 18 → (남은 Phase 0~16 Gap은 Phase 17에서 커버)
+
+1. **Phase 17 — Gap Fix (WI-201 ~ WI-228, 28건)**: 기존 엔진/파일은 있으나 UI·배선이 끊긴 항목을 E2E 동작까지 연결. ROI 최고.
+2. **Phase 18 — 인증 업무 자동화 (WI-301 ~ WI-326, 26건)**: 설계 4.3 BUNDLE 워크플로우 중 핵심 가치인데 구현이 빠진 벤처/소부장/연구소/특허/포털 Playwright 실구현.
+
+**Phase 0~16 기존 WI (WI-001 ~ WI-140) 처리 방침:**
+- 대부분은 스캐폴드·구조 레벨이 이미 구현돼 있으나 `completed_wis.txt`에 미반영.
+- flowset.sh `recover_completed_from_history()` 가 git log에서 자동 복원 — Phase 17 루프 실행 시점에 SSOT 동기화됨.
+- 실제 미구현 gap은 Phase 17 WI가 대체 커버하므로 **이 영역은 Phase 17 완료 이후 재감사**.
+
+**게이트:**
+- Phase 17 완료 게이트 = WI-201 ~ WI-228 전부 merged + 사업계획서/서류요청/크롤러/Gap 진단 E2E 스모크 통과.
+- Phase 18 시작 전 게이트 = HWPX 템플릿 포맷 + 포털 로그인 자격증명 관리 정책 (PKCS#12 저장 위치) 사용자 확정 필요.
+
+---
+
 ## L1: Foundation (Phase 0)
 
 ### L2: Monorepo 설정 > L3: Turborepo Scaffold
@@ -416,3 +436,101 @@
 - [ ] WI-139-feat 임베딩 생성 /api/cron/embedding-generate | L1:Cron > L2:AI > L3:embedding
 ### L2: AI > L3: daily-digest
 - [ ] WI-140-feat 일일 요약 메일 /api/cron/daily-digest | L1:Cron > L2:AI > L3:daily-digest
+
+---
+
+## L1: Phase 17 — 기능 연결 Gap Fix (2026-04-21 추가)
+## Gap 감사 결과 "엔진/API는 있으나 UI·배선 누락"으로 판정된 항목을 E2E 동작까지 연결
+
+### L2: 사업계획서 생성 > L3: RAG 초안 실제 연결
+- [ ] WI-201-feat rag-draft.ts Mock 제거 + pgvector searchClientDocuments/searchPastPlans 실구현 | L1:Phase17 > L2:BizPlan > L3:Engine A
+- [ ] WI-202-feat /api/business-plans POST (Engine A→B→Verification 파이프라인) + AiJob 생성 | L1:Phase17 > L2:BizPlan > L3:API
+- [ ] WI-203-feat 사업계획서 생성 마법사 UI (프로젝트 상세 → "사업계획서 생성" 버튼) | L1:Phase17 > L2:BizPlan > L3:UI
+- [ ] WI-204-feat /api/documents/[id]/verify + 평가 결과 패널 UI | L1:Phase17 > L2:BizPlan > L3:Verify UI
+
+### L2: 사업계획서 생성 > L3: 평가/Gap 로직 심화
+- [ ] WI-205-feat evaluation/engine.ts 채점 로직 완성 (키워드+길이+구조 매칭, A-F 등급) | L1:Phase17 > L2:BizPlan > L3:Evaluation
+- [ ] WI-206-feat diagnosis/gap-analyzer.ts category별 severity 계산 + GapItem[] 생성 | L1:Phase17 > L2:BizPlan > L3:GapEngine
+- [ ] WI-207-feat Client 상세에 "Gap 분석 보기" 진입점 + 진단 결과 렌더링 | L1:Phase17 > L2:BizPlan > L3:Gap UI
+
+### L2: HWPX 편집 > L3: 양식 채우기 배선
+- [ ] WI-208-feat /api/hwpx/edit POST (템플릿 ID + HwpxEdit[] → DOCX 저장) | L1:Phase17 > L2:HWPX > L3:API
+- [ ] WI-209-feat HWPX 템플릿 관리 Admin (업로드 + 필드 매핑 정의) | L1:Phase17 > L2:HWPX > L3:Admin
+- [ ] WI-210-feat rhwp 채택 여부 재평가 훅 (v1.0+ 대비 adapter 인터페이스 분리) | L1:Phase17 > L2:HWPX > L3:rhwp-adapter
+
+### L2: 크롤러 > L3: DB 저장 완결
+- [ ] WI-211-feat crawler-execute cron → ProgramInfo upsert (기업마당 API) | L1:Phase17 > L2:Crawler > L3:DB Save
+- [ ] WI-212-feat crawler-execute cron → ProgramInfo upsert (K-Startup API) | L1:Phase17 > L2:Crawler > L3:DB Save
+- [ ] WI-213-feat 크롤링 이력 AutomationLog 기록 + 실패 재시도 | L1:Phase17 > L2:Crawler > L3:Resilience
+- [ ] WI-214-feat Playwright bizinfo 크롤러 → self-repair AI 복구 루프 agent-bridge 위임 | L1:Phase17 > L2:Crawler > L3:SelfRepair
+
+### L2: 고객사 서류 요청 > L3: UI/메뉴 노출
+- [ ] WI-215-feat Client 상세에 "서류 요청" 탭 추가 (체크리스트 기반 + 포털 토큰 UI 통합) | L1:Phase17 > L2:Client > L3:서류요청
+- [ ] WI-216-feat 포털 토큰 생성 UI를 Client/Project 양쪽 진입 가능하게 일원화 | L1:Phase17 > L2:Client > L3:포털통합
+- [ ] WI-217-feat 온보딩 체크리스트 발송 UI (Client 상세 → "온보딩 시작") | L1:Phase17 > L2:Client > L3:온보딩 UI
+- [ ] WI-218-feat masterProfile 편집/확인 Client 상세 탭 | L1:Phase17 > L2:Client > L3:masterProfile
+- [ ] WI-219-feat Client 생성 시 businessNumber 자동 검증 훅 (fire-and-forget) | L1:Phase17 > L2:Client > L3:자동검증
+- [ ] WI-220-feat ChecklistTemplate Admin 관리 UI (플랫폼/조직) | L1:Phase17 > L2:Client > L3:Template Admin
+
+### L2: AiJob Dispatcher > L3: 10 Type 핸들러
+- [ ] WI-221-feat AiJob dispatcher 추상화 (type → handler 매핑) | L1:Phase17 > L2:AI > L3:Dispatcher
+- [ ] WI-222-feat 10개 AiJobType 각 핸들러 (BUSINESS_PLAN/RESEARCH/OCR/TRANSCRIBE/SUMMARY/JOURNAL_DRAFT/FINANCIAL_ANALYSIS/GAP_DIAGNOSIS/EVALUATION/MATCHING) | L1:Phase17 > L2:AI > L3:Handlers
+
+### L2: SkillPattern > L3: 학습 루프 완결
+- [ ] WI-223-feat SkillPattern 10회 성공 → 파인튜닝 후보 표시 Admin UI | L1:Phase17 > L2:AI > L3:SkillPattern UI
+- [ ] WI-224-feat Unsloth 파인튜닝 트리거 + LOCAL_MLX 승격 상태 머신 (markAsFineTuned 실제 연결) | L1:Phase17 > L2:AI > L3:FineTune
+
+### L2: Trigger Map > L3: 14 이벤트 전부 emit
+- [ ] WI-225-feat MEETING_SCHEDULED/JOURNAL_DUE/ACTION_ITEM_*/PORTAL_COMPLETE/HANDOFF 등 12개 emit 지점 배선 | L1:Phase17 > L2:Notification > L3:Emit 완결
+
+### L2: Web Push > L3: Service Worker
+- [ ] WI-226-feat public/service-worker.js + 클라이언트 구독 훅 + push subscription DB 저장 | L1:Phase17 > L2:Push > L3:SW
+
+### L2: 재무 > L3: DART + AI 분석
+- [ ] WI-227-feat DART OpenAPI 실호출 + ClientFinancial 자동 수집 | L1:Phase17 > L2:Finance > L3:DART
+- [ ] WI-228-feat buildAnalysisStub → AI 분석(AiJob FINANCIAL_ANALYSIS) 실연결 + DOCX FinancialReport | L1:Phase17 > L2:Finance > L3:AI Report
+
+---
+
+## L1: Phase 18 — 인증 업무 자동화 (2026-04-21 추가)
+## 설계 4.3 BUNDLE 워크플로우의 하위 인증별 자동화 (스펙에 명시됐으나 scope out된 항목)
+
+### L2: 벤처기업 인증 > L3: 기술성평가서 자동화
+- [ ] WI-301-feat 벤처 기술성평가서 HWPX 템플릿 등록 + 필드 맵(기업정보/기술내용/재무/실적) | L1:Phase18 > L2:Venture > L3:Template
+- [ ] WI-302-feat Client masterProfile + ClientFinancial → 기술성평가서 자동 채우기 파이프라인 | L1:Phase18 > L2:Venture > L3:Autofill
+- [ ] WI-303-feat VENTURE_CERT 프로젝트 상세에 "기술성평가서 생성" 버튼 + 미리보기 | L1:Phase18 > L2:Venture > L3:UI
+- [ ] WI-304-feat 벤처 체크리스트 템플릿 seed (연구개발비/인력/매출 기준 증빙 12종) | L1:Phase18 > L2:Venture > L3:Checklist
+
+### L2: 소부장 인증 > L3: 기술자립도 평가
+- [ ] WI-305-feat SOBOOJANG_CERT 프로젝트 타입 schema 확정 (enum 정비) + 한글 라벨 통일 | L1:Phase18 > L2:SOBOOJANG > L3:Schema
+- [ ] WI-306-feat 소부장 품목 마스터 데이터 seed (산업부 고시 품목) + Client 품목 매핑 | L1:Phase18 > L2:SOBOOJANG > L3:Data
+- [ ] WI-307-feat 기술자립도 평가 엔진 (품목별 해외의존도/국산화율 AI 분석) | L1:Phase18 > L2:SOBOOJANG > L3:Engine
+- [ ] WI-308-feat 소부장 신청서 HWPX 템플릿 + 자동 채우기 + 증빙 체크리스트 | L1:Phase18 > L2:SOBOOJANG > L3:Doc
+
+### L2: 기업부설연구소 > L3: 설립/인정 자동화
+- [ ] WI-309-feat 연구소 연구원 증빙 체크리스트 템플릿 seed (학위/경력/4대보험) | L1:Phase18 > L2:Institute > L3:Checklist
+- [ ] WI-310-feat 연구시설 증빙 수집 UI (도면/사진/임대차계약 업로드) | L1:Phase18 > L2:Institute > L3:Facility
+- [ ] WI-311-feat KOITA 신고서 HWPX 템플릿 + 자동 채우기 (masterProfile + 연구원 목록) | L1:Phase18 > L2:Institute > L3:KOITA Doc
+- [ ] WI-312-feat 연구소 설립 후 연구일지 관리 자동 연결 (Journal 모듈 트리거) | L1:Phase18 > L2:Institute > L3:Journal Link
+
+### L2: 특허 > L3: 선행기술 조사 + 명세서
+- [ ] WI-313-feat KIPRIS 선행기술 API 연동 + AI 요약 (CLI_CLAUDE) | L1:Phase18 > L2:Patent > L3:PriorArt
+- [ ] WI-314-feat 특허 명세서 초안 생성 API + UI (patent-draft.ts 배선) | L1:Phase18 > L2:Patent > L3:Draft
+- [ ] WI-315-feat 발명신고서/직무발명 체크리스트 템플릿 seed | L1:Phase18 > L2:Patent > L3:Checklist
+
+### L2: 포털 자동 등록 > L3: Desktop Playwright (Phase 15 확장)
+- [ ] WI-316-feat VENTUREIN 로그인 + 신청 접수 Playwright 실구현 (page-object 스텁 제거) | L1:Phase18 > L2:Portal > L3:VENTUREIN
+- [ ] WI-317-feat KOITA 로그인 + 신고서 제출 Playwright 실구현 | L1:Phase18 > L2:Portal > L3:KOITA
+- [ ] WI-318-feat 홈택스 납세증명/사업자등록증 발급 Playwright 실구현 | L1:Phase18 > L2:Portal > L3:Hometax
+- [ ] WI-319-feat 민원24 각종 증명서 발급 Playwright 실구현 | L1:Phase18 > L2:Portal > L3:Minwon24
+- [ ] WI-320-feat 4대보험 가입자 명부/납부확인 Playwright 실구현 | L1:Phase18 > L2:Portal > L3:Insurance
+- [ ] WI-321-feat PKCS#12 공인인증서 실제 비밀번호 검증 + 서명 (node-forge) | L1:Phase18 > L2:Portal > L3:PKCS12
+
+### L2: BUNDLE 워크플로우 > L3: 통합 진행 관리
+- [ ] WI-322-feat BUNDLE 하위 프로젝트 진행률 롤업 대시보드 (벤처+연구소+특허 한 화면) | L1:Phase18 > L2:Bundle > L3:Dashboard
+- [ ] WI-323-feat BUNDLE 공통 서류 1회 수집 → 하위 프로젝트 자동 공유 | L1:Phase18 > L2:Bundle > L3:SharedDocs
+- [ ] WI-324-feat BUNDLE 완료 트리거 (하위 전체 COMPLETED 시 자동 상태 전이 + 알림) | L1:Phase18 > L2:Bundle > L3:Complete
+
+### L2: 인증서 관리 > L3: 기존 Certificate 모듈 통합
+- [ ] WI-325-feat 인증 완료 시 Certificate 레코드 자동 생성 (VENTURE/RESEARCH_INSTITUTE/PATENT/INNOBIZ 등) | L1:Phase18 > L2:CertReg > L3:AutoCreate
+- [ ] WI-326-feat 인증 만료 추적 + 갱신 프로젝트 자동 제안 (90일 전 알림) | L1:Phase18 > L2:CertReg > L3:Renewal
