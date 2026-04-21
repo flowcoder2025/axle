@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@axle/ui";
 import { Button } from "@axle/ui";
+import { PushSubscribeButton } from "@/src/components/settings/push-subscribe-button";
 
 export const metadata = {
   title: "알림 설정 | AXLE",
@@ -39,6 +40,8 @@ export default function NotificationsSettingsPage() {
           알림 채널과 수신 조건을 설정합니다.
         </p>
       </div>
+
+      <PushSubscribeButton />
 
       <Card>
         <CardHeader>

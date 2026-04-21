@@ -3,9 +3,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
 const mockCreate = vi.fn();
+const mockPushFindMany = vi.fn();
 vi.mock("@axle/db", () => ({
   prisma: {
     notification: { create: mockCreate },
+    pushSubscription: { findMany: mockPushFindMany },
   },
 }));
 
@@ -38,6 +40,8 @@ describe("dispatch()", () => {
     mockSend.mockResolvedValue(undefined);
     mockSendTelegramToDefault.mockResolvedValue(undefined);
     mockSendDiscordNotification.mockResolvedValue(undefined);
+    mockPushFindMany.mockResolvedValue([]);
+    mockSendPushNotification.mockResolvedValue(undefined);
   });
 
   it("creates IN_APP notifications for each recipientUserId", async () => {
