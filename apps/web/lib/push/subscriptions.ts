@@ -1,45 +1,83 @@
 /**
- * In-memory push subscription store (Phase 4 simplicity).
+ * Push subscription store — Prisma-backed (WI-226).
  *
- * Maps userId → PushSubscription. In a production setup this would be
- * persisted in a dedicated DB table or in User.metadata.
+ * Replaces the previous in-memory Map so subscriptions survive server
+ * restarts and are available to every serverless instance.
  *
- * Extracted here so it can be imported by both the route handler and
- * server-side notification dispatch code without violating Next.js
- * Route Segment Config (route files may only export HTTP method handlers).
+ * Unique key = `endpoint` (a device/browser can have only one active
+ * subscription per push service). The same user may register multiple
+ * endpoints (desktop + mobile + laptop) — all of them receive push.
  */
+
+import { prisma } from "@axle/db";
 
 export type StoredPushSubscription = {
   endpoint: string;
   keys: { p256dh: string; auth: string };
 };
 
-const pushSubscriptions = new Map<string, StoredPushSubscription>();
+export type PersistOptions = {
+  userAgent?: string;
+};
 
 /**
- * Save (or overwrite) the push subscription for a user.
- * One active subscription per user for Phase 4.
+ * Persist a push subscription for a user. Upserts by `endpoint` so re-subscribing
+ * from the same browser updates the keys instead of creating duplicates.
  */
-export function setPushSubscription(
+export async function setPushSubscription(
   userId: string,
-  subscription: StoredPushSubscription
-): void {
-  pushSubscriptions.set(userId, subscription);
+  subscription: StoredPushSubscription,
+  options: PersistOptions = {}
+): Promise<void> {
+  await prisma.pushSubscription.upsert({
+    where: { endpoint: subscription.endpoint },
+    create: {
+      userId,
+      endpoint: subscription.endpoint,
+      p256dh: subscription.keys.p256dh,
+      auth: subscription.keys.auth,
+      userAgent: options.userAgent,
+    },
+    update: {
+      userId,
+      p256dh: subscription.keys.p256dh,
+      auth: subscription.keys.auth,
+      userAgent: options.userAgent,
+    },
+  });
 }
 
 /**
- * Remove the push subscription for a user.
+ * Remove a single push subscription identified by its push-service endpoint.
+ * Called when the browser unsubscribes or reports the endpoint is gone (410).
  */
-export function deletePushSubscription(userId: string): void {
-  pushSubscriptions.delete(userId);
+export async function deletePushSubscription(endpoint: string): Promise<void> {
+  await prisma.pushSubscription.deleteMany({ where: { endpoint } });
 }
 
 /**
- * Retrieve a stored subscription by userId.
- * Returns null when the user has no registered subscription.
+ * Remove every push subscription for a user (e.g. "sign out everywhere").
  */
-export function getPushSubscription(
+export async function deleteAllPushSubscriptionsForUser(
   userId: string
-): StoredPushSubscription | null {
-  return pushSubscriptions.get(userId) ?? null;
+): Promise<void> {
+  await prisma.pushSubscription.deleteMany({ where: { userId } });
+}
+
+/**
+ * Load every active subscription for a user. Used by the dispatcher when
+ * fanning out a PUSH channel notification.
+ */
+export async function getPushSubscriptionsForUser(
+  userId: string
+): Promise<StoredPushSubscription[]> {
+  const rows = await prisma.pushSubscription.findMany({
+    where: { userId },
+    select: { endpoint: true, p256dh: true, auth: true },
+  });
+
+  return rows.map((row) => ({
+    endpoint: row.endpoint,
+    keys: { p256dh: row.p256dh, auth: row.auth },
+  }));
 }

@@ -10,9 +10,36 @@ import { sendPushNotification } from "./web-push.js";
 import { sendTelegramToDefault } from "./telegram.js";
 import { sendDiscordNotification } from "./discord.js";
 import { send } from "@axle/email";
+import { prisma } from "@axle/db";
 import { getTriggerConfig } from "./trigger-map.js";
 import type { BusinessEvent, Channel } from "./trigger-map.js";
 import type { NotificationType } from "./types.js";
+
+type PushSub = {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+};
+
+/**
+ * Load active Web Push subscriptions for a set of users from the
+ * PushSubscription table (WI-226). Returns empty array on empty input
+ * or when no rows match. A single user may have multiple device endpoints.
+ */
+async function loadPushSubscriptionsForUsers(
+  userIds: string[]
+): Promise<PushSub[]> {
+  if (userIds.length === 0) return [];
+
+  const rows = await prisma.pushSubscription.findMany({
+    where: { userId: { in: userIds } },
+    select: { endpoint: true, p256dh: true, auth: true },
+  });
+
+  return rows.map((row) => ({
+    endpoint: row.endpoint,
+    keys: { p256dh: row.p256dh, auth: row.auth },
+  }));
+}
 
 export type { BusinessEvent, Channel };
 
@@ -175,13 +202,15 @@ async function sendKakao(payload: DispatchPayload): Promise<void> {
 }
 
 async function sendPush(payload: DispatchPayload): Promise<void> {
-  // Push subscriptions must be provided via metadata.
-  const subscriptions = Array.isArray(payload.metadata?.pushSubscriptions)
-    ? (payload.metadata!.pushSubscriptions as Array<{
-        endpoint: string;
-        keys: { p256dh: string; auth: string };
-      }>)
-    : [];
+  // Prefer inline subscriptions when supplied (test harnesses, one-off pushes).
+  // Otherwise fall back to the PushSubscription table keyed by recipientUserIds.
+  const inline = Array.isArray(payload.metadata?.pushSubscriptions)
+    ? (payload.metadata!.pushSubscriptions as PushSub[])
+    : null;
+
+  const subscriptions = inline
+    ? inline
+    : await loadPushSubscriptionsForUsers(payload.recipientUserIds);
 
   if (subscriptions.length === 0) return;
 
