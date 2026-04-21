@@ -13,6 +13,8 @@ interface ClientSummary {
   id: string;
   name: string;
   businessNumber?: string | null;
+  businessStatus?: string | null;
+  businessVerifiedAt?: string | null;
   ceoName?: string | null;
   industry?: string | null;
   address?: string | null;
@@ -25,6 +27,37 @@ interface ClientSummary {
   isInnoBiz?: boolean;
   isMainBiz?: boolean;
   isSocial?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Business status badge
+// ---------------------------------------------------------------------------
+function BusinessStatusBadge({ status }: { status?: string | null }) {
+  const resolved = status ?? "미확인";
+  const className = (() => {
+    switch (resolved) {
+      case "정상":
+        return "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+      case "휴업":
+        return "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+      case "폐업":
+        return "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300";
+      default:
+        return "border-muted bg-muted/40 text-muted-foreground";
+    }
+  })();
+  return (
+    <span
+      data-testid="business-status-badge"
+      data-status={resolved}
+      className={[
+        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium",
+        className,
+      ].join(" ")}
+    >
+      사업자상태: {resolved}
+    </span>
+  );
 }
 
 interface ClientDetailTabsProps {
@@ -117,8 +150,20 @@ function ClientInfoPanel({ client }: { client: ClientSummary }) {
     { label: "사회적기업", active: !!client.isSocial },
   ].filter((f) => f.active);
 
+  const verifiedAtLabel = client.businessVerifiedAt
+    ? new Date(client.businessVerifiedAt).toLocaleString("ko-KR")
+    : null;
+
   return (
     <div className="max-w-2xl space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <BusinessStatusBadge status={client.businessStatus} />
+        {verifiedAtLabel && (
+          <span className="text-xs text-muted-foreground">
+            최근 확인: {verifiedAtLabel}
+          </span>
+        )}
+      </div>
       <dl className="divide-y rounded-lg border">
         {rows.map(({ label, value }) => (
           <div key={label} className="grid grid-cols-3 gap-4 px-4 py-3">

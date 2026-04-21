@@ -4,6 +4,7 @@ import { getCurrentUser } from "@axle/auth";
 import { clientCreateSchema, clientSearchSchema } from "@/lib/validations/client";
 import { sendOnboardingChecklist } from "@/lib/services/client-onboarding";
 import { generateMasterProfile } from "@/lib/services/client-profile";
+import { verifyAndStoreBusinessStatus } from "@/lib/services/client-business-verify";
 import { handleZodError, handleInternalError, unauthorizedResponse } from "@/lib/api-helpers";
 import { Prisma } from "@prisma/client";
 
@@ -127,6 +128,12 @@ export async function POST(req: NextRequest) {
     void sendOnboardingChecklist(client.id, client.orgId);
     // Fire-and-forget: generate AI master profile without blocking the 201 response
     void generateMasterProfile(client.id);
+    // Fire-and-forget: verify business registration status via NTS API
+    if (client.businessNumber) {
+      verifyAndStoreBusinessStatus(client.id, client.businessNumber).catch(
+        console.error
+      );
+    }
 
     return NextResponse.json({ data: client }, { status: 201 });
   } catch (err) {
