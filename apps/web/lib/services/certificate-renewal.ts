@@ -15,6 +15,7 @@ import { prisma } from "@axle/db";
 import { Prisma, type ProjectType } from "@prisma/client";
 import { create as createNotification } from "@axle/notification";
 import { eventBus } from "@/lib/events/event-bus";
+import { applyChecklistTemplates } from "@/lib/services/checklist-template-apply";
 import {
   DEFAULT_RENEWAL_LEAD_DAYS,
   projectTypeForCertificate,
@@ -130,20 +131,12 @@ async function createRenewalProject(
       select: { id: true },
     });
 
-    const templates = await tx.checklistTemplate.findMany({
-      where: { orgId: candidate.client.orgId, projectType },
-      orderBy: { sortOrder: "asc" },
+    // Auto-apply checklist templates (org-specific + platform-wide).
+    await applyChecklistTemplates(tx, {
+      projectId: project.id,
+      orgId: candidate.client.orgId,
+      projectType,
     });
-    if (templates.length > 0) {
-      await tx.checklistItem.createMany({
-        data: templates.map((tpl) => ({
-          projectId: project.id,
-          name: tpl.name,
-          description: tpl.description,
-          isRequired: tpl.isRequired,
-        })),
-      });
-    }
 
     return project.id;
   });

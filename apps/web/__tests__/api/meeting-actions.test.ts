@@ -240,8 +240,10 @@ describe("POST /api/meetings/[meetingId]/actions/[actionId]/create-project", () 
     mockClient.findFirst.mockResolvedValue({ id: "c-1" });
     const createdProject = { id: "p-1", title: "Submit plan", type: "BUSINESS_PLAN" };
     mockProject.create.mockResolvedValue(createdProject);
+    // WI-331-fix: helper requests `include: { items }`; templates with no
+    // items still produce a single header row (back-compat).
     const templates = [
-      { id: "tpl-1", name: "체크1", description: null, isRequired: true, sortOrder: 0 },
+      { id: "tpl-1", name: "체크1", description: null, isRequired: true, sortOrder: 0, items: [] },
     ];
     mockChecklistTemplate.findMany.mockResolvedValue(templates);
     mockChecklistItem.createMany.mockResolvedValue({ count: 1 });

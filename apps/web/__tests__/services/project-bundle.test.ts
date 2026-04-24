@@ -120,9 +120,17 @@ describe("createBundleChildren", () => {
     expect(types).toEqual(["SOBOOJANG_CERT", "PATENT"]);
   });
 
-  it("auto-applies checklist templates for each child type", async () => {
+  it("auto-applies checklist templates for each child type (WI-331-fix: items flattened)", async () => {
+    // Helper now requests `include: { items }` and flattens children into ChecklistItem rows.
     const templates = [
-      { id: "tpl-1", name: "벤처확인신청서", description: null, isRequired: true, sortOrder: 0 },
+      {
+        id: "tpl-1",
+        name: "벤처확인신청서",
+        description: null,
+        isRequired: true,
+        sortOrder: 0,
+        items: [],
+      },
     ];
     // Return templates only for VENTURE_CERT, empty for others
     mockTxChecklistTemplate.findMany.mockImplementation(
@@ -148,11 +156,12 @@ describe("createBundleChildren", () => {
     expect(mockTxChecklistItem.createMany).not.toHaveBeenCalled();
   });
 
-  it("queries checklist templates scoped to the provided orgId", async () => {
+  it("queries checklist templates with OR=[org-specific, platform-wide] (WI-331-fix BLOCKER #1)", async () => {
     await createBundleChildren(mockTx as never, BUNDLE_ID, PARENT_TITLE, CLIENT_ID, ORG_ID);
 
     for (const call of mockTxChecklistTemplate.findMany.mock.calls) {
-      expect((call as [{ where: { orgId: string } }])[0].where.orgId).toBe(ORG_ID);
+      const where = (call as [{ where: { OR: Array<{ orgId: string | null }> } }])[0].where;
+      expect(where.OR).toEqual([{ orgId: ORG_ID }, { orgId: null }]);
     }
   });
 });
