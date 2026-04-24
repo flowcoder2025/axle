@@ -11,6 +11,7 @@ import {
   SUPPORTED_PROJECT_TYPES,
 } from "../../../../src/components/projects/business-plan-wizard";
 import { VentureTechAssessmentButton } from "../../../../src/components/projects/venture-tech-assessment-button";
+import { ResearchInstituteNotificationButton } from "../../../../src/components/projects/research-institute-notification-button";
 import type { FeeType, Priority, ProjectStatus, ProjectType } from "@prisma/client";
 
 export async function generateMetadata({
@@ -144,6 +145,9 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           )}
           {project.type === "VENTURE_CERT" && (
             <VentureTechAssessmentButton projectId={project.id} />
+          )}
+          {project.type === "RESEARCH_INSTITUTE" && (
+            <ResearchInstituteNotificationButton projectId={project.id} />
           )}
           <Button variant="outline" size="sm" asChild>
             <Link href={`/projects/${projectId}/edit`}>
