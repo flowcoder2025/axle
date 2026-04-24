@@ -14,7 +14,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@axle/auth";
 import { prisma } from "@axle/db";
-import { generateVentureTechAssessmentDocx } from "@axle/docgen";
+import {
+  generateVentureTechAssessmentDocx,
+  type VentureTechAssessmentInput,
+} from "@axle/docgen";
 import { buildVentureTechAssessmentInput } from "@/lib/services/venture-tech-assessment";
 import {
   handleInternalError,
@@ -24,6 +27,35 @@ import {
 } from "@/lib/api-helpers";
 
 type RouteContext = { params: Promise<{ projectId: string }> };
+
+/**
+ * Shallow-merge a partial override on top of the auto-filled input.
+ * Per top-level field:
+ *   - companyInfo / sections / checks / achievements / intellectualProperty:
+ *     spread-merge (override scalar fields, keep auto values for unspecified).
+ *   - finance: array replace when supplied; otherwise keep auto.
+ *   - title: simple override.
+ * Deep merging beyond two levels is intentionally avoided — the override
+ * shape mirrors the input shape so callers can always send `{ field: value }`
+ * exactly where they want to land.
+ */
+function mergeOverrides(
+  base: VentureTechAssessmentInput,
+  override: Partial<VentureTechAssessmentInput>,
+): VentureTechAssessmentInput {
+  return {
+    companyInfo: { ...base.companyInfo, ...(override.companyInfo ?? {}) },
+    sections: { ...base.sections, ...(override.sections ?? {}) },
+    checks: { ...base.checks, ...(override.checks ?? {}) },
+    finance: override.finance ?? base.finance,
+    achievements: { ...(base.achievements ?? {}), ...(override.achievements ?? {}) },
+    intellectualProperty: {
+      ...(base.intellectualProperty ?? {}),
+      ...(override.intellectualProperty ?? {}),
+    },
+    title: override.title ?? base.title,
+  };
+}
 
 async function resolveClientId(
   projectId: string,
@@ -78,7 +110,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
   }
 }
 
-export async function POST(_req: NextRequest, { params }: RouteContext) {
+export async function POST(req: NextRequest, { params }: RouteContext) {
   const user = await getCurrentUser();
   if (!user?.orgId) return unauthorizedResponse();
 
@@ -87,7 +119,22 @@ export async function POST(_req: NextRequest, { params }: RouteContext) {
     const resolved = await resolveClientId(projectId, user.orgId);
     if ("error" in resolved) return resolved.error;
 
-    const input = await buildVentureTechAssessmentInput(resolved.clientId);
+    // Optional `{ overrides: Partial<VentureTechAssessmentInput> }` body
+    // lets the UI tweak fields right before generation without persisting
+    // them into masterProfile.venture first. Empty body is the common case;
+    // tolerate any parse failure quietly (no overrides applied).
+    let overrides: Partial<VentureTechAssessmentInput> | undefined;
+    if (req.body) {
+      try {
+        const body = (await req.json()) as { overrides?: Partial<VentureTechAssessmentInput> };
+        overrides = body?.overrides;
+      } catch {
+        // Empty/invalid body — ignore, treat as no overrides.
+      }
+    }
+
+    let input = await buildVentureTechAssessmentInput(resolved.clientId);
+    if (overrides) input = mergeOverrides(input, overrides);
 
     // Surface a clean 422 when prerequisite fields are missing so the UI can
     // tell the user *why* generation failed instead of a generic 500.

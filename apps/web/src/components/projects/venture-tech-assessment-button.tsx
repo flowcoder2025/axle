@@ -21,7 +21,7 @@ import {
   DialogTrigger,
 } from "@axle/ui";
 import { Badge } from "@axle/ui";
-import { FileText, Loader2, Download, AlertCircle } from "lucide-react";
+import { FileText, Loader2, Download, AlertCircle, RefreshCw } from "lucide-react";
 
 interface PreviewInput {
   companyInfo: {
@@ -101,6 +101,12 @@ export function VentureTechAssessmentButton({ projectId }: Props) {
       if (next && !preview && !loading) {
         void loadPreview();
       }
+      // WI-334-feat M3: invalidate cache on close so reopening fetches fresh
+      // data after the user edits client info in another tab.
+      if (!next) {
+        setPreview(null);
+        setError(null);
+      }
     },
     [preview, loading, loadPreview],
   );
@@ -151,11 +157,30 @@ export function VentureTechAssessmentButton({ projectId }: Props) {
 
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>벤처 기술성평가서 생성</DialogTitle>
-          <DialogDescription>
-            고객사 정보·재무·실적이 자동으로 채워집니다. 누락된 항목은 고객사
-            정보 페이지에서 먼저 입력하세요.
-          </DialogDescription>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <DialogTitle>벤처 기술성평가서 생성</DialogTitle>
+              <DialogDescription>
+                고객사 정보·재무·실적이 자동으로 채워집니다. 누락된 항목은
+                고객사 정보 페이지에서 먼저 입력하세요.
+              </DialogDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setPreview(null);
+                void loadPreview();
+              }}
+              disabled={loading || downloading}
+              data-testid="venture-tech-assessment-refresh"
+              aria-label="미리보기 새로고침"
+            >
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
+              />
+            </Button>
+          </div>
         </DialogHeader>
 
         {loading && (

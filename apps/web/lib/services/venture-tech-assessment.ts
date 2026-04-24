@@ -32,20 +32,30 @@ import type {
 /**
  * Shape of the `venture` slice we read out of `Client.masterProfile`. Every
  * field is optional — the editor may fill it incrementally.
+ *
+ * Number fields use a **three-way signal** for fallbacks (WI-332-fix M4):
+ *   - `undefined` (or absent) → auto-fill from DB columns when applicable
+ *   - `null`                  → explicitly empty, no fallback (user cleared it)
+ *   - `number`                → explicit override
+ *
+ * This distinction matters for `domesticSales`, which would otherwise fall
+ * back to the most recent year's revenue and silently disagree with what the
+ * editor saw on screen.
  */
 export interface MasterProfileVentureSlice {
   sections?: Record<string, string>;
   checks?: VentureTechAssessmentChecks;
   achievements?: {
-    domesticSales?: number;
-    exports?: number;
+    /** `null` = explicitly empty (no revenue fallback). */
+    domesticSales?: number | null;
+    exports?: number | null;
   };
   ip?: {
-    trademarks?: number;
-    designs?: number;
-    softwareCopyrights?: number;
+    trademarks?: number | null;
+    designs?: number | null;
+    softwareCopyrights?: number | null;
     /** When supplied, overrides the count derived from ClientAchievement. */
-    patents?: number;
+    patents?: number | null;
   };
 }
 
@@ -94,6 +104,20 @@ function readVentureSlice(masterProfile: unknown): MasterProfileVentureSlice {
   const v = (masterProfile as Record<string, unknown>).venture;
   if (!v || typeof v !== "object") return {};
   return v as MasterProfileVentureSlice;
+}
+
+/**
+ * Resolve a number with three-way semantics (WI-334-feat M4):
+ *   - explicit number → use it
+ *   - explicit `null` → "explicitly empty"; never fall back
+ *   - `undefined`     → fall back to the auto-derived value
+ */
+function resolveOverride<T>(
+  override: T | null | undefined,
+  fallback: T | undefined,
+): T | undefined {
+  if (override === null) return undefined;
+  return override ?? fallback;
 }
 
 export async function buildVentureTechAssessmentInput(
@@ -145,17 +169,23 @@ export async function buildVentureTechAssessmentInput(
     checks: venture.checks ?? {},
     finance,
     achievements: {
-      domesticSales:
-        venture.achievements?.domesticSales ?? mostRecentRevenue,
-      exports: venture.achievements?.exports,
+      // null override = "explicitly empty"; undefined = fall back to revenue
+      domesticSales: resolveOverride(
+        venture.achievements?.domesticSales,
+        mostRecentRevenue,
+      ),
+      exports: resolveOverride(venture.achievements?.exports, undefined),
       employeeCount: client.employeeCount ?? undefined,
     },
     intellectualProperty: {
       // Editor override wins; otherwise count PATENT-type achievements.
-      patents: venture.ip?.patents ?? patentCount,
-      trademarks: venture.ip?.trademarks,
-      designs: venture.ip?.designs,
-      softwareCopyrights: venture.ip?.softwareCopyrights,
+      patents: resolveOverride(venture.ip?.patents, patentCount),
+      trademarks: resolveOverride(venture.ip?.trademarks, undefined),
+      designs: resolveOverride(venture.ip?.designs, undefined),
+      softwareCopyrights: resolveOverride(
+        venture.ip?.softwareCopyrights,
+        undefined,
+      ),
     },
   };
 }
