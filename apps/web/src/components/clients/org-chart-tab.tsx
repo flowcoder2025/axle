@@ -91,6 +91,11 @@ export function OrgChartTab({
       try {
         const mod = await import("mermaid");
         const mermaidLib = mod.default;
+        // "loose" is required for `<b>`, `<br/>`, `<i>` styling emitted by
+        // the generator. Safety comes from `escapeLabel` in
+        // packages/docgen/src/generators/org-chart.ts which HTML-encodes
+        // every user-supplied string before label construction, so no raw
+        // markup from user input can reach this renderer.
         mermaidLib.initialize({ startOnLoad: false, securityLevel: "loose" });
         const id = `org-chart-${Date.now()}`;
         const { svg } = await mermaidLib.render(id, mermaid);
