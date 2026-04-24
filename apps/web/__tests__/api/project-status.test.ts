@@ -7,6 +7,9 @@ const mockPrismaProject = {
   update: vi.fn(),
 };
 
+const mockAutoCertificate = vi.fn();
+const mockEmit = vi.fn();
+
 vi.mock("@axle/db", () => ({
   DB_PACKAGE: "@axle/db",
   prisma: {
@@ -17,6 +20,20 @@ vi.mock("@axle/db", () => ({
 vi.mock("@axle/auth", () => ({
   AUTH_PACKAGE: "@axle/auth",
   getCurrentUser: vi.fn(),
+}));
+
+vi.mock("../../lib/services/project-certificate-auto", () => ({
+  autoCreateCertificateFromProject: (...args: unknown[]) =>
+    mockAutoCertificate(...args),
+}));
+
+vi.mock("../../lib/events/event-bus", () => ({
+  eventBus: {
+    emit: (...args: unknown[]) => {
+      mockEmit(...args);
+      return Promise.resolve();
+    },
+  },
 }));
 
 import { getCurrentUser } from "@axle/auth";
@@ -219,5 +236,122 @@ describe("PATCH /api/projects/[projectId]/status", () => {
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error.code).toBe("INVALID_TRANSITION");
+  });
+});
+
+// ─── WI-325: certificate auto-issue on COMPLETED ───────────────────────────
+
+describe("PATCH .../status — WI-325 certificate auto-issue hook", () => {
+  beforeEach(() => vi.resetAllMocks());
+
+  it("invokes autoCreateCertificateFromProject when entering COMPLETED", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(authedUser);
+    mockPrismaProject.findFirst.mockResolvedValue({
+      id: "p-1",
+      status: "APPROVED",
+      type: "VENTURE_CERT",
+      clientId: "c-1",
+      title: "2026 벤처 확인",
+    });
+    mockPrismaProject.update.mockResolvedValue({
+      id: "p-1",
+      status: "COMPLETED",
+      updatedAt: new Date(),
+    });
+    mockAutoCertificate.mockResolvedValue({
+      created: true,
+      certificateId: "cert-42",
+    });
+
+    const { PATCH } = await import(
+      "../../app/api/projects/[projectId]/status/route"
+    );
+    const res = await PATCH(
+      makeRequest("PATCH", "http://localhost/api/projects/p-1/status", {
+        status: "COMPLETED",
+      }) as never,
+      { params: Promise.resolve({ projectId: "p-1" }) },
+    );
+    expect(res.status).toBe(200);
+
+    expect(mockAutoCertificate).toHaveBeenCalledWith({
+      id: "p-1",
+      type: "VENTURE_CERT",
+      clientId: "c-1",
+      title: "2026 벤처 확인",
+    });
+    expect(mockEmit).toHaveBeenCalledWith(
+      "PROJECT_COMPLETED",
+      expect.objectContaining({
+        projectId: "p-1",
+        projectType: "VENTURE_CERT",
+        clientId: "c-1",
+        certificateCreated: true,
+        certificateId: "cert-42",
+      }),
+    );
+  });
+
+  it("does NOT invoke the hook on non-COMPLETED transitions", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(authedUser);
+    mockPrismaProject.findFirst.mockResolvedValue({
+      id: "p-1",
+      status: "INTAKE",
+      type: "VENTURE_CERT",
+      clientId: "c-1",
+      title: "n",
+    });
+    mockPrismaProject.update.mockResolvedValue({
+      id: "p-1",
+      status: "DOC_COLLECTING",
+      updatedAt: new Date(),
+    });
+
+    const { PATCH } = await import(
+      "../../app/api/projects/[projectId]/status/route"
+    );
+    await PATCH(
+      makeRequest("PATCH", "http://localhost/api/projects/p-1/status", {
+        status: "DOC_COLLECTING",
+      }) as never,
+      { params: Promise.resolve({ projectId: "p-1" }) },
+    );
+
+    expect(mockAutoCertificate).not.toHaveBeenCalled();
+    expect(mockEmit).not.toHaveBeenCalled();
+  });
+
+  it("still returns 200 even when the cert service rejects", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(authedUser);
+    mockPrismaProject.findFirst.mockResolvedValue({
+      id: "p-1",
+      status: "APPROVED",
+      type: "RESEARCH_INSTITUTE",
+      clientId: "c-1",
+      title: "n",
+    });
+    mockPrismaProject.update.mockResolvedValue({
+      id: "p-1",
+      status: "COMPLETED",
+      updatedAt: new Date(),
+    });
+    mockAutoCertificate.mockRejectedValue(new Error("DB down"));
+
+    const { PATCH } = await import(
+      "../../app/api/projects/[projectId]/status/route"
+    );
+    const res = await PATCH(
+      makeRequest("PATCH", "http://localhost/api/projects/p-1/status", {
+        status: "COMPLETED",
+      }) as never,
+      { params: Promise.resolve({ projectId: "p-1" }) },
+    );
+    // Status transition succeeds even though cert creation failed.
+    expect(res.status).toBe(200);
+    // Event still emitted with certificateCreated=false so consumers see the failure.
+    expect(mockEmit).toHaveBeenCalledWith(
+      "PROJECT_COMPLETED",
+      expect.objectContaining({ certificateCreated: false }),
+    );
   });
 });
