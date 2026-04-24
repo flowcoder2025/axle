@@ -7,6 +7,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 import { seedPatentChecklistTemplates } from "./seeds/checklist-templates/patent.js";
 import { seedVentureChecklistTemplates } from "./seeds/checklist-templates/venture.js";
+import { seedResearchInstituteChecklistTemplates } from "./seeds/checklist-templates/research-institute.js";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -1258,6 +1259,12 @@ async function seed() {
   const ventureReport = await seedVentureChecklistTemplates(prisma);
   console.log(
     `VENTURE_CERT checklist templates: ${ventureReport.templatesUpserted} templates, ${ventureReport.itemsUpserted} items`,
+  );
+
+  // WI-309: platform-wide RESEARCH_INSTITUTE checklist templates (idempotent)
+  const researchReport = await seedResearchInstituteChecklistTemplates(prisma);
+  console.log(
+    `RESEARCH_INSTITUTE checklist templates: ${researchReport.templatesUpserted} templates, ${researchReport.itemsUpserted} items`,
   );
 
   const totalRecords = Object.values(counts).reduce((a, b) => a + b, 0);
