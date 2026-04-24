@@ -5,6 +5,7 @@ import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
+import { seedPatentChecklistTemplates } from "./seeds/checklist-templates/patent.js";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -1245,6 +1246,12 @@ async function seed() {
   };
 
   console.log("Record counts:", counts);
+
+  // WI-315: platform-wide PATENT checklist templates (idempotent)
+  const patentReport = await seedPatentChecklistTemplates(prisma);
+  console.log(
+    `PATENT checklist templates: ${patentReport.templatesUpserted} templates, ${patentReport.itemsUpserted} items`,
+  );
 
   const totalRecords = Object.values(counts).reduce((a, b) => a + b, 0);
   console.log(`\nTotal records inserted: ${totalRecords}`);
