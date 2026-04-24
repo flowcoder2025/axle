@@ -12,6 +12,11 @@ import {
 } from "../../../../src/components/projects/business-plan-wizard";
 import { VentureTechAssessmentButton } from "../../../../src/components/projects/venture-tech-assessment-button";
 import { ResearchInstituteNotificationButton } from "../../../../src/components/projects/research-institute-notification-button";
+import {
+  computeBundleRollup,
+  countChecklistDone,
+  type RollupChildInput,
+} from "../../../../lib/services/bundle-rollup";
 import type { FeeType, Priority, ProjectStatus, ProjectType } from "@prisma/client";
 
 export async function generateMetadata({
@@ -51,6 +56,8 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           title: true,
           type: true,
           status: true,
+          checklist: { select: { status: true } },
+          _count: { select: { documents: true } },
         },
         orderBy: { createdAt: "asc" },
       },
@@ -103,6 +110,23 @@ export default async function ProjectDetailPage({ params }: PageProps) {
       status: c.status as ProjectStatus,
     })),
   };
+
+  // WI-322: BUNDLE rollup — only computed for parents to keep the non-BUNDLE
+  // hot path free of extra work in the render tree.
+  const rollup =
+    project.type === "BUNDLE"
+      ? computeBundleRollup(
+          project.children.map<RollupChildInput>((c) => ({
+            id: c.id,
+            title: c.title,
+            type: c.type as string,
+            status: c.status as ProjectStatus,
+            checklistTotal: c.checklist.length,
+            checklistDone: countChecklistDone(c.checklist),
+            docsCount: c._count.documents,
+          })),
+        )
+      : null;
 
   return (
     <div className="space-y-6">
@@ -159,7 +183,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
       </div>
 
       {/* Tabs */}
-      <ProjectDetailTabs project={serialized} />
+      <ProjectDetailTabs project={serialized} rollup={rollup} />
     </div>
   );
 }
