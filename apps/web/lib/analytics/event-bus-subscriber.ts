@@ -23,6 +23,7 @@ const EVENT_ACTION_MAP: Record<BusinessEventKey, string> = {
   AI_JOB_FAILED: "ai.job.failed",
   PORTAL_COMPLETE: "portal.complete",
   HANDOFF: "project.handoff",
+  PROJECT_COMPLETED: "project.completed",
 };
 
 function extractUserId(

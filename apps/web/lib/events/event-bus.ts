@@ -83,6 +83,14 @@ export type EventMap = {
     fromUserId: string;
     toUserId: string;
   };
+  PROJECT_COMPLETED: {
+    projectId: string;
+    projectType: string;
+    clientId: string;
+    completedAt: Date;
+    certificateCreated: boolean;
+    certificateId: string | null;
+  };
 };
 
 export type BusinessEventKey = keyof EventMap;

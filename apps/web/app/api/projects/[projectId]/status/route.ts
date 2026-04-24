@@ -9,6 +9,8 @@ import {
   notFoundResponse,
 } from "@/lib/api-helpers";
 import { canTransition } from "@/lib/services/project-state-machine";
+import { autoCreateCertificateFromProject } from "@/lib/services/project-certificate-auto";
+import { eventBus } from "@/lib/events/event-bus";
 
 type RouteContext = { params: Promise<{ projectId: string }> };
 
@@ -30,7 +32,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
 
     const project = await prisma.project.findFirst({
       where: { id: projectId, client: { orgId: user.orgId } },
-      select: { id: true, status: true },
+      select: { id: true, status: true, type: true, clientId: true, title: true },
     });
 
     if (!project) {
@@ -66,6 +68,38 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         updatedAt: true,
       },
     });
+
+    // WI-325: when a project transitions into COMPLETED, auto-issue the
+    // certificate it was pursuing (if any). Idempotent via
+    // `findValidCertificate` inside the service. Errors are logged but do
+    // not fail the status transition response.
+    if (targetStatus === "COMPLETED" && project.status !== "COMPLETED") {
+      const completedAt = new Date();
+      const result = await autoCreateCertificateFromProject({
+        id: project.id,
+        type: project.type,
+        clientId: project.clientId,
+        title: project.title,
+      }).catch((err) => {
+        console.error("autoCreateCertificateFromProject failed", err);
+        return {
+          created: false,
+          certificateId: null,
+          reason: "UNSUPPORTED_TYPE" as const,
+        };
+      });
+
+      void eventBus
+        .emit("PROJECT_COMPLETED", {
+          projectId: project.id,
+          projectType: project.type,
+          clientId: project.clientId,
+          completedAt,
+          certificateCreated: result.created,
+          certificateId: result.certificateId,
+        })
+        .catch(console.error);
+    }
 
     return NextResponse.json({ data: updated });
   } catch (err) {
