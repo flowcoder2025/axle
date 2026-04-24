@@ -206,6 +206,76 @@ describe("PATCH /api/clients/[clientId]/profile — WI-327-1-fix preservation", 
     expect(data.businessInfo).toBeUndefined();
   });
 
+  // ── WI-311: researchInstitute slice preservation ─────────────────────────
+  it("keeps researchInstitute slice when PATCH ships only profile fields (WI-311)", async () => {
+    const researchInstitute = {
+      instituteName: "JET 기업부설연구소",
+      instituteAreaSqm: 120,
+      overview: "연구소 개요",
+      rdFields: [{ title: "자동화 장비", items: ["a"] }],
+    };
+    mockPrismaClient.findFirst.mockResolvedValue({
+      id: "c1",
+      masterProfile: { businessInfo: { name: "stale" }, researchInstitute },
+      profileBlocks: null,
+    });
+    mockPrismaClient.update.mockResolvedValue({
+      id: "c1",
+      masterProfile: {},
+      profileBlocks: null,
+    });
+
+    const { PATCH } = await import(
+      "../../app/api/clients/[clientId]/profile/route"
+    );
+    await PATCH(
+      makeRequest({
+        masterProfile: { businessInfo: { name: "fresh" } },
+      }) as never,
+      { params: Promise.resolve({ clientId: "c1" }) },
+    );
+
+    const [callArg] = mockPrismaClient.update.mock.calls;
+    const data = callArg[0].data.masterProfile as Record<string, unknown>;
+    expect(data.businessInfo).toEqual({ name: "fresh" });
+    expect(data.researchInstitute).toEqual(researchInstitute);
+  });
+
+  it("keeps organizationChart + venture + researchInstitute slices simultaneously (WI-311)", async () => {
+    const orgChart = { companyName: "JET", ceo: { name: "김희수" }, departments: [] };
+    const venture = { sections: { background: "x" } };
+    const researchInstitute = { instituteName: "JET 연구소", projects: [] };
+    mockPrismaClient.findFirst.mockResolvedValue({
+      id: "c1",
+      masterProfile: {
+        businessInfo: { name: "stale" },
+        organizationChart: orgChart,
+        venture,
+        researchInstitute,
+      },
+      profileBlocks: null,
+    });
+    mockPrismaClient.update.mockResolvedValue({
+      id: "c1",
+      masterProfile: {},
+      profileBlocks: null,
+    });
+
+    const { PATCH } = await import(
+      "../../app/api/clients/[clientId]/profile/route"
+    );
+    await PATCH(
+      makeRequest({ masterProfile: { businessInfo: { name: "fresh" } } }) as never,
+      { params: Promise.resolve({ clientId: "c1" }) },
+    );
+
+    const [callArg] = mockPrismaClient.update.mock.calls;
+    const data = callArg[0].data.masterProfile as Record<string, unknown>;
+    expect(data.organizationChart).toEqual(orgChart);
+    expect(data.venture).toEqual(venture);
+    expect(data.researchInstitute).toEqual(researchInstitute);
+  });
+
   it("writes Prisma.DbNull when no preserved keys and masterProfile null", async () => {
     mockPrismaClient.findFirst.mockResolvedValue({
       id: "c1",

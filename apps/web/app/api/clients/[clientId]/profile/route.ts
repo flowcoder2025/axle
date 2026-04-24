@@ -62,8 +62,12 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
  *   slice is owned by future assessment-edit UI but already populated by
  *   any consultant who saved overrides; without preservation, a single
  *   profile save wipes the entire venture working state.
+ * - `researchInstitute` — read by the Research Institute Notification
+ *   auto-fill (WI-311) for KOITA DOCX generation: institute name/address/
+ *   area, R&D fields, core technologies, projects, researchers. Same
+ *   preservation rationale as `venture`.
  */
-const PRESERVED_KEYS = ["organizationChart", "venture"] as const;
+const PRESERVED_KEYS = ["organizationChart", "venture", "researchInstitute"] as const;
 
 /**
  * PATCH /api/clients/[clientId]/profile
