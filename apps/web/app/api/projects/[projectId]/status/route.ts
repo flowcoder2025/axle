@@ -10,6 +10,7 @@ import {
 } from "@/lib/api-helpers";
 import { canTransition } from "@/lib/services/project-state-machine";
 import { autoCreateCertificateFromProject } from "@/lib/services/project-certificate-auto";
+import { maybeCompleteBundleParent } from "@/lib/services/bundle-auto-complete";
 import { eventBus } from "@/lib/events/event-bus";
 
 type RouteContext = { params: Promise<{ projectId: string }> };
@@ -99,6 +100,13 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
           certificateId: result.certificateId,
         })
         .catch(console.error);
+
+      // WI-324: if this project has a BUNDLE parent and all siblings are now
+      // COMPLETED, bubble the completion up. Runs asynchronously so the status
+      // PATCH response isn't blocked on parent bookkeeping.
+      void maybeCompleteBundleParent(project.id).catch((err) =>
+        console.error("maybeCompleteBundleParent failed", err),
+      );
     }
 
     return NextResponse.json({ data: updated });
