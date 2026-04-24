@@ -188,6 +188,38 @@ describe("buildVentureTechAssessmentInput", () => {
     );
   });
 
+  // ── WI-332-fix H2: Decimal precision guard ──────────────────────────────
+  it("throws explicit precision-loss error when capitalAmount exceeds Number.MAX_SAFE_INTEGER", async () => {
+    // 9,007,199,254,740,993 = MAX_SAFE_INTEGER + 2 — silently rounds in JS Number
+    mockClientFindUnique.mockResolvedValueOnce(
+      makeClient({ capitalAmount: "9007199254740993" }),
+    );
+    await expect(buildVentureTechAssessmentInput("client-1")).rejects.toThrow(
+      /safe integer range/,
+    );
+  });
+
+  it("accepts capitalAmount equal to Number.MAX_SAFE_INTEGER (2^53 - 1)", async () => {
+    mockClientFindUnique.mockResolvedValueOnce(
+      makeClient({ capitalAmount: String(Number.MAX_SAFE_INTEGER) }),
+    );
+    const input = await buildVentureTechAssessmentInput("client-1");
+    expect(input.companyInfo.capitalAmount).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
+  it("throws when a financial revenue exceeds safe integer range", async () => {
+    mockClientFindUnique.mockResolvedValueOnce(
+      makeClient({
+        financials: [
+          { year: 2024, revenue: "99999999999999999", operatingProfit: "0", netProfit: "0" },
+        ],
+      }),
+    );
+    await expect(buildVentureTechAssessmentInput("client-1")).rejects.toThrow(
+      /safe integer range/,
+    );
+  });
+
   it("requests only the most recent 3 financial years from the database", async () => {
     mockClientFindUnique.mockResolvedValueOnce(makeClient());
     await buildVentureTechAssessmentInput("client-1");

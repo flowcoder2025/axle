@@ -115,10 +115,11 @@ describe("generateVentureTechAssessmentDocx", () => {
     expect(xml).toContain("기존제품대비 고성능");
     // The label "정부지원(R&D 지원)" is XML-encoded in document.xml as `R&amp;D`
     expect(xml).toContain("정부지원(R&amp;D 지원)");
-    // checked marker should appear
-    expect(xml).toMatch(/\[v\]|☑/);
-    // unchecked marker should appear
-    expect(xml).toMatch(/\[ \]|☐/);
+    // WI-332-fix: switched from `[v]/[ ]` ASCII to ☑/☐ Unicode (matches the
+    // 2024 official 중기부 form). Plain XML stores them as numeric entities
+    // (`&#9745;` for ☑, `&#9744;` for ☐) since they're outside ASCII.
+    expect(xml).toMatch(/☑|&#9745;/);
+    expect(xml).toMatch(/☐|&#9744;/);
   });
 
   it("renders 3-year financial table with revenue/profit numbers", async () => {
@@ -162,6 +163,16 @@ describe("generateVentureTechAssessmentDocx", () => {
     });
     expect(fileName).not.toMatch(/[\\/:*?"<>|]/);
     expect(fileName).toMatch(/기술성평가서\.docx$/);
+  });
+
+  it("falls back to 'venture' when companyName is entirely reserved chars (WI-332-fix L3)", async () => {
+    const { fileName } = await generateVentureTechAssessmentDocx({
+      ...baseInput,
+      // After sanitize this becomes "____" — historically would produce
+      // "____-기술성평가서.docx"; now falls back to "venture-기술성평가서.docx".
+      companyInfo: { ...baseInput.companyInfo, companyName: "//\\\\::" },
+    });
+    expect(fileName).toBe("venture-기술성평가서.docx");
   });
 
   it("throws when companyName is missing", async () => {
