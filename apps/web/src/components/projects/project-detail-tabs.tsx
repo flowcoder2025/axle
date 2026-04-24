@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { Button } from "@axle/ui";
 import { ProjectOverview } from "./project-overview";
+import type {
+  RollupAggregate,
+  RollupChildResult,
+} from "../../../lib/services/bundle-rollup";
 import { ChecklistPanel } from "../checklist/checklist-panel";
 import { ActivityFeed } from "../collaboration/activity-feed";
 import { MemberList } from "./member-list";
@@ -39,8 +43,14 @@ interface ProjectSummary {
   children: ChildProject[];
 }
 
+interface BundleRollup {
+  children: RollupChildResult[];
+  aggregate: RollupAggregate;
+}
+
 interface ProjectDetailTabsProps {
   project: ProjectSummary;
+  rollup?: BundleRollup | null;
 }
 
 const TABS = [
@@ -56,7 +66,7 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-export function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
+export function ProjectDetailTabs({ project, rollup }: ProjectDetailTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [memberDialogOpen, setMemberDialogOpen] = useState(false);
   const tablistId = "project-detail-tablist";
@@ -100,7 +110,7 @@ export function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
         aria-labelledby={`tab-${activeTab}`}
       >
         {activeTab === "overview" && (
-          <ProjectOverview project={project} />
+          <ProjectOverview project={project} rollup={rollup ?? null} />
         )}
         {activeTab === "checklist" && (
           <ChecklistPanel projectId={project.id} clientId={project.client.id} />

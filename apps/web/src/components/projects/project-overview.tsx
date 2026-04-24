@@ -2,6 +2,10 @@ import Link from "next/link";
 import { ProjectStatusBadge } from "./project-status-badge";
 import { ProjectTypeBadge } from "./project-type-badge";
 import { ProjectStatusControls } from "./project-status-controls";
+import type {
+  RollupAggregate,
+  RollupChildResult,
+} from "../../../lib/services/bundle-rollup";
 import type { ProjectStatus, ProjectType, Priority, FeeType } from "@prisma/client";
 
 const PRIORITY_LABELS: Record<Priority, string> = {
@@ -24,6 +28,11 @@ interface ChildProject {
   status: ProjectStatus;
 }
 
+interface BundleRollup {
+  children: RollupChildResult[];
+  aggregate: RollupAggregate;
+}
+
 interface ProjectOverviewProps {
   project: {
     id: string;
@@ -42,6 +51,14 @@ interface ProjectOverviewProps {
     client: { id: string; name: string };
     children: ChildProject[];
   };
+  rollup?: BundleRollup | null;
+}
+
+function progressTone(percent: number): string {
+  if (percent >= 100) return "bg-emerald-500";
+  if (percent >= 60) return "bg-primary";
+  if (percent >= 30) return "bg-amber-500";
+  return "bg-muted-foreground/40";
 }
 
 function formatDate(iso: string | null) {
@@ -57,7 +74,7 @@ function formatDate(iso: string | null) {
   }
 }
 
-export function ProjectOverview({ project }: ProjectOverviewProps) {
+export function ProjectOverview({ project, rollup }: ProjectOverviewProps) {
   const infoRows: Array<{ label: string; value: React.ReactNode }> = [
     { label: "고객사", value: (
       <Link href={`/clients/${project.client.id}`} className="text-primary hover:underline">
@@ -136,8 +153,97 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
         </div>
       )}
 
-      {/* Bundle tree */}
-      {project.type === "BUNDLE" && project.children.length > 0 && (
+      {/* Bundle rollup dashboard (WI-322) */}
+      {project.type === "BUNDLE" && rollup && rollup.children.length > 0 && (
+        <div
+          className="rounded-lg border"
+          data-testid="bundle-rollup-dashboard"
+        >
+          <div className="flex items-center justify-between gap-4 px-4 py-3 border-b">
+            <div>
+              <h3 className="text-sm font-semibold">하위 프로젝트 진행률</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {rollup.aggregate.completedCount}/{rollup.aggregate.totalCount} 완료
+                {rollup.aggregate.allCompleted && " · 전체 완료"}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className="text-sm font-semibold"
+                data-testid="bundle-rollup-avg-percent"
+              >
+                {rollup.aggregate.avgProgress}%
+              </span>
+              <div
+                className="h-2 w-24 rounded-full bg-muted overflow-hidden"
+                role="progressbar"
+                aria-valuenow={rollup.aggregate.avgProgress}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="BUNDLE 전체 진행률"
+              >
+                <div
+                  className={`h-full transition-all duration-500 ${progressTone(
+                    rollup.aggregate.avgProgress,
+                  )}`}
+                  style={{ width: `${rollup.aggregate.avgProgress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+          <ul className="divide-y">
+            {rollup.children.map((child) => (
+              <li
+                key={child.id}
+                className="flex items-center justify-between gap-4 px-4 py-3"
+                data-testid="bundle-rollup-child"
+              >
+                <div className="flex flex-col min-w-0 flex-1 gap-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <ProjectTypeBadge type={child.type as ProjectType} />
+                    <Link
+                      href={`/projects/${child.id}`}
+                      className="text-sm font-medium hover:underline truncate"
+                    >
+                      {child.title}
+                    </Link>
+                    <ProjectStatusBadge status={child.status} />
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span>
+                      체크리스트 {child.checklistDone}/{child.checklistTotal}
+                    </span>
+                    <span>서류 {child.docsCount}건</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-sm font-mono tabular-nums w-10 text-right">
+                    {child.progressPercent}%
+                  </span>
+                  <div
+                    className="h-2 w-24 rounded-full bg-muted overflow-hidden"
+                    role="progressbar"
+                    aria-valuenow={child.progressPercent}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`${child.title} 진행률`}
+                  >
+                    <div
+                      className={`h-full transition-all duration-500 ${progressTone(
+                        child.progressPercent,
+                      )}`}
+                      style={{ width: `${child.progressPercent}%` }}
+                    />
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Bundle tree fallback (when rollup not supplied — e.g. legacy call sites) */}
+      {project.type === "BUNDLE" && !rollup && project.children.length > 0 && (
         <div className="rounded-lg border">
           <div className="px-4 py-3 border-b">
             <h3 className="text-sm font-semibold">하위 프로젝트</h3>
