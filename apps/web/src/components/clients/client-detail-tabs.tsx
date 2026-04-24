@@ -8,6 +8,7 @@ import { ClientAchievementList } from "./client-achievement-list";
 import { GapAnalysisPanel } from "./gap-analysis-panel";
 import { DocumentRequestTab } from "./document-request-tab";
 import { MasterProfileTab } from "./master-profile-tab";
+import { OrgChartTab } from "./org-chart-tab";
 
 // ---------------------------------------------------------------------------
 // Minimal Client shape passed from server component
@@ -74,6 +75,7 @@ interface ClientDetailTabsProps {
 const TABS = [
   { id: "info", label: "기본 정보" },
   { id: "profile", label: "마스터 프로필" },
+  { id: "org-chart", label: "조직도" },
   { id: "contacts", label: "인물" },
   { id: "projects", label: "프로젝트" },
   { id: "documents", label: "서류 요청" },
@@ -119,6 +121,13 @@ export function ClientDetailTabs({ clientId, client }: ClientDetailTabsProps) {
       <div role="tabpanel">
         {activeTab === "info" && <ClientInfoPanel client={client} />}
         {activeTab === "profile" && <MasterProfileTab clientId={clientId} />}
+        {activeTab === "org-chart" && (
+          <OrgChartTab
+            clientId={clientId}
+            fallbackCompanyName={client.name}
+            fallbackCeoName={client.ceoName}
+          />
+        )}
         {activeTab === "contacts" && <ContactList clientId={clientId} />}
         {activeTab === "projects" && (
           <ClientProjectList clientId={clientId} />
