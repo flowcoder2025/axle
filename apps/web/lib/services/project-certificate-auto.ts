@@ -59,6 +59,29 @@ export function certificateTypeForProject(
 }
 
 /**
+ * Inverse of `certificateTypeForProject` — resolves a Certificate.type string
+ * back to the ProjectType that would renew it. Used by the renewal cron
+ * (WI-326) to decide which project type to create when a certificate is
+ * nearing expiry.
+ */
+export function projectTypeForCertificate(
+  certificateType: string,
+): ProjectType | null {
+  for (const [projectType, certType] of Object.entries(
+    CERTIFICATE_TYPE_BY_PROJECT,
+  )) {
+    if (certType === certificateType) return projectType as ProjectType;
+  }
+  return null;
+}
+
+/**
+ * Default renewal lead time — we begin prompting for renewal this many days
+ * before the certificate expires.
+ */
+export const DEFAULT_RENEWAL_LEAD_DAYS = 90;
+
+/**
  * Compute the `validTo` date for a newly issued certificate. Returns null
  * when the cert has no expiration (e.g. 기업부설연구소 인정서).
  */

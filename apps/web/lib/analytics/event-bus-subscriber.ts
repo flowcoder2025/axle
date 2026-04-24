@@ -24,6 +24,7 @@ const EVENT_ACTION_MAP: Record<BusinessEventKey, string> = {
   PORTAL_COMPLETE: "portal.complete",
   HANDOFF: "project.handoff",
   PROJECT_COMPLETED: "project.completed",
+  CERTIFICATE_RENEWING: "certificate.renewing",
 };
 
 function extractUserId(
