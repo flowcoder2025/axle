@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@axle/db";
 import { getCurrentUser } from "@axle/auth";
 import { handleInternalError, unauthorizedResponse, notFoundResponse } from "@/lib/api-helpers";
+import { applyChecklistTemplates } from "@/lib/services/checklist-template-apply";
 import { z } from "zod";
 
 type RouteContext = { params: Promise<{ meetingId: string; actionId: string }> };
@@ -91,30 +92,19 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         },
       });
 
-      // Auto-apply checklist templates for this project type + org
-      // user.orgId is guaranteed non-null by the guard at the top of POST
-      const templates = await tx.checklistTemplate.findMany({
-        where: { orgId: user.orgId!, projectType: created.type },
-        orderBy: { sortOrder: "asc" },
+      // Auto-apply checklist templates (org-specific + platform-wide).
+      // user.orgId is guaranteed non-null by the guard at the top of POST.
+      const applied = await applyChecklistTemplates(tx, {
+        projectId: created.id,
+        orgId: user.orgId!,
+        projectType: created.type,
       });
 
-      if (templates.length > 0) {
-        await tx.checklistItem.createMany({
-          data: templates.map((tpl) => ({
-            projectId: created.id,
-            name: tpl.name,
-            description: tpl.description,
-            isRequired: tpl.isRequired,
-          })),
-        });
-      }
-
-      // Link: update ActionItem.linkedChecklistId with the project id
-      // (stored as projectId reference since linkedChecklistId points to a checklist, not project)
-      // We update the actionItem to record which project was created from it.
-      // If there are checklist items, link to the first one; otherwise null.
+      // Link: update ActionItem.linkedChecklistId with the first checklist
+      // item id when items were created. Stored as projectId reference since
+      // linkedChecklistId points to a checklist item, not a project.
       let linkedChecklistId: string | null = null;
-      if (templates.length > 0) {
+      if (applied.itemsCreated > 0) {
         const firstItem = await tx.checklistItem.findFirst({
           where: { projectId: created.id },
           orderBy: { id: "asc" },

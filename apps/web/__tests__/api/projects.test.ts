@@ -281,9 +281,11 @@ describe("POST /api/projects", () => {
     const created = { id: "p-1", title: "Test Project", type: "BUSINESS_PLAN" };
     mockPrismaProject.create.mockResolvedValue(created);
 
+    // WI-331-fix: helper now requests `include: { items }` and templates with
+    // no items still produce a single header row (back-compat).
     const templates = [
-      { id: "tpl-1", name: "사업계획서 초안", description: null, isRequired: true, sortOrder: 0 },
-      { id: "tpl-2", name: "법인등기부등본", description: "최근 3개월", isRequired: true, sortOrder: 1 },
+      { id: "tpl-1", name: "사업계획서 초안", description: null, isRequired: true, sortOrder: 0, items: [] },
+      { id: "tpl-2", name: "법인등기부등본", description: "최근 3개월", isRequired: true, sortOrder: 1, items: [] },
     ];
     mockPrismaChecklistTemplate.findMany.mockResolvedValue(templates);
     mockPrismaChecklistItem.createMany.mockResolvedValue({ count: 2 });

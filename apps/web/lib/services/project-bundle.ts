@@ -10,6 +10,7 @@ import { prisma } from "@axle/db";
 import { type ProjectType } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 import { PROJECT_TYPE_LABELS } from "@/lib/constants/project";
+import { applyChecklistTemplates } from "@/lib/services/checklist-template-apply";
 
 export { PROJECT_TYPE_LABELS };
 
@@ -53,22 +54,12 @@ export async function createBundleChildren(
       },
     });
 
-    // Auto-apply checklist templates for the child's project type
-    const templates = await tx.checklistTemplate.findMany({
-      where: { orgId, projectType: type },
-      orderBy: { sortOrder: "asc" },
+    // Auto-apply checklist templates (org-specific + platform-wide).
+    await applyChecklistTemplates(tx, {
+      projectId: child.id,
+      orgId,
+      projectType: type,
     });
-
-    if (templates.length > 0) {
-      await tx.checklistItem.createMany({
-        data: templates.map((tpl) => ({
-          projectId: child.id,
-          name: tpl.name,
-          description: tpl.description,
-          isRequired: tpl.isRequired,
-        })),
-      });
-    }
   }
 }
 

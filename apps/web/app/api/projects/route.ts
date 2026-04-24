@@ -6,6 +6,7 @@ import { handleZodError, handleInternalError, unauthorizedResponse } from "@/lib
 import { eventBus } from "@/lib/events/event-bus";
 import { Prisma } from "@prisma/client";
 import { createBundleChildren } from "@/lib/services/project-bundle";
+import { applyChecklistTemplates } from "@/lib/services/checklist-template-apply";
 
 // GET /api/projects — list projects with filters and pagination
 export async function GET(req: NextRequest) {
@@ -123,22 +124,14 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Auto-apply checklist templates for this project type + org
-      const templates = await tx.checklistTemplate.findMany({
-        where: { orgId, projectType: created.type },
-        orderBy: { sortOrder: "asc" },
+      // Auto-apply checklist templates (org-specific + platform-wide).
+      // Helper flattens ChecklistTemplateItem rows into ChecklistItem so the
+      // full evidence list lands on the project, not just phase headers.
+      await applyChecklistTemplates(tx, {
+        projectId: created.id,
+        orgId,
+        projectType: created.type,
       });
-
-      if (templates.length > 0) {
-        await tx.checklistItem.createMany({
-          data: templates.map((tpl) => ({
-            projectId: created.id,
-            name: tpl.name,
-            description: tpl.description,
-            isRequired: tpl.isRequired,
-          })),
-        });
-      }
 
       // For BUNDLE projects: auto-create child projects inside the same transaction
       if (created.type === "BUNDLE") {

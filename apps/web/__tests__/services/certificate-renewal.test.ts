@@ -190,9 +190,11 @@ describe("runCertificateRenewalScan", () => {
     mockCertificate.findMany.mockResolvedValue([makeCandidate()]);
     mockProject.findFirst.mockResolvedValue(null);
     mockProject.create.mockResolvedValue({ id: "renew-proj-with-checklist" });
+    // WI-331-fix: helper requests `include: { items }`; templates with no
+    // items still produce a single header row (back-compat).
     mockChecklistTemplate.findMany.mockResolvedValue([
-      { name: "벤처확인서 신청서", description: "중기부 양식", isRequired: true },
-      { name: "기술성평가서", description: null, isRequired: true },
+      { name: "벤처확인서 신청서", description: "중기부 양식", isRequired: true, items: [] },
+      { name: "기술성평가서", description: null, isRequired: true, items: [] },
     ]);
 
     await runCertificateRenewalScan({ now: NOW });
