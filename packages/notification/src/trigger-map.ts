@@ -19,7 +19,8 @@ export type BusinessEvent =
   | "AI_JOB_COMPLETE"
   | "AI_JOB_FAILED"
   | "PORTAL_COMPLETE"
-  | "HANDOFF";
+  | "HANDOFF"
+  | "BUNDLE_COMPLETED";
 
 export type Channel =
   | "IN_APP"
@@ -111,6 +112,13 @@ const TRIGGER_MAP: Record<BusinessEvent, TriggerConfig> = {
     priority: "normal",
   },
   HANDOFF: {
+    channels: ["IN_APP", "EMAIL"],
+    recipientRole: "assignee",
+    priority: "high",
+  },
+  BUNDLE_COMPLETED: {
+    // BUNDLE은 여러 자식 프로젝트의 오랜 진행 끝에 도달하는 마일스톤이므로
+    // 메일까지 보내 상태 보고 용도로 활용. 팀 채널은 시끄러워지므로 제외.
     channels: ["IN_APP", "EMAIL"],
     recipientRole: "assignee",
     priority: "high",

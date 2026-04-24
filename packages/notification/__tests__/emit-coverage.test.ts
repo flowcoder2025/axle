@@ -53,7 +53,20 @@ const WEB_ROOTS = [
   resolve(__dirname, "../../../apps/web/lib"),
 ];
 
-const ALL_EVENTS = Object.keys(TRIGGER_MAP) as BusinessEvent[];
+/**
+ * Dispatch-only events: BusinessEvents that do NOT flow through
+ * `eventBus.emit()`. `setup.ts` derives them from other events (e.g.
+ * BUNDLE_COMPLETED is minted from a PROJECT_COMPLETED with projectType ===
+ * "BUNDLE") and calls `dispatch()` directly. Requiring a call-site for these
+ * would force a duplicate emit that adds no information.
+ */
+const DISPATCH_ONLY_EVENTS: ReadonlySet<BusinessEvent> = new Set([
+  "BUNDLE_COMPLETED",
+]);
+
+const ALL_EVENTS = (Object.keys(TRIGGER_MAP) as BusinessEvent[]).filter(
+  (event) => !DISPATCH_ONLY_EVENTS.has(event),
+);
 
 // Scan once so every assertion reuses the same index.
 const CALL_SITES: Record<BusinessEvent, string[]> = Object.fromEntries(
