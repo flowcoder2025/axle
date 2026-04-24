@@ -521,10 +521,17 @@
 ### L2: 포털 자동 등록 > L3: Desktop Playwright (Phase 15 확장)
 - [x] WI-316-chore VENTUREIN 포털 자동화 제거 — 벤처 트랙 DOCX(WI-301~309)로 대체
 - [x] WI-317-chore KOITA 포털 자동화 제거 — 연구소는 별도 DOCX 트랙으로 전환
-- [ ] WI-318-feat 홈택스 납세증명/사업자등록증 발급 Playwright 실구현 | L1:Phase18 > L2:Portal > L3:Hometax
-- [ ] WI-319-feat 민원24 각종 증명서 발급 Playwright 실구현 | L1:Phase18 > L2:Portal > L3:Minwon24
-- [ ] WI-320-feat 4대보험 가입자 명부/납부확인 Playwright 실구현 | L1:Phase18 > L2:Portal > L3:Insurance
-- [ ] WI-321-feat PKCS#12 공인인증서 실제 비밀번호 검증 + 서명 (node-forge) | L1:Phase18 > L2:Portal > L3:PKCS12
+- [ ] WI-318a-feat AXLE /api/scraper/* 엔드포인트 4종 신설 (health/jobs/results/repair/report) + X-Scraper-Key 인증 | L1:Phase18 > L2:Portal > L3:API
+- [ ] WI-318b-feat ScraperJob / ScraperApiKey / ScraperRepairLog / ClientCertificate / ClientPortalAccount Prisma 모델 + Credentials AES-256-GCM 암호화 | L1:Phase18 > L2:Portal > L3:DB
+- [ ] WI-318c-feat Vercel Blob 업로드 + signed URL 발급 유틸 + log-sanitizer 확장(credentials redaction) | L1:Phase18 > L2:Portal > L3:Storage
+- [ ] WI-318d-feat flowvue-scraper AxleApiClient + SCRAPER_MODE=axle 분기 + polling loop | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
+- [ ] WI-318e-feat flowvue-scraper pages/hometax_certificate.py — 납세증명서 발급 PoC | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
+- [ ] WI-318f-feat Electron UI 축소 (flowvue-scraper subprocess 런처 + 로그뷰어) / 웹 UI job 생성 폼 + AutomationLog 결과 PDF 다운로드 | L1:Phase18 > L2:Portal > L3:UI
+- [ ] WI-319a-feat flowvue-scraper pages/minwon24_certificate.py — 민원24 증명서 발급 | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
+- [ ] WI-319b-feat 민원24 발급 UI + 증명서 유형 카탈로그 | L1:Phase18 > L2:Portal > L3:UI
+- [ ] WI-320a-feat flowvue-scraper pages/insurance_*.py — 4대보험 가입자명부/납부확인 | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
+- [ ] WI-320b-feat 4대보험 UI + 조회 필터 (연월/사업장) | L1:Phase18 > L2:Portal > L3:UI
+- [ ] WI-321-feat PKCS#12 내부 전자서명(계약서 서명 등 비-포털 용도) — 포털 로그인 PFX는 flowvue-scraper 처리로 별도 | L1:Phase18 > L2:Internal > L3:PKCS12
 
 ### L2: BUNDLE 워크플로우 > L3: 통합 진행 관리
 - [ ] WI-322-feat BUNDLE 하위 프로젝트 진행률 롤업 대시보드 (벤처+연구소+특허 한 화면) | L1:Phase18 > L2:Bundle > L3:Dashboard
