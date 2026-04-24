@@ -104,3 +104,19 @@ export type {
   OrgChartMember,
   OrgChartDocxOptions,
 } from "./generators/org-chart.js";
+
+// ── Venture Tech Assessment Generator (WI-301) ──────────────────────────────
+export {
+  generateVentureTechAssessmentDocx,
+  PROBLEM_IMPORTANCE_OPTIONS,
+  PRODUCT_DIFFERENTIATION_OPTIONS,
+  FUNDING_SOURCE_OPTIONS,
+} from "./generators/venture-tech-assessment.js";
+export type {
+  VentureTechAssessmentInput,
+  VentureTechAssessmentCompanyInfo,
+  VentureTechAssessmentFinanceRow,
+  VentureTechAssessmentAchievements,
+  VentureTechAssessmentIp,
+  VentureTechAssessmentChecks,
+} from "./generators/venture-tech-assessment.js";
