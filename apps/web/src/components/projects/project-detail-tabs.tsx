@@ -14,6 +14,7 @@ import { AddMemberDialog } from "./add-member-dialog";
 import { HandoffForm } from "./handoff-form";
 import { HandoffSummary } from "./handoff-summary";
 import { ProjectDocumentList } from "./project-document-list";
+import { BundlePropagateButton } from "./bundle-propagate-button";
 import { ProjectMeetingList } from "./project-meeting-list";
 import { ProjectAiJobList } from "./project-ai-job-list";
 import type { ProjectStatus, ProjectType, Priority, FeeType } from "@prisma/client";
@@ -116,7 +117,12 @@ export function ProjectDetailTabs({ project, rollup }: ProjectDetailTabsProps) {
           <ChecklistPanel projectId={project.id} clientId={project.client.id} />
         )}
         {activeTab === "documents" && (
-          <ProjectDocumentList projectId={project.id} />
+          <div className="space-y-4">
+            {project.type === "BUNDLE" && (
+              <BundlePropagateButton projectId={project.id} />
+            )}
+            <ProjectDocumentList projectId={project.id} />
+          </div>
         )}
         {activeTab === "meetings" && (
           <ProjectMeetingList projectId={project.id} />
