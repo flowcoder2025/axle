@@ -120,3 +120,14 @@ export type {
   VentureTechAssessmentIp,
   VentureTechAssessmentChecks,
 } from "./generators/venture-tech-assessment.js";
+
+// ── Research Institute Notification Generator (WI-311) ──────────────────────
+export { generateResearchInstituteNotificationDocx } from "./generators/research-institute-notification.js";
+export type {
+  ResearchInstituteNotificationInput,
+  ResearchInstituteCompanyInfo,
+  ResearchInstituteRDField,
+  ResearchInstituteCoreTechnology,
+  ResearchInstituteProject,
+  ResearchInstituteResearcher,
+} from "./generators/research-institute-notification.js";
