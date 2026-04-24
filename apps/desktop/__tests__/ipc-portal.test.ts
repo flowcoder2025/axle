@@ -48,7 +48,7 @@ describe("Portal IPC handlers", () => {
     registerPortalHandlers();
   });
 
-  const portals: PortalName[] = ["hometax", "minwon24", "insurance", "venturein", "koita"];
+  const portals: PortalName[] = ["hometax", "minwon24", "insurance"];
 
   for (const portal of portals) {
     it(`login to ${portal} returns a session`, async () => {
@@ -112,15 +112,5 @@ describe("createPageObject", () => {
   it("creates InsurancePageObject", () => {
     const obj = createPageObject("insurance");
     expect(typeof obj.fetchContributions).toBe("function");
-  });
-
-  it("creates VentureinPageObject", () => {
-    const obj = createPageObject("venturein");
-    expect(typeof obj.fetchApplicationList).toBe("function");
-  });
-
-  it("creates KoitaPageObject", () => {
-    const obj = createPageObject("koita");
-    expect(typeof obj.fetchCertifications).toBe("function");
   });
 });

@@ -519,8 +519,8 @@
 - [ ] WI-315-feat 발명신고서/직무발명 체크리스트 템플릿 seed | L1:Phase18 > L2:Patent > L3:Checklist
 
 ### L2: 포털 자동 등록 > L3: Desktop Playwright (Phase 15 확장)
-- [ ] WI-316-feat VENTUREIN 로그인 + 신청 접수 Playwright 실구현 (page-object 스텁 제거) | L1:Phase18 > L2:Portal > L3:VENTUREIN
-- [ ] WI-317-feat KOITA 로그인 + 신고서 제출 Playwright 실구현 | L1:Phase18 > L2:Portal > L3:KOITA
+- [x] WI-316-chore VENTUREIN 포털 자동화 제거 — 벤처 트랙 DOCX(WI-301~309)로 대체
+- [x] WI-317-chore KOITA 포털 자동화 제거 — 연구소는 별도 DOCX 트랙으로 전환
 - [ ] WI-318-feat 홈택스 납세증명/사업자등록증 발급 Playwright 실구현 | L1:Phase18 > L2:Portal > L3:Hometax
 - [ ] WI-319-feat 민원24 각종 증명서 발급 Playwright 실구현 | L1:Phase18 > L2:Portal > L3:Minwon24
 - [ ] WI-320-feat 4대보험 가입자 명부/납부확인 Playwright 실구현 | L1:Phase18 > L2:Portal > L3:Insurance
