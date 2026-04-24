@@ -647,7 +647,7 @@ function WizardDialog({
             </div>
 
             <p className="text-xs text-muted-foreground">
-              이 창을 닫아도 백그라운드에서 계속 생성됩니다. 결과는 "AI 작업" 탭에서도 확인할 수 있습니다.
+              이 창을 닫아도 백그라운드에서 계속 생성됩니다. 결과는 &ldquo;AI 작업&rdquo; 탭에서도 확인할 수 있습니다.
             </p>
 
             <div className="flex justify-end border-t pt-3">
