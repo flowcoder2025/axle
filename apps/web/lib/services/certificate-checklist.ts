@@ -109,8 +109,15 @@ export async function requestCertificate(
 }
 
 /**
- * When a certificate file is uploaded via portal, create/update the Certificate record
- * and link it to the checklist item.
+ * When a certificate file is uploaded via portal, create/update the
+ * Certificate record and link it to the checklist item.
+ *
+ * Coexists with `autoCreateCertificateFromProject` (WI-325): see that
+ * function's docstring for the full precedence model. In short — this
+ * function is the *canonical writer*: it always deactivates any prior
+ * active row of the same `(clientId, type)` and inserts a new active row
+ * with the user-supplied `subjectName`, regardless of whether the auto
+ * path ran first.
  */
 export async function fulfillCertificateUpload(
   checklistItemId: string,

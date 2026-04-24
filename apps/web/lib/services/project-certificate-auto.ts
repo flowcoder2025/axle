@@ -101,6 +101,30 @@ function computeValidTo(projectType: ProjectType, issuedAt: Date): Date | null {
  * BUNDLE projects are intentionally skipped — their children each trigger
  * this hook independently, so creating a Certificate for the parent would
  * double-issue.
+ *
+ * ── Precedence vs the checklist-upload path (WI-335-fix H1) ──────────────
+ * Two paths can mint a Certificate for the same `(client, type)` pair:
+ *
+ *   1. THIS function — fired on `project.status = COMPLETED`. `subjectName`
+ *      is the project title (e.g. "JET 벤처기업 인증 신청"). Skipped when a
+ *      valid active cert already exists.
+ *
+ *   2. `fulfillCertificateUpload` (certificate-checklist.ts) — fired when the
+ *      consultant uploads the actual PDF via the checklist CERTIFICATE item.
+ *      `subjectName` comes from the user's input. Always supersedes the
+ *      currently-active cert by flipping `isActive = false` on prior rows
+ *      and inserting a new active row.
+ *
+ * Sequence outcomes (verified by `__tests__/services/cert-issue-precedence.test.ts`):
+ *
+ *   • COMPLETED → upload  → 1 active cert with user-supplied subjectName
+ *                            (auto cert was deactivated on upload)
+ *   • upload    → COMPLETED → 1 active cert with user-supplied subjectName
+ *                            (auto skipped because valid cert already existed)
+ *
+ * Both sequences converge on the same end state; user-supplied `subjectName`
+ * always wins. The checklist-upload path is the canonical writer once a real
+ * certificate exists.
  */
 export async function autoCreateCertificateFromProject(
   project: Pick<Project, "id" | "type" | "clientId" | "title">,
