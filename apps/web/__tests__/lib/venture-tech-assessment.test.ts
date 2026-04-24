@@ -220,6 +220,42 @@ describe("buildVentureTechAssessmentInput", () => {
     );
   });
 
+  // ── WI-334-feat M4: three-way override signal ─────────────────────────────
+  it("treats `domesticSales: null` as explicitly empty (no revenue fallback)", async () => {
+    mockClientFindUnique.mockResolvedValueOnce(
+      makeClient({
+        masterProfile: {
+          venture: { achievements: { domesticSales: null } },
+        },
+      }),
+    );
+    const input = await buildVentureTechAssessmentInput("client-1");
+    // baseline finance has 500M revenue; null override should suppress fallback
+    expect(input.achievements!.domesticSales).toBeUndefined();
+  });
+
+  it("treats `domesticSales: undefined` as missing (revenue fallback applies)", async () => {
+    mockClientFindUnique.mockResolvedValueOnce(
+      makeClient({
+        masterProfile: { venture: { achievements: {} } },
+      }),
+    );
+    const input = await buildVentureTechAssessmentInput("client-1");
+    // most recent revenue (500M) is used as fallback
+    expect(input.achievements!.domesticSales).toBe(500_000_000);
+  });
+
+  it("treats `ip.patents: null` as explicitly empty (no PATENT count fallback)", async () => {
+    mockClientFindUnique.mockResolvedValueOnce(
+      makeClient({
+        masterProfile: { venture: { ip: { patents: null } } },
+      }),
+    );
+    const input = await buildVentureTechAssessmentInput("client-1");
+    // 2 PATENT achievements exist but null override suppresses the count
+    expect(input.intellectualProperty!.patents).toBeUndefined();
+  });
+
   it("requests only the most recent 3 financial years from the database", async () => {
     mockClientFindUnique.mockResolvedValueOnce(makeClient());
     await buildVentureTechAssessmentInput("client-1");

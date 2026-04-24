@@ -189,4 +189,46 @@ describe("POST /api/projects/[projectId]/venture-tech-assessment", () => {
     const buf = await res.arrayBuffer();
     expect(buf.byteLength).toBeGreaterThan(2000);
   });
+
+  it("merges request-body overrides into the auto-filled input (WI-334-feat M2)", async () => {
+    mockGetCurrentUser.mockResolvedValueOnce(orgUser);
+    mockProjectFindFirst.mockResolvedValueOnce(makeProject());
+    mockClientFindUnique.mockResolvedValueOnce(makeClient());
+
+    const res = await POST(
+      new Request("http://test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          overrides: {
+            companyInfo: { companyName: "오버라이드 사명" },
+            sections: { background: "사용자 본문" },
+          },
+        }),
+      }) as never,
+      ctx(),
+    );
+    expect(res.status).toBe(200);
+    const disposition = decodeURIComponent(res.headers.get("Content-Disposition") ?? "");
+    // Filename reflects the overridden company name, not the DB one.
+    expect(disposition).toContain("오버라이드 사명");
+  });
+
+  it("ignores invalid JSON body and proceeds with auto-filled input", async () => {
+    mockGetCurrentUser.mockResolvedValueOnce(orgUser);
+    mockProjectFindFirst.mockResolvedValueOnce(makeProject());
+    mockClientFindUnique.mockResolvedValueOnce(makeClient());
+
+    const res = await POST(
+      new Request("http://test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{not json",
+      }) as never,
+      ctx(),
+    );
+    expect(res.status).toBe(200);
+    const disposition = decodeURIComponent(res.headers.get("Content-Disposition") ?? "");
+    expect(disposition).toContain("주식회사 제이이티");
+  });
 });
