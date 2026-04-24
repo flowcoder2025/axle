@@ -26,20 +26,32 @@ import type { ProjectType } from "@prisma/client";
 // ---------------------------------------------------------------------------
 
 /**
- * Default REQUIRED_SECTIONS surfaced to the operator. The server-side
- * BUSINESS_PLAN_REQUIRED_SECTIONS is the authoritative list; this mirrors those
- * five and adds commonly-requested optional sections so users can opt-in.
+ * Wizard section list — mirrors `VENTURE_BUSINESS_PLAN_SECTIONS` in
+ * `@axle/docgen` so the user sees the exact same 9 sections the server will
+ * generate. Adding/removing a section here without touching the docgen
+ * config will silently desynchronise the pipeline, so we import directly.
  */
-export const WIZARD_SECTIONS: ReadonlyArray<{ id: string; label: string; required: boolean }> = [
-  { id: "사업 개요", label: "사업 개요", required: true },
-  { id: "시장 분석", label: "시장 분석", required: true },
-  { id: "추진 전략", label: "추진 전략", required: true },
-  { id: "재무 계획", label: "재무 계획", required: true },
-  { id: "조직 및 인력", label: "조직 및 인력", required: true },
-  { id: "기술성", label: "기술성", required: false },
-  { id: "사업화 전략", label: "사업화 전략", required: false },
-  { id: "추진 일정", label: "추진 일정", required: false },
-] as const;
+// Subpath import — types.ts has no runtime deps, so the client bundle stays
+// free of server-only dependencies (docx, pdf-parse, etc.).
+import { VENTURE_BUSINESS_PLAN_SECTIONS } from "@axle/docgen/sections";
+
+export const WIZARD_SECTIONS: ReadonlyArray<{
+  id: string;
+  label: string;
+  required: boolean;
+  instruction: string;
+  tips: readonly string[];
+  minChars: number;
+  maxChars: number;
+}> = VENTURE_BUSINESS_PLAN_SECTIONS.map((s) => ({
+  id: s.title,
+  label: s.title,
+  required: s.required,
+  instruction: s.instruction,
+  tips: s.tips,
+  minChars: s.minChars,
+  maxChars: s.maxChars,
+}));
 
 export const SUPPORTED_PROJECT_TYPES: ReadonlySet<ProjectType> = new Set<ProjectType>([
   "BUSINESS_PLAN",

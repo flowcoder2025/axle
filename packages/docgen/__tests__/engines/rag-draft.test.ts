@@ -27,8 +27,12 @@ import {
   generateRagDraft,
   searchClientDocuments,
   searchPastPlans,
+  buildSectionPrompt,
 } from "../../src/engines/rag-draft.js";
-import { REQUIRED_SECTIONS } from "../../src/types.js";
+import {
+  REQUIRED_SECTIONS,
+  VENTURE_BUSINESS_PLAN_SECTIONS,
+} from "../../src/types.js";
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
 const baseInput = {
@@ -79,9 +83,8 @@ describe("WI-201: generateRagDraft — RAG-backed business plan draft", () => {
     });
   });
 
-  it("returns all 5 required sections in order", async () => {
+  it("returns every required venture section in order", async () => {
     const result = await generateRagDraft(baseInput);
-    expect(result.sections).toHaveLength(5);
     expect(result.sections.map((s) => s.title)).toEqual([...REQUIRED_SECTIONS]);
   });
 
@@ -109,8 +112,8 @@ describe("WI-201: generateRagDraft — RAG-backed business plan draft", () => {
 
   it("accumulates tokensUsed across all sections", async () => {
     const result = await generateRagDraft(baseInput);
-    // 5 sections × (100 + 200) = 1500
-    expect(result.metadata.tokensUsed).toBe(1500);
+    // N sections × (100 + 200) per `mkCompletion` in fixtures
+    expect(result.metadata.tokensUsed).toBe(REQUIRED_SECTIONS.length * 300);
   });
 
   it("deduplicates sourceDocs across client + past-plan RAG hits", async () => {
@@ -241,5 +244,37 @@ describe("WI-201: searchPastPlans", () => {
     });
     expect(result).toHaveLength(1);
     expect(result[0].sourceId).toBe("plan-1");
+  });
+});
+
+// ─── WI-328: 9-section schema injection into AI prompt ─────────────────────
+
+describe("WI-328: buildSectionPrompt injects section config into prompt", () => {
+  const marketConfig = VENTURE_BUSINESS_PLAN_SECTIONS.find(
+    (s) => s.id === "market",
+  )!;
+
+  it("includes the section title + instruction verbatim", () => {
+    const prompt = buildSectionPrompt(marketConfig, baseInput, [], []);
+    expect(prompt).toContain(marketConfig.title);
+    expect(prompt).toContain(marketConfig.instruction);
+  });
+
+  it("includes every tip from the agency guideline", () => {
+    const prompt = buildSectionPrompt(marketConfig, baseInput, [], []);
+    for (const tip of marketConfig.tips) {
+      expect(prompt).toContain(tip);
+    }
+  });
+
+  it("includes the min/max character constraints", () => {
+    const prompt = buildSectionPrompt(marketConfig, baseInput, [], []);
+    expect(prompt).toContain(`${marketConfig.minChars}자 이상`);
+    expect(prompt).toContain(`${marketConfig.maxChars}자 이내`);
+  });
+
+  it("falls back to '해당 없음' when no RAG context is supplied", () => {
+    const prompt = buildSectionPrompt(marketConfig, baseInput, [], []);
+    expect(prompt).toContain("(해당 없음)");
   });
 });

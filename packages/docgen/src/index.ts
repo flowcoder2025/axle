@@ -10,8 +10,12 @@ export type {
   MissingItem,
   FormatIssue,
   RequiredSection,
+  SectionConfig,
 } from "./types.js";
-export { REQUIRED_SECTIONS } from "./types.js";
+export {
+  REQUIRED_SECTIONS,
+  VENTURE_BUSINESS_PLAN_SECTIONS,
+} from "./types.js";
 
 // ── RAG Draft Engine (WI-063 / WI-201) ───────────────────────────────────────
 export {
