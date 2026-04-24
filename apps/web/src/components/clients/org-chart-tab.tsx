@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, Input, Label, toast } from "@axle/ui";
-import { Download, Plus, Save, Trash2, UserPlus } from "lucide-react";
+import { Download, FileText, Plus, Save, Trash2, UserPlus } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Types (mirrors OrgChartStructure in packages/docgen/src/generators/org-chart.ts)
@@ -54,6 +54,7 @@ export function OrgChartTab({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [exportingDocx, setExportingDocx] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
   // ── Load ────────────────────────────────────────────────────────────────
@@ -226,27 +227,77 @@ export function OrgChartTab({
     }
   };
 
+  /**
+   * Rasterize the Mermaid preview into a PNG Blob. Returns null when the
+   * preview isn't available (user hasn't saved yet). Shared by both PNG
+   * download and DOCX export.
+   */
+  const rasterizePreview = async (): Promise<Blob | null> => {
+    if (!previewRef.current || !mermaid) return null;
+    const { toBlob } = await import("html-to-image");
+    const blob = await toBlob(previewRef.current, {
+      backgroundColor: "#ffffff",
+      pixelRatio: 2,
+    });
+    return blob;
+  };
+
   // ── Export PNG ──────────────────────────────────────────────────────────
   const handleDownload = async () => {
-    if (!previewRef.current || !mermaid) {
+    const blob = await rasterizePreview().catch(() => null);
+    if (!blob) {
       toast.error("먼저 조직도를 저장해주세요");
       return;
     }
     setDownloading(true);
     try {
-      const { toPng } = await import("html-to-image");
-      const dataUrl = await toPng(previewRef.current, {
-        backgroundColor: "#ffffff",
-        pixelRatio: 2,
-      });
+      const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.download = `${sanitized().companyName || "org-chart"}-조직도.png`;
-      link.href = dataUrl;
+      link.href = url;
       link.click();
+      URL.revokeObjectURL(url);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "PNG 다운로드 실패");
     } finally {
       setDownloading(false);
+    }
+  };
+
+  // ── Export DOCX (WI-329) ────────────────────────────────────────────────
+  const handleExportDocx = async () => {
+    if (!mermaid) {
+      toast.error("먼저 조직도를 저장해주세요");
+      return;
+    }
+    setExportingDocx(true);
+    try {
+      const form = new FormData();
+      // Upload the rendered PNG so the DOCX matches what the user sees.
+      const blob = await rasterizePreview().catch(() => null);
+      if (blob) form.append("png", blob, "chart.png");
+
+      const res = await fetch(
+        `/api/clients/${clientId}/org-chart/export`,
+        { method: "POST", body: form },
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(
+          body?.error?.message ?? `DOCX export failed: ${res.status}`,
+        );
+      }
+      const docxBlob = await res.blob();
+      const url = URL.createObjectURL(docxBlob);
+      const link = document.createElement("a");
+      link.download = `${sanitized().companyName || "org-chart"}-조직도.docx`;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "DOCX 다운로드 실패");
+    } finally {
+      setExportingDocx(false);
     }
   };
 
@@ -395,6 +446,15 @@ export function OrgChartTab({
           >
             <Download className="mr-1 size-4" />
             {downloading ? "생성 중…" : "PNG 다운로드"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleExportDocx}
+            disabled={exportingDocx || !mermaid}
+          >
+            <FileText className="mr-1 size-4" />
+            {exportingDocx ? "생성 중…" : "DOCX 다운로드"}
           </Button>
         </div>
       </div>

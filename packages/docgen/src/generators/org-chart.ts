@@ -105,3 +105,186 @@ export function generateOrgChartMermaid(chart: OrgChartStructure): string {
 
   return lines.join("\n");
 }
+
+// ─── DOCX export (WI-329) ─────────────────────────────────────────────────
+
+import {
+  AlignmentType,
+  Document,
+  HeadingLevel,
+  ImageRun,
+  Packer,
+  Paragraph,
+  Table,
+  TableCell,
+  TableRow,
+  VerticalAlign,
+  WidthType,
+} from "docx";
+import { buildDocxStyles, buildSectionProperties } from "../utils/docx-styles.js";
+import { para, run, todayKorean } from "../utils/docx-helpers.js";
+
+export interface OrgChartDocxOptions {
+  /**
+   * Optional PNG rendering of the chart. When provided, it is embedded as an
+   * image at the top of the DOCX. The client usually produces this via
+   * `html-to-image` in the Org Chart tab and uploads the buffer.
+   */
+  png?: Buffer;
+  /**
+   * Display width of the embedded PNG in DOCX pixels (used only when `png`
+   * is supplied). Height is auto-scaled to preserve aspect ratio.
+   */
+  pngWidthPx?: number;
+  pngHeightPx?: number;
+  /** Document title — defaults to "{companyName} 조직도". */
+  title?: string;
+}
+
+function buildHeaderParagraphs(chart: OrgChartStructure, title: string): Paragraph[] {
+  return [
+    new Paragraph({
+      children: [run(title, { bold: true, size: 32 })],
+      alignment: AlignmentType.CENTER,
+      heading: HeadingLevel.HEADING_1,
+      spacing: { after: 200 },
+    }),
+    para(`작성일: ${todayKorean()}`, {
+      align: AlignmentType.CENTER,
+      spacingAfter: 200,
+      size: 20,
+    }),
+    para(`대표자: ${chart.ceo.name}${chart.ceo.position ? ` (${chart.ceo.position})` : ""}`, {
+      spacingAfter: 100,
+      size: 22,
+    }),
+    para(`회사명: ${chart.companyName}`, { spacingAfter: 300, size: 22 }),
+  ];
+}
+
+function buildHierarchyTable(chart: OrgChartStructure): Table {
+  const headerRow = new TableRow({
+    tableHeader: true,
+    children: [
+      new TableCell({
+        children: [para("부서", { bold: true, align: AlignmentType.CENTER })],
+        verticalAlign: VerticalAlign.CENTER,
+        width: { size: 30, type: WidthType.PERCENTAGE },
+      }),
+      new TableCell({
+        children: [para("구성원", { bold: true, align: AlignmentType.CENTER })],
+        verticalAlign: VerticalAlign.CENTER,
+        width: { size: 50, type: WidthType.PERCENTAGE },
+      }),
+      new TableCell({
+        children: [para("인원", { bold: true, align: AlignmentType.CENTER })],
+        verticalAlign: VerticalAlign.CENTER,
+        width: { size: 20, type: WidthType.PERCENTAGE },
+      }),
+    ],
+  });
+
+  const bodyRows = chart.departments.map((dept) => {
+    const membersText =
+      dept.members.length > 0
+        ? dept.members
+            .map((m) => (m.position ? `${m.name} (${m.position})` : m.name))
+            .join(", ")
+        : "(미배정)";
+    return new TableRow({
+      children: [
+        new TableCell({
+          children: [para(dept.name)],
+          verticalAlign: VerticalAlign.CENTER,
+        }),
+        new TableCell({
+          children: [para(membersText)],
+          verticalAlign: VerticalAlign.CENTER,
+        }),
+        new TableCell({
+          children: [
+            para(`${dept.members.length}명`, { align: AlignmentType.CENTER }),
+          ],
+          verticalAlign: VerticalAlign.CENTER,
+        }),
+      ],
+    });
+  });
+
+  return new Table({
+    rows: [headerRow, ...bodyRows],
+    width: { size: 100, type: WidthType.PERCENTAGE },
+  });
+}
+
+function buildImageParagraph(
+  png: Buffer,
+  widthPx: number,
+  heightPx: number,
+): Paragraph {
+  return new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 200, after: 300 },
+    children: [
+      new ImageRun({
+        data: png,
+        transformation: { width: widthPx, height: heightPx },
+        type: "png",
+      }),
+    ],
+  });
+}
+
+/**
+ * Generate a DOCX buffer containing the org chart. The document always
+ * includes a header (company + CEO) and a hierarchy table; when `png` is
+ * supplied the rendered chart image is embedded above the table so the
+ * reader sees both the visual and the text representation.
+ *
+ * The text table serves as a fallback when the image cannot be rendered
+ * (e.g. the client is unable to produce a PNG) and also helps screen
+ * readers / search indexers since the image itself is opaque.
+ */
+export async function generateOrgChartDocx(
+  chart: OrgChartStructure,
+  options: OrgChartDocxOptions = {},
+): Promise<{ docxBuffer: Buffer; fileName: string }> {
+  if (!chart.companyName?.trim()) {
+    throw new Error("OrgChartStructure.companyName is required");
+  }
+  if (!chart.ceo?.name?.trim()) {
+    throw new Error("OrgChartStructure.ceo.name is required");
+  }
+
+  const title = options.title ?? `${chart.companyName} 조직도`;
+  const children: Array<Paragraph | Table> = [...buildHeaderParagraphs(chart, title)];
+
+  if (options.png) {
+    children.push(
+      buildImageParagraph(
+        options.png,
+        options.pngWidthPx ?? 500,
+        options.pngHeightPx ?? 400,
+      ),
+    );
+  }
+
+  children.push(buildHierarchyTable(chart));
+
+  const doc = new Document({
+    styles: buildDocxStyles(),
+    sections: [
+      {
+        properties: buildSectionProperties(),
+        children,
+      },
+    ],
+  });
+
+  const docxBuffer = (await Packer.toBuffer(doc)) as Buffer;
+  const safe = chart.companyName.replace(/[\\/:*?"<>|]/g, "_").trim();
+  return {
+    docxBuffer,
+    fileName: `${safe || "org-chart"}-조직도.docx`,
+  };
+}

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import JSZip from "jszip";
 import {
   generateOrgChartMermaid,
+  generateOrgChartDocx,
   type OrgChartStructure,
 } from "../../src/generators/org-chart.js";
 
@@ -158,5 +160,77 @@ describe("generateOrgChartMermaid", () => {
     const out1 = generateOrgChartMermaid(baseChart);
     const out2 = generateOrgChartMermaid(baseChart);
     expect(out1).toBe(out2);
+  });
+});
+
+// ─── WI-329: DOCX export ───────────────────────────────────────────────────
+
+async function readDocumentXml(buffer: Buffer): Promise<string> {
+  const zip = await JSZip.loadAsync(buffer);
+  const entry = zip.file("word/document.xml");
+  if (!entry) throw new Error("word/document.xml missing from DOCX");
+  return entry.async("string");
+}
+
+describe("generateOrgChartDocx", () => {
+  it("returns a DOCX buffer + filename with the company name", async () => {
+    const { docxBuffer, fileName } = await generateOrgChartDocx(baseChart);
+    expect(docxBuffer).toBeInstanceOf(Buffer);
+    expect(docxBuffer.byteLength).toBeGreaterThan(1000);
+    expect(fileName).toContain("주식회사 제이이티");
+    expect(fileName).toMatch(/조직도\.docx$/);
+  });
+
+  it("embeds CEO, company, and every department + member in the body", async () => {
+    const { docxBuffer } = await generateOrgChartDocx(baseChart);
+    const xml = await readDocumentXml(docxBuffer);
+    expect(xml).toContain("주식회사 제이이티");
+    expect(xml).toContain("김희수");
+    expect(xml).toContain("경영지원팀");
+    expect(xml).toContain("김창수");
+    expect(xml).toContain("심재경");
+    expect(xml).toContain("백성영");
+  });
+
+  it("embeds a PNG image when one is provided", async () => {
+    const fakePng = Buffer.from([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, // PNG magic
+      ...new Array(64).fill(0),
+    ]);
+    const { docxBuffer } = await generateOrgChartDocx(baseChart, {
+      png: fakePng,
+      pngWidthPx: 400,
+      pngHeightPx: 300,
+    });
+    const zip = await JSZip.loadAsync(docxBuffer);
+    // docx package stores images under word/media/*
+    const mediaEntries = Object.keys(zip.files).filter((k) =>
+      k.startsWith("word/media/"),
+    );
+    expect(mediaEntries.length).toBeGreaterThan(0);
+  });
+
+  it("omits the image section when no PNG is supplied", async () => {
+    const { docxBuffer } = await generateOrgChartDocx(baseChart);
+    const zip = await JSZip.loadAsync(docxBuffer);
+    const mediaEntries = Object.keys(zip.files).filter((k) =>
+      k.startsWith("word/media/"),
+    );
+    expect(mediaEntries.length).toBe(0);
+  });
+
+  it("sanitizes the filename from filesystem-special characters", async () => {
+    const { fileName } = await generateOrgChartDocx({
+      ...baseChart,
+      companyName: "Acme/Co: *v1?",
+    });
+    expect(fileName).not.toMatch(/[\\/:*?"<>|]/);
+    expect(fileName).toMatch(/조직도\.docx$/);
+  });
+
+  it("throws when companyName is missing", async () => {
+    await expect(
+      generateOrgChartDocx({ ...baseChart, companyName: "" }),
+    ).rejects.toThrow(/companyName/);
   });
 });
