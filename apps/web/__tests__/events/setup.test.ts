@@ -7,12 +7,20 @@ vi.mock("@axle/notification", () => ({
   dispatch: mockDispatch,
 }));
 
+const mockProjectFindUnique = vi.fn();
+vi.mock("@axle/db", () => ({
+  prisma: {
+    project: { findUnique: mockProjectFindUnique },
+  },
+}));
+
 // ── Tests ──────────────────────────────────────────────────────────────────
 
 describe("setupEventHandlers()", () => {
   beforeEach(async () => {
     vi.resetAllMocks();
     mockDispatch.mockResolvedValue(undefined);
+    mockProjectFindUnique.mockResolvedValue(null);
 
     // Reset module state so each test starts with a fresh setup
     const setup = await import("../../lib/events/setup.js");
@@ -129,6 +137,103 @@ describe("setupEventHandlers()", () => {
 
     // Should be called exactly once, not twice
     expect(mockDispatch).toHaveBeenCalledOnce();
+  });
+
+  // ── PROJECT_COMPLETED (WI-325F) ────────────────────────────────────────────
+
+  it("PROJECT_COMPLETED on BUNDLE → dispatches BUNDLE_COMPLETED to assignee", async () => {
+    await setup();
+    const { eventBus } = await import("../../lib/events/event-bus.js");
+
+    mockProjectFindUnique.mockResolvedValueOnce({
+      title: "JET 번들 인증",
+      assignedToId: "user-lead",
+      client: { name: "JET Corp" },
+    });
+
+    await eventBus.emit("PROJECT_COMPLETED", {
+      projectId: "bundle-1",
+      projectType: "BUNDLE",
+      clientId: "client-1",
+      completedAt: new Date(),
+      certificateCreated: false,
+      certificateId: null,
+    });
+
+    expect(mockDispatch).toHaveBeenCalledOnce();
+    expect(mockDispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: "BUNDLE_COMPLETED",
+        recipientUserIds: ["user-lead"],
+        link: "/projects/bundle-1",
+      }),
+    );
+    const call = mockDispatch.mock.calls[0][0];
+    expect(call.body).toContain("JET Corp");
+    expect(call.body).toContain("JET 번들 인증");
+    expect(call.metadata).toMatchObject({
+      projectId: "bundle-1",
+      clientId: "client-1",
+      certificateCreated: false,
+    });
+  });
+
+  it("PROJECT_COMPLETED on BUNDLE with no assignee → does not dispatch", async () => {
+    await setup();
+    const { eventBus } = await import("../../lib/events/event-bus.js");
+
+    mockProjectFindUnique.mockResolvedValueOnce({
+      title: "무할당 번들",
+      assignedToId: null,
+      client: { name: "X" },
+    });
+
+    await eventBus.emit("PROJECT_COMPLETED", {
+      projectId: "bundle-2",
+      projectType: "BUNDLE",
+      clientId: "client-1",
+      completedAt: new Date(),
+      certificateCreated: false,
+      certificateId: null,
+    });
+
+    expect(mockDispatch).not.toHaveBeenCalled();
+  });
+
+  it("PROJECT_COMPLETED on BUNDLE with missing project row → does not dispatch", async () => {
+    await setup();
+    const { eventBus } = await import("../../lib/events/event-bus.js");
+
+    mockProjectFindUnique.mockResolvedValueOnce(null);
+
+    await eventBus.emit("PROJECT_COMPLETED", {
+      projectId: "gone",
+      projectType: "BUNDLE",
+      clientId: "client-1",
+      completedAt: new Date(),
+      certificateCreated: false,
+      certificateId: null,
+    });
+
+    expect(mockDispatch).not.toHaveBeenCalled();
+  });
+
+  it("PROJECT_COMPLETED on non-BUNDLE projects → does not dispatch (no notification path)", async () => {
+    await setup();
+    const { eventBus } = await import("../../lib/events/event-bus.js");
+
+    await eventBus.emit("PROJECT_COMPLETED", {
+      projectId: "venture-1",
+      projectType: "VENTURE_CERT",
+      clientId: "client-1",
+      completedAt: new Date(),
+      certificateCreated: true,
+      certificateId: "cert-1",
+    });
+
+    expect(mockDispatch).not.toHaveBeenCalled();
+    // Should not even probe the DB for non-BUNDLE types
+    expect(mockProjectFindUnique).not.toHaveBeenCalled();
   });
 
   it("all 14 events are registered and dispatch is called for each", async () => {

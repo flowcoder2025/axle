@@ -22,6 +22,7 @@ const ALL_EVENTS: BusinessEvent[] = [
   "AI_JOB_FAILED",
   "PORTAL_COMPLETE",
   "HANDOFF",
+  "BUNDLE_COMPLETED",
 ];
 
 const VALID_CHANNELS: Channel[] = [
@@ -37,8 +38,8 @@ const VALID_CHANNELS: Channel[] = [
 const VALID_PRIORITIES: Priority[] = ["low", "normal", "high", "urgent"];
 
 describe("TRIGGER_MAP", () => {
-  it("covers all 14 business events", () => {
-    expect(Object.keys(TRIGGER_MAP)).toHaveLength(14);
+  it("covers all 15 business events", () => {
+    expect(Object.keys(TRIGGER_MAP)).toHaveLength(15);
     for (const event of ALL_EVENTS) {
       expect(TRIGGER_MAP).toHaveProperty(event);
     }

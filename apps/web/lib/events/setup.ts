@@ -1,7 +1,8 @@
 /**
  * Event Bus Setup (WI-054)
  *
- * Registers all 14 business event handlers on the singleton eventBus.
+ * Registers 14 notification-eligible business event handlers on the singleton
+ * eventBus, plus a 15th PROJECT_COMPLETED → BUNDLE_COMPLETED bridge (WI-325F).
  * Each handler resolves recipients from the event payload and delegates
  * to the notification dispatcher.
  *
@@ -10,6 +11,7 @@
 
 import { eventBus } from "./event-bus";
 import { dispatch } from "@axle/notification";
+import { prisma } from "@axle/db";
 
 let initialized = false;
 
@@ -191,6 +193,51 @@ export function setupEventHandlers(): void {
       metadata: {
         projectId: payload.projectId,
         fromUserId: payload.fromUserId,
+      },
+    });
+  });
+
+  // ── PROJECT_COMPLETED (WI-325F) ───────────────────────────────────────────
+  // Subscriber added as the follow-up to WI-325 (cert auto-issue) + WI-324
+  // (BUNDLE auto-completion). The event was emitted but no notification path
+  // existed — BUNDLE parents silently finished with no heads-up to the
+  // consultant.
+  //
+  // We currently only dispatch for BUNDLE completions because:
+  //   - NotificationType enum has BUNDLE_COMPLETE (exists for this exact
+  //     milestone) but no PROJECT_COMPLETED counterpart. Adding an enum
+  //     value would require a migration.
+  //   - A per-project completion notification would fire on every leaf
+  //     transition to COMPLETED and quickly become noise for high-volume
+  //     consultancies. The BUNDLE milestone is the valuable signal.
+  // Non-BUNDLE completions still flow into analytics via the existing
+  // event-bus-subscriber.ts; they just don't page the assignee.
+  eventBus.on("PROJECT_COMPLETED", async (payload) => {
+    if (payload.projectType !== "BUNDLE") return;
+
+    // Resolve the assignee from the project row — payload does not include it
+    // to avoid expanding the event schema for every consumer.
+    const project = await prisma.project.findUnique({
+      where: { id: payload.projectId },
+      select: {
+        title: true,
+        assignedToId: true,
+        client: { select: { name: true } },
+      },
+    });
+    if (!project?.assignedToId) return;
+
+    await dispatch({
+      event: "BUNDLE_COMPLETED",
+      title: "BUNDLE 전체 완료",
+      body: `${project.client.name} — "${project.title}"의 모든 하위 프로젝트가 완료되었습니다.`,
+      recipientUserIds: [project.assignedToId],
+      link: `/projects/${payload.projectId}`,
+      metadata: {
+        projectId: payload.projectId,
+        clientId: payload.clientId,
+        certificateCreated: payload.certificateCreated,
+        certificateId: payload.certificateId,
       },
     });
   });

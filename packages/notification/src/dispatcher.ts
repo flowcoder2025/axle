@@ -270,6 +270,7 @@ function eventToNotificationType(event: BusinessEvent): NotificationType {
     AI_JOB_FAILED: "AI_JOB_FAILED",
     PORTAL_COMPLETE: "PORTAL_COMPLETE",
     HANDOFF: "HANDOFF",
+    BUNDLE_COMPLETED: "BUNDLE_COMPLETE",
   };
   return MAP[event];
 }
