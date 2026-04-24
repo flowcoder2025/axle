@@ -110,6 +110,102 @@ describe("PATCH /api/clients/[clientId]/profile — WI-327-1-fix preservation", 
     expect(data.businessInfo).toBeUndefined();
   });
 
+  // ── WI-330-fix: venture slice (WI-302/303) preservation ───────────────────
+  it("keeps venture slice when PATCH ships only profile fields (WI-330-fix)", async () => {
+    const venture = {
+      sections: { background: "사용자 입력 본문" },
+      checks: { problemImportance: ["많은 사람들이 겪고 있는 문제임"] },
+      ip: { trademarks: 5 },
+    };
+    mockPrismaClient.findFirst.mockResolvedValue({
+      id: "c1",
+      masterProfile: { businessInfo: { name: "stale" }, venture },
+      profileBlocks: null,
+    });
+    mockPrismaClient.update.mockResolvedValue({
+      id: "c1",
+      masterProfile: {},
+      profileBlocks: null,
+    });
+
+    const { PATCH } = await import(
+      "../../app/api/clients/[clientId]/profile/route"
+    );
+    await PATCH(
+      makeRequest({
+        masterProfile: { businessInfo: { name: "fresh" }, summary: "new" },
+      }) as never,
+      { params: Promise.resolve({ clientId: "c1" }) },
+    );
+
+    const [callArg] = mockPrismaClient.update.mock.calls;
+    const data = callArg[0].data.masterProfile as Record<string, unknown>;
+    expect(data.businessInfo).toEqual({ name: "fresh" });
+    expect(data.venture).toEqual(venture);
+  });
+
+  it("keeps both organizationChart and venture slices simultaneously (WI-330-fix)", async () => {
+    const orgChart = {
+      companyName: "JET",
+      ceo: { name: "김희수" },
+      departments: [],
+    };
+    const venture = { sections: { background: "x" } };
+    mockPrismaClient.findFirst.mockResolvedValue({
+      id: "c1",
+      masterProfile: {
+        businessInfo: { name: "stale" },
+        organizationChart: orgChart,
+        venture,
+      },
+      profileBlocks: null,
+    });
+    mockPrismaClient.update.mockResolvedValue({
+      id: "c1",
+      masterProfile: {},
+      profileBlocks: null,
+    });
+
+    const { PATCH } = await import(
+      "../../app/api/clients/[clientId]/profile/route"
+    );
+    await PATCH(
+      makeRequest({ masterProfile: { businessInfo: { name: "fresh" } } }) as never,
+      { params: Promise.resolve({ clientId: "c1" }) },
+    );
+
+    const [callArg] = mockPrismaClient.update.mock.calls;
+    const data = callArg[0].data.masterProfile as Record<string, unknown>;
+    expect(data.organizationChart).toEqual(orgChart);
+    expect(data.venture).toEqual(venture);
+  });
+
+  it("nulling masterProfile keeps venture slice when present (WI-330-fix)", async () => {
+    const venture = { sections: { background: "x" }, checks: {} };
+    mockPrismaClient.findFirst.mockResolvedValue({
+      id: "c1",
+      masterProfile: { venture, businessInfo: { name: "x" } },
+      profileBlocks: null,
+    });
+    mockPrismaClient.update.mockResolvedValue({
+      id: "c1",
+      masterProfile: {},
+      profileBlocks: null,
+    });
+
+    const { PATCH } = await import(
+      "../../app/api/clients/[clientId]/profile/route"
+    );
+    await PATCH(makeRequest({ masterProfile: null }) as never, {
+      params: Promise.resolve({ clientId: "c1" }),
+    });
+
+    const [callArg] = mockPrismaClient.update.mock.calls;
+    const data = callArg[0].data.masterProfile as Record<string, unknown>;
+    expect(data.venture).toEqual(venture);
+    expect(data.businessInfo).toBeUndefined();
+  });
+
   it("writes Prisma.DbNull when no preserved keys and masterProfile null", async () => {
     mockPrismaClient.findFirst.mockResolvedValue({
       id: "c1",

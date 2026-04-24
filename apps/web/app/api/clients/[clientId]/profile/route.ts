@@ -57,8 +57,13 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
  *
  * Currently:
  * - `organizationChart` — written by the Org Chart tab (WI-327)
+ * - `venture` — read by the Venture Tech Assessment auto-fill (WI-302/303)
+ *   to source sections / checks / IP overrides for the DOCX generator. The
+ *   slice is owned by future assessment-edit UI but already populated by
+ *   any consultant who saved overrides; without preservation, a single
+ *   profile save wipes the entire venture working state.
  */
-const PRESERVED_KEYS = ["organizationChart"] as const;
+const PRESERVED_KEYS = ["organizationChart", "venture"] as const;
 
 /**
  * PATCH /api/clients/[clientId]/profile
