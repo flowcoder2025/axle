@@ -78,11 +78,22 @@ describe("SUPPORTED_PROJECT_TYPES", () => {
 });
 
 describe("WIZARD_SECTIONS", () => {
-  it("marks the 5 REQUIRED_SECTIONS as required and includes 3 optional", () => {
+  it("mirrors the 9 venture sections from @axle/docgen", () => {
+    // The wizard list is derived from VENTURE_BUSINESS_PLAN_SECTIONS, so the
+    // server-side generator and UI cannot drift. Expect all 9 to be required.
+    expect(WIZARD_SECTIONS).toHaveLength(9);
     const required = WIZARD_SECTIONS.filter((s) => s.required);
-    const optional = WIZARD_SECTIONS.filter((s) => !s.required);
-    expect(required).toHaveLength(5);
-    expect(optional.length).toBeGreaterThanOrEqual(3);
+    expect(required).toHaveLength(9);
+  });
+
+  it("exposes instruction, tips, and char limits for AI prompt injection", () => {
+    for (const section of WIZARD_SECTIONS) {
+      expect(section.instruction.length).toBeGreaterThan(0);
+      expect(Array.isArray(section.tips)).toBe(true);
+      expect(section.tips.length).toBeGreaterThan(0);
+      expect(section.minChars).toBeGreaterThan(0);
+      expect(section.maxChars).toBeGreaterThanOrEqual(section.minChars);
+    }
   });
 
   it("has unique ids", () => {

@@ -1,8 +1,13 @@
 import { semanticSearch, completeWithFallback } from "@axle/ai";
 import type { SearchResult } from "@axle/ai";
 import { prisma } from "@axle/db";
-import type { RagDraftInput, RagDraftOutput, DocumentSection } from "../types.js";
-import { REQUIRED_SECTIONS } from "../types.js";
+import type {
+  RagDraftInput,
+  RagDraftOutput,
+  DocumentSection,
+  SectionConfig,
+} from "../types.js";
+import { VENTURE_BUSINESS_PLAN_SECTIONS } from "../types.js";
 
 /**
  * RAG Draft Engine (WI-063 / WI-201)
@@ -98,8 +103,8 @@ const SYSTEM_PROMPT = [
   "출력은 해당 섹션 본문만. 섹션 제목·마크다운 헤더·설명 문구는 포함하지 말 것.",
 ].join("\n");
 
-function buildSectionPrompt(
-  sectionTitle: string,
+export function buildSectionPrompt(
+  config: SectionConfig,
   input: RagDraftInput,
   clientDocs: SearchResult[],
   pastPlans: SearchResult[]
@@ -116,6 +121,10 @@ function buildSectionPrompt(
         .join("\n\n")
     : "(해당 없음)";
 
+  const tipsBlock = config.tips.length
+    ? config.tips.map((t, i) => `  ${i + 1}. ${t}`).join("\n")
+    : "  (별도 지침 없음)";
+
   return [
     `프로그램 ID: ${input.programId}`,
     `프로젝트 ID: ${input.projectId}`,
@@ -127,18 +136,28 @@ function buildSectionPrompt(
     "── 과거 유사 사업계획서 컨텍스트 ──",
     pastPlanContext,
     "",
-    `위 컨텍스트를 바탕으로 "${sectionTitle}" 섹션 본문만 작성하십시오.`,
-    "분량은 3~6문단. 구체적 수치·근거가 컨텍스트에 있으면 인용하여 활용.",
+    `── 작성 지침: "${config.title}" ──`,
+    config.instruction,
+    "",
+    "── 작성 요령 ──",
+    tipsBlock,
+    "",
+    `── 분량 제약 ──`,
+    `${config.minChars}자 이상 ${config.maxChars}자 이내로 작성. 한국어 공식 문어체.`,
+    "",
+    `위 컨텍스트와 지침을 바탕으로 "${config.title}" 섹션 본문만 작성하십시오.`,
+    "섹션 제목·마크다운 헤더·설명 문구·글자수 안내는 출력에 포함하지 말 것.",
+    "구체적 수치·근거가 컨텍스트에 있으면 인용하여 활용하고, 없는 내용은 지어내지 말 것.",
   ].join("\n");
 }
 
 async function generateSection(
-  title: string,
+  config: SectionConfig,
   input: RagDraftInput,
   clientDocs: SearchResult[],
   pastPlans: SearchResult[]
 ): Promise<{ section: DocumentSection; usage: { inputTokens: number; outputTokens: number } }> {
-  const prompt = buildSectionPrompt(title, input, clientDocs, pastPlans);
+  const prompt = buildSectionPrompt(config, input, clientDocs, pastPlans);
 
   const result = await completeWithFallback("BUSINESS_PLAN", {
     system: SYSTEM_PROMPT,
@@ -147,7 +166,7 @@ async function generateSection(
   });
 
   return {
-    section: { title, content: result.text.trim() },
+    section: { title: config.title, content: result.text.trim() },
     usage: result.usage,
   };
 }
@@ -177,12 +196,12 @@ export async function generateRagDraft(
   const sections: DocumentSection[] = [];
   let totalTokens = 0;
 
-  for (const title of REQUIRED_SECTIONS) {
+  for (const config of VENTURE_BUSINESS_PLAN_SECTIONS) {
     const { section, usage } = await generateSection(
-      title,
+      config,
       input,
       clientDocs,
-      pastPlans
+      pastPlans,
     );
     sections.push(section);
     totalTokens += usage.inputTokens + usage.outputTokens;

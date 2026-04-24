@@ -1,37 +1,38 @@
 import { describe, it, expect } from "vitest";
 import { verify } from "../../src/engines/verification.js";
-import { REQUIRED_SECTIONS } from "../../src/types.js";
+import {
+  REQUIRED_SECTIONS,
+  VENTURE_BUSINESS_PLAN_SECTIONS,
+} from "../../src/types.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+/** A long paragraph used to satisfy per-section minimum length. */
+const LONG_PARAGRAPH =
+  "본 사업은 AI 기반 중소기업 지원 플랫폼을 구축하여 국내 중소기업의 경쟁력 강화를 " +
+  "목표로 합니다. 최신 자연어 처리 기술과 RAG 아키텍처를 활용하여 사업계획서 자동 " +
+  "작성 및 검토 서비스를 제공하며, 정부 지원 사업 선정률을 2배 이상 끌어올리는 것을 " +
+  "핵심 KPI로 설정했습니다. 3년 차에는 누적 2,000개 고객사를 확보하고 연 매출 50억 " +
+  "원을 달성하겠습니다. 공공 데이터 포털의 벤처 투자 성과 지표, KISTI 산업분류 데이터, " +
+  "한국경제산업연구원의 업종별 성장률 지표를 활용해 객관 근거를 확보했습니다. ";
+
 /**
- * Builds a complete, well-formed business plan document string
- * that should pass all verification checks.
+ * Builds a complete, well-formed business plan document string that should
+ * pass all verification checks. Every section is filled with enough Korean
+ * text to exceed `config.minChars * MIN_SECTION_SCALE`.
  */
 function buildCompletePlan(overrides?: Record<string, string>): string {
-  const sections: Record<string, string> = {
-    "사업 개요": "본 사업은 AI 기반 중소기업 지원 플랫폼을 구축하여 국내 중소기업의 경쟁력 강화를 목표로 합니다. " +
-      "최신 자연어 처리 기술을 활용하여 사업계획서 자동 작성 및 검토 서비스를 제공합니다. " +
-      "이를 통해 중소기업의 정부 지원 사업 선정률을 높이고 행정 부담을 줄일 수 있습니다.",
-    "기술 설명": "RAG(Retrieval-Augmented Generation) 아키텍처를 기반으로 한 AI 엔진을 구현합니다. " +
-      "벡터 데이터베이스에 성공 사례를 저장하고 유사 사례를 검색하여 맞춤형 사업계획서를 생성합니다. " +
-      "Claude API를 활용하여 고품질의 한국어 문서를 자동으로 생성하는 파이프라인을 구축합니다.",
-    "시장 분석": "국내 중소기업 지원 시장 규모는 연간 5조원 이상으로 추정됩니다. " +
-      "정부 지원 사업 신청 건수는 매년 증가하고 있으며 성공률은 평균 15% 수준입니다. " +
-      "AI 기반 솔루션 도입을 통해 성공률을 30% 이상으로 향상시킬 수 있을 것으로 기대합니다.",
-    "실행 계획": "1단계(1-3개월): 핵심 AI 엔진 개발 및 초기 데이터 수집. " +
-      "2단계(4-6개월): 베타 서비스 출시 및 파일럿 고객 모집. " +
-      "3단계(7-12개월): 상용 서비스 전환 및 마케팅 강화. 총 개발 인력 5명, 예산 3억원.",
-    "기대 효과": "1차 연도: 100개 기업 지원, 매출 5억원 달성 목표. " +
-      "2차 연도: 500개 기업 지원, 매출 20억원 달성 목표. " +
-      "사회적 효과: 중소기업 정부 지원 사업 선정률 2배 향상, 행정 비용 50% 절감.",
-    ...overrides,
-  };
+  const base = Object.fromEntries(
+    VENTURE_BUSINESS_PLAN_SECTIONS.map((s) => [s.title, LONG_PARAGRAPH.repeat(3)]),
+  );
+  const sections: Record<string, string> = { ...base, ...overrides };
 
   return Object.entries(sections)
     .map(([title, content]) => `# ${title}\n\n${content}`)
     .join("\n\n");
 }
+
+const FIRST_SECTION = VENTURE_BUSINESS_PLAN_SECTIONS[0].title;
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
@@ -61,17 +62,16 @@ describe("verify — complete document", () => {
 });
 
 describe("verify — missing sections", () => {
-  it("detects missing 사업 개요 as critical", async () => {
-    const content = buildCompletePlan({ "사업 개요": "" });
-    // Remove the section entirely
+  it(`detects missing "${FIRST_SECTION}" as critical`, async () => {
+    const content = buildCompletePlan();
     const withoutSection = content
       .split("\n\n")
-      .filter((block) => !block.startsWith("# 사업 개요"))
+      .filter((block) => !block.startsWith(`# ${FIRST_SECTION}`))
       .join("\n\n");
 
     const result = await verify({ documentContent: withoutSection });
     const critical = result.missingItems.filter(
-      (m) => m.severity === "critical" && m.section === "사업 개요"
+      (m) => m.severity === "critical" && m.section === FIRST_SECTION,
     );
     expect(critical.length).toBeGreaterThan(0);
   });

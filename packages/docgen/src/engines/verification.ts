@@ -4,7 +4,7 @@ import type {
   MissingItem,
   FormatIssue,
 } from "../types.js";
-import { REQUIRED_SECTIONS } from "../types.js";
+import { VENTURE_BUSINESS_PLAN_SECTIONS } from "../types.js";
 
 /**
  * Verification Engine (WI-065)
@@ -18,11 +18,17 @@ import { REQUIRED_SECTIONS } from "../types.js";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-/** Minimum character count for a section to be considered non-trivial */
+/**
+ * Fallback minimum character count when a heading isn't covered by
+ * `VENTURE_BUSINESS_PLAN_SECTIONS` (e.g. program-specific add-ons).
+ */
 const MIN_SECTION_LENGTH = 100;
 
 /** Minimum total document character count */
 const MIN_DOCUMENT_LENGTH = 500;
+
+/** Applies a soft floor so we don't flag every section as too short. */
+const MIN_SECTION_SCALE = 0.6;
 
 /**
  * Program-specific additional requirements.
@@ -156,25 +162,34 @@ export async function verify(
   const headingSet = new Set(headings.map((h) => h.trim()));
 
   // 1. Check required sections exist
-  for (const section of REQUIRED_SECTIONS) {
+  for (const config of VENTURE_BUSINESS_PLAN_SECTIONS) {
+    const section = config.title;
     const found = [...headingSet].some(
-      (h) => h === section || h.includes(section)
+      (h) => h === section || h.includes(section),
     );
     if (!found) {
-      missingItems.push({
-        section,
-        description: `필수 섹션 "${section}"이(가) 없습니다.`,
-        severity: "critical",
-      });
+      if (config.required) {
+        missingItems.push({
+          section,
+          description: `필수 섹션 "${section}"이(가) 없습니다.`,
+          severity: "critical",
+        });
+      }
       continue;
     }
 
-    // 2. Check minimum content length per section
+    // 2. Check minimum content length per section (per-section floor derived
+    // from the agency guideline, scaled down to leave room for concise
+    // writing without auto-flagging).
+    const perSectionMin = Math.max(
+      MIN_SECTION_LENGTH,
+      Math.floor(config.minChars * MIN_SECTION_SCALE),
+    );
     const length = getSectionContentLength(documentContent, section);
-    if (length < MIN_SECTION_LENGTH) {
+    if (length < perSectionMin) {
       missingItems.push({
         section,
-        description: `"${section}" 섹션의 내용이 너무 짧습니다 (${length}자, 최소 ${MIN_SECTION_LENGTH}자 필요).`,
+        description: `"${section}" 섹션의 내용이 너무 짧습니다 (${length}자, 최소 ${perSectionMin}자 필요).`,
         severity: "minor",
       });
     }
