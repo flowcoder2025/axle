@@ -21,21 +21,16 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
+import {
+  seedChecklistTemplates,
+  type ChecklistSeedResult,
+  type ChecklistTemplateDef,
+  type ChecklistTemplateItemDef,
+} from "./_shared.js";
 
-export interface ResearchInstituteTemplateItem {
-  name: string;
-  description: string;
-  isRequired: boolean;
-  itemType: "DOCUMENT" | "CERTIFICATE";
-  certificateType?: string;
-}
-
-export interface ResearchInstituteTemplateDef {
-  name: string;
-  description: string;
-  isRequired: boolean;
-  items: ResearchInstituteTemplateItem[];
-}
+// Back-compat re-exports — existing tests import these names.
+export type ResearchInstituteTemplateItem = ChecklistTemplateItemDef;
+export type ResearchInstituteTemplateDef = ChecklistTemplateDef;
 
 /**
  * Canonical list — 12 items across 3 phases. Order mirrors KOITA application
@@ -154,81 +149,16 @@ export const RESEARCH_INSTITUTE_CHECKLIST_TEMPLATES: readonly ResearchInstituteT
 ] as const;
 
 /**
- * Idempotent seeder — platform-wide (orgId=null). Mirrors patent/venture:
- *   - Existing template by (orgId=null, projectType=RESEARCH_INSTITUTE, name) is reused
- *   - Items are matched by template + name; missing ones are created
+ * Idempotent seeder — platform-wide (orgId=null). Delegates to the shared
+ * runner; RESEARCH_INSTITUTE-specific behaviour lives entirely in the data
+ * array above.
  */
 export async function seedResearchInstituteChecklistTemplates(
   prisma: PrismaClient,
-): Promise<{ templatesUpserted: number; itemsUpserted: number }> {
-  let templatesUpserted = 0;
-  let itemsUpserted = 0;
-
-  for (let i = 0; i < RESEARCH_INSTITUTE_CHECKLIST_TEMPLATES.length; i += 1) {
-    const def = RESEARCH_INSTITUTE_CHECKLIST_TEMPLATES[i];
-
-    const existing = await prisma.checklistTemplate.findFirst({
-      where: { orgId: null, projectType: "RESEARCH_INSTITUTE", name: def.name },
-      select: { id: true },
-    });
-
-    const template = existing
-      ? await prisma.checklistTemplate.update({
-          where: { id: existing.id },
-          data: {
-            description: def.description,
-            isRequired: def.isRequired,
-            sortOrder: i,
-          },
-          select: { id: true },
-        })
-      : await prisma.checklistTemplate.create({
-          data: {
-            orgId: null,
-            projectType: "RESEARCH_INSTITUTE",
-            name: def.name,
-            description: def.description,
-            isRequired: def.isRequired,
-            sortOrder: i,
-          },
-          select: { id: true },
-        });
-
-    if (!existing) templatesUpserted += 1;
-
-    for (let j = 0; j < def.items.length; j += 1) {
-      const itemDef = def.items[j];
-      const existingItem = await prisma.checklistTemplateItem.findFirst({
-        where: { templateId: template.id, name: itemDef.name },
-        select: { id: true },
-      });
-      if (existingItem) {
-        await prisma.checklistTemplateItem.update({
-          where: { id: existingItem.id },
-          data: {
-            description: itemDef.description,
-            isRequired: itemDef.isRequired,
-            itemType: itemDef.itemType,
-            certificateType: itemDef.certificateType ?? null,
-            sortOrder: j,
-          },
-        });
-      } else {
-        await prisma.checklistTemplateItem.create({
-          data: {
-            templateId: template.id,
-            name: itemDef.name,
-            description: itemDef.description,
-            isRequired: itemDef.isRequired,
-            itemType: itemDef.itemType,
-            certificateType: itemDef.certificateType ?? null,
-            sortOrder: j,
-          },
-        });
-        itemsUpserted += 1;
-      }
-    }
-  }
-
-  return { templatesUpserted, itemsUpserted };
+): Promise<ChecklistSeedResult> {
+  return seedChecklistTemplates(
+    prisma,
+    "RESEARCH_INSTITUTE",
+    RESEARCH_INSTITUTE_CHECKLIST_TEMPLATES,
+  );
 }
