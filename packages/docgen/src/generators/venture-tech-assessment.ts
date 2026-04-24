@@ -252,13 +252,18 @@ function buildCover(input: VentureTechAssessmentInput): Array<Paragraph | Table>
 
 // ── Check-box list rendering ─────────────────────────────────────────────────
 
+// Unicode ballot box characters — the 2024 중기부 official form uses these
+// glyphs. Korean fonts (맑은 고딕 / NanumGothic) render them correctly.
+const CHECKED_MARK = "☑"; // ☑
+const UNCHECKED_MARK = "☐"; // ☐
+
 function renderChecklist(
   options: readonly string[],
   selected: string[] | undefined,
 ): Paragraph[] {
   const set = new Set(selected ?? []);
   return options.map((option) => {
-    const mark = set.has(option) ? "[v]" : "[ ]";
+    const mark = set.has(option) ? CHECKED_MARK : UNCHECKED_MARK;
     return new Paragraph({
       children: [run(`${mark} ${option}`, { size: 22 })],
       spacing: { before: 40, after: 40, line: 320 },
@@ -548,9 +553,13 @@ export async function generateVentureTechAssessmentDocx(
   });
 
   const docxBuffer = (await Packer.toBuffer(doc)) as Buffer;
-  const safe =
-    input.companyInfo.companyName.replace(/[\\/:*?"<>|]/g, "_").trim() ||
-    "venture";
+  // Strip filesystem-reserved chars, then fall back to a generic name when
+  // the result is empty *or* contains nothing but separators (e.g. the input
+  // was made entirely of reserved chars and survived as `____`).
+  const sanitized = input.companyInfo.companyName
+    .replace(/[\\/:*?"<>|]/g, "_")
+    .trim();
+  const safe = /[^_\s]/.test(sanitized) ? sanitized : "venture";
   return {
     docxBuffer,
     fileName: `${safe}-기술성평가서.docx`,

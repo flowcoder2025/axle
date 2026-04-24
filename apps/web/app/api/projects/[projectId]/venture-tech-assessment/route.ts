@@ -42,6 +42,25 @@ async function resolveClientId(
   return { clientId: project.clientId };
 }
 
+/** Recognise the explicit precision-loss error from `decimalToNumber`. */
+function isPrecisionLossError(err: unknown): err is Error {
+  return err instanceof Error && err.message.includes("safe integer range");
+}
+
+function precisionResponse(err: Error) {
+  return NextResponse.json(
+    {
+      error: {
+        code: "NUMERIC_OVERFLOW",
+        message:
+          "재무 항목 중 일부가 안전 변환 범위를 초과합니다. 자본금/매출 입력값을 확인해주세요.",
+        detail: err.message,
+      },
+    },
+    { status: 422 },
+  );
+}
+
 export async function GET(_req: NextRequest, { params }: RouteContext) {
   const user = await getCurrentUser();
   if (!user?.orgId) return unauthorizedResponse();
@@ -54,6 +73,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
     const input = await buildVentureTechAssessmentInput(resolved.clientId);
     return NextResponse.json({ input });
   } catch (err) {
+    if (isPrecisionLossError(err)) return precisionResponse(err);
     return handleInternalError(err);
   }
 }
@@ -105,6 +125,7 @@ export async function POST(_req: NextRequest, { params }: RouteContext) {
       },
     });
   } catch (err) {
+    if (isPrecisionLossError(err)) return precisionResponse(err);
     return handleInternalError(err);
   }
 }

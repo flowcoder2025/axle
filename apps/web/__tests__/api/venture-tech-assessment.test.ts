@@ -160,6 +160,18 @@ describe("POST /api/projects/[projectId]/venture-tech-assessment", () => {
     expect(body.error.code).toBe("MISSING_CEO_NAME");
   });
 
+  it("maps capitalAmount precision-loss into a 422 NUMERIC_OVERFLOW (WI-332-fix H2)", async () => {
+    mockGetCurrentUser.mockResolvedValueOnce(orgUser);
+    mockProjectFindFirst.mockResolvedValueOnce(makeProject());
+    mockClientFindUnique.mockResolvedValueOnce(
+      makeClient({ capitalAmount: "9007199254740993" }),
+    );
+    const res = await POST(new Request("http://test", { method: "POST" }) as never, ctx());
+    expect(res.status).toBe(422);
+    const body = await res.json();
+    expect(body.error.code).toBe("NUMERIC_OVERFLOW");
+  });
+
   it("returns a DOCX buffer with proper download headers when generation succeeds", async () => {
     mockGetCurrentUser.mockResolvedValueOnce(orgUser);
     mockProjectFindFirst.mockResolvedValueOnce(makeProject());

@@ -49,11 +49,39 @@ export interface MasterProfileVentureSlice {
   };
 }
 
+/**
+ * Convert a Prisma Decimal / string / number column into a plain JS Number,
+ * asserting that no precision is lost in the process.
+ *
+ * We surface an explicit error (rather than returning a silently-truncated
+ * value) when the input exceeds JS safe-integer range. Korean 자본금 fields
+ * for large holding companies routinely exceed `Number.MAX_SAFE_INTEGER`
+ * (2^53 - 1 ≈ 9.007 × 10^15) — silently rounding to the nearest representable
+ * double would produce a wrong number on the official form.
+ *
+ * Note: `Number(null) === 0`, so we must guard `value == null` first; the
+ * `Number.isFinite` check then handles only non-finite results (NaN, ±∞).
+ */
 function decimalToNumber(value: unknown): number | undefined {
   if (value == null) return undefined;
-  // Prisma Decimal / string / number — Number() handles all three.
-  const n = Number(value);
-  return Number.isFinite(n) ? n : undefined;
+
+  // Prisma Decimal exposes `.toString()`; plain numbers/strings work too.
+  const str =
+    typeof value === "object" && value !== null && "toString" in value
+      ? (value as { toString(): string }).toString()
+      : String(value);
+
+  const n = Number(str);
+  if (!Number.isFinite(n)) return undefined;
+
+  if (Math.abs(n) > Number.MAX_SAFE_INTEGER) {
+    throw new Error(
+      `Numeric value exceeds JS safe integer range (${str}). ` +
+        `Refusing to convert to Number to avoid silent precision loss.`,
+    );
+  }
+
+  return n;
 }
 
 function isoDate(d: Date | null | undefined): string | undefined {
