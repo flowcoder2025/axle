@@ -534,3 +534,4 @@
 ### L2: 인증서 관리 > L3: 기존 Certificate 모듈 통합
 - [ ] WI-325-feat 인증 완료 시 Certificate 레코드 자동 생성 (VENTURE/RESEARCH_INSTITUTE/PATENT/INNOBIZ 등) | L1:Phase18 > L2:CertReg > L3:AutoCreate
 - [ ] WI-326-feat 인증 만료 추적 + 갱신 프로젝트 자동 제안 (90일 전 알림) | L1:Phase18 > L2:CertReg > L3:Renewal
+- [x] WI-327-feat 조직도 자동 생성기 (Mermaid → SVG/PNG, Client 상세 탭) | L1:Phase18 > L2:공통 > L3:OrgChart
