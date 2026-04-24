@@ -91,6 +91,17 @@ export type EventMap = {
     certificateCreated: boolean;
     certificateId: string | null;
   };
+  CERTIFICATE_RENEWING: {
+    certificateId: string;
+    certificateType: string;
+    clientId: string;
+    expiresAt: Date;
+    daysUntilExpiry: number;
+    /** Assignee who owns the renewal — usually Client.assignedToId. */
+    assigneeId: string;
+    /** Populated when a new INTAKE project was created for the renewal. */
+    renewalProjectId: string | null;
+  };
 };
 
 export type BusinessEventKey = keyof EventMap;
