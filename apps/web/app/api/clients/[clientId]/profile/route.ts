@@ -51,11 +51,23 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 }
 
 /**
+ * Fields owned by features outside of the master-profile editor. These MUST
+ * be preserved when PATCH writes a new masterProfile, otherwise saving the
+ * profile form silently destroys data owned by those features.
+ *
+ * Currently:
+ * - `organizationChart` — written by the Org Chart tab (WI-327)
+ */
+const PRESERVED_KEYS = ["organizationChart"] as const;
+
+/**
  * PATCH /api/clients/[clientId]/profile
  *
- * Persists a manually-edited master profile JSON document. The full blob is
- * replaced — the UI is expected to send the entire merged structure after
- * form edits.
+ * Persists a manually-edited master profile JSON document. Fields owned by
+ * other features (see PRESERVED_KEYS) are merged back on top of the incoming
+ * payload so the editor cannot unintentionally wipe them.
+ * Passing `masterProfile: null` clears every key except the preserved ones;
+ * if no preserved keys exist, the column is nulled.
  */
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
   const user = await getCurrentUser();
@@ -84,15 +96,27 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     }
 
     const { masterProfile } = parsed.data;
+    const existing = (client.masterProfile as Record<string, unknown> | null) ?? {};
+    const preserved: Record<string, unknown> = {};
+    for (const key of PRESERVED_KEYS) {
+      if (existing[key] !== undefined) preserved[key] = existing[key];
+    }
+
+    let nextValue: Prisma.InputJsonValue | typeof Prisma.DbNull;
+    if (masterProfile != null) {
+      nextValue = {
+        ...masterProfile,
+        ...preserved,
+      } as Prisma.InputJsonValue;
+    } else if (Object.keys(preserved).length > 0) {
+      nextValue = preserved as Prisma.InputJsonValue;
+    } else {
+      nextValue = Prisma.DbNull;
+    }
 
     const updated = await prisma.client.update({
       where: { id: clientId },
-      data: {
-        masterProfile:
-          masterProfile != null
-            ? (masterProfile as Prisma.InputJsonValue)
-            : Prisma.DbNull,
-      },
+      data: { masterProfile: nextValue },
       select: { id: true, masterProfile: true, profileBlocks: true },
     });
 

@@ -13,7 +13,10 @@ export const orgChartDepartmentSchema = z.object({
 export const orgChartStructureSchema = z.object({
   companyName: z.string().min(1, "회사명은 필수입니다").max(100),
   ceo: orgChartMemberSchema,
-  departments: z.array(orgChartDepartmentSchema).max(20),
+  departments: z
+    .array(orgChartDepartmentSchema)
+    .min(1, "부서를 최소 1개 이상 추가해야 합니다")
+    .max(20),
 });
 
 export type OrgChartStructureInput = z.infer<typeof orgChartStructureSchema>;

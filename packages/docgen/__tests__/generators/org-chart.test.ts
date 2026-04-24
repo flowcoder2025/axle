@@ -81,16 +81,57 @@ describe("generateOrgChartMermaid", () => {
     expect(out).not.toContain("이순신 undefined");
   });
 
-  it("escapes double quotes and backticks in labels", () => {
+  it("encodes HTML entities in labels to prevent SVG XSS", () => {
     const out = generateOrgChartMermaid({
-      companyName: 'Acme "Tech"',
-      ceo: { name: "a`b", position: "CEO" },
+      companyName: "<script>alert(1)</script>",
+      ceo: {
+        name: '<img src=x onerror="alert(2)">',
+        position: "CEO & CTO",
+      },
+      departments: [
+        {
+          name: "<b onclick=evil()>hack</b>",
+          members: [{ name: "a'b\"c", position: "pos" }],
+        },
+      ],
+    });
+    // Extract only the label content inside `NODE["..."]` — that's where
+    // user input lives. Generator-owned tags (<b>, <br/>, <i>) are stripped
+    // so any remaining `<` or `>` would mean user input slipped through
+    // unescaped.
+    const labels = Array.from(out.matchAll(/\["([^"]*)"\]/g)).map((m) => m[1]);
+    expect(labels.length).toBeGreaterThan(0);
+    for (const label of labels) {
+      const stripped = label
+        .replace(/<\/?b>/g, "")
+        .replace(/<br\/>/g, "")
+        .replace(/<\/?i>/g, "");
+      expect(stripped).not.toContain("<");
+      expect(stripped).not.toContain(">");
+    }
+    // HTML-encoded forms must be present.
+    expect(out).toContain("&lt;script&gt;");
+    expect(out).toContain("&amp;");
+    expect(out).toContain("&quot;");
+    expect(out).toContain("&#39;");
+  });
+
+  it("strips Mermaid-special punctuation that breaks the parser", () => {
+    const out = generateOrgChartMermaid({
+      companyName: "Acme [HQ] (North) {Main}|Sub",
+      ceo: { name: "back`tick", position: "C.E.O." },
       departments: [],
     });
-    expect(out).not.toContain('"Tech"');
-    expect(out).not.toContain("a`b");
-    expect(out).toContain("Acme Tech");
-    expect(out).toContain("ab");
+    // Brackets / braces / pipes / backticks would break `flowchart TD` parsing
+    // when they appear INSIDE user-supplied labels.
+    expect(out).not.toContain("[HQ]");
+    expect(out).not.toContain("(North)");
+    expect(out).not.toContain("{Main}");
+    expect(out).not.toContain("|Sub");
+    expect(out).not.toContain("back`tick");
+    // Meaningful chars survive.
+    expect(out).toContain("Acme HQ North MainSub");
+    expect(out).toContain("backtick");
   });
 
   it("throws when companyName is missing", () => {

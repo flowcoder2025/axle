@@ -207,11 +207,17 @@ export async function generateMasterProfile(clientId: string): Promise<void> {
   // 4. Build profileBlocks
   const profileBlocks = buildProfileBlocks(masterProfile);
 
-  // 5. Persist to DB
+  // 5. Persist to DB — merge with existing to preserve sibling fields
+  // (e.g. `organizationChart` saved by the Org Chart tab). The masterProfile
+  // JSON column is shared across multiple features; full overwrite would
+  // destroy data owned by other editors.
+  const existing = (client.masterProfile as Record<string, unknown> | null) ?? {};
+  const merged = { ...existing, ...masterProfile };
+
   await prisma.client.update({
     where: { id: clientId },
     data: {
-      masterProfile: masterProfile as unknown as Prisma.InputJsonValue,
+      masterProfile: merged as unknown as Prisma.InputJsonValue,
       profileBlocks: profileBlocks as unknown as Prisma.InputJsonValue,
     },
   });

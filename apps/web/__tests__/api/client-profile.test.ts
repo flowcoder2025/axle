@@ -152,6 +152,39 @@ describe("generateMasterProfile", () => {
     expect(types).toContain("financial");
   });
 
+  it("preserves organizationChart when regenerating (WI-327-1-fix)", async () => {
+    // Regression: WI-327 started storing org-chart data in the same JSON
+    // column as masterProfile. Regenerating the profile must not destroy it.
+    const preserved = {
+      companyName: "주식회사 제이이티",
+      ceo: { name: "김희수", position: "대표이사" },
+      departments: [{ name: "연구개발전담부서", members: [] }],
+      updatedAt: "2026-04-24T00:00:00Z",
+    };
+    mockPrismaClient.findUnique.mockResolvedValue(
+      makeClient({
+        masterProfile: {
+          organizationChart: preserved,
+          // Also include a key owned by the profile editor to confirm it is
+          // still overwritten (only whitelisted keys are preserved).
+          businessInfo: { name: "stale" },
+        },
+      }),
+    );
+    mockVerifyBusinessNumber.mockResolvedValue({ valid: true, status: "정상" });
+    mockPrismaClient.update.mockResolvedValue({});
+
+    await generateMasterProfile("c-1");
+
+    const [callArg] = mockPrismaClient.update.mock.calls;
+    const { masterProfile } = callArg[0].data as {
+      masterProfile: { organizationChart?: unknown; businessInfo?: { name?: string } };
+    };
+    expect(masterProfile.organizationChart).toEqual(preserved);
+    // Freshly generated businessInfo must win over the stale one.
+    expect(masterProfile.businessInfo?.name).toBe("테스트기업");
+  });
+
   it("builds summary that includes company name", async () => {
     mockPrismaClient.findUnique.mockResolvedValue(
       makeClient({ businessNumber: null })

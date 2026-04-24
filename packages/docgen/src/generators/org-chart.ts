@@ -28,12 +28,29 @@ export interface OrgChartStructure {
 }
 
 /**
- * Escapes characters that would break Mermaid node label syntax.
- * Mermaid uses `<br/>` for line breaks inside labels. Quotes and backticks are
- * stripped to avoid parser ambiguity.
+ * Escapes user-supplied text so it can be safely embedded inside a Mermaid
+ * node label that the caller constructs with its own `<b>`, `<br/>`, `<i>`
+ * tags. Handles two concerns:
+ *
+ * 1. XSS — the UI renders Mermaid with `securityLevel: "loose"` (needed for
+ *    `<br/>` + `<b>`), so any HTML tag in user input would be injected into
+ *    the resulting SVG. All `<`, `>`, `&`, `"`, `'` are HTML-encoded.
+ * 2. Mermaid parser safety — `[]{}()|` and backticks alter node/edge syntax,
+ *    so they are stripped. Newlines become `<br/>` for in-label line breaks.
+ *
+ * Must be called on every user-controlled string; generator-owned tags
+ * (`<b>`, `<br/>`, `<i>`) are added by the caller after escaping.
  */
 function escapeLabel(text: string): string {
-  return text.replace(/["`]/g, "").replace(/\n/g, "<br/>").trim();
+  return text
+    .replace(/[`[\]{}()|]/g, "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/\n/g, "<br/>")
+    .trim();
 }
 
 function formatMemberLine(member: OrgChartMember): string {
