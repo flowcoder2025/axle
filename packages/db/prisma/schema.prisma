@@ -25,12 +25,12 @@ enum PlatformRole {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String       @id @default(cuid())
   name          String?
-  email         String    @unique
+  email         String       @unique
   emailVerified DateTime?
   image         String?
-  password      String?   // bcrypt hashed, null for OAuth-only users
+  password      String? // bcrypt hashed, null for OAuth-only users
   platformRole  PlatformRole @default(USER)
   isActive      Boolean      @default(true)
 
@@ -39,11 +39,11 @@ model User {
   memberships   Membership[]
   notifications Notification[]
 
-  oauthTokens      OAuthToken[]
-  assignedClients  Client[]  @relation("ClientAssignee")
-  assignedProjects Project[] @relation("ProjectAssignee")
+  oauthTokens       OAuthToken[]
+  assignedClients   Client[]           @relation("ClientAssignee")
+  assignedProjects  Project[]          @relation("ProjectAssignee")
   pushSubscriptions PushSubscription[]
-  hwpxTemplates    HwpxTemplate[] @relation("HwpxTemplateCreator")
+  hwpxTemplates     HwpxTemplate[]     @relation("HwpxTemplateCreator")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -64,15 +64,15 @@ model PushSubscription {
 }
 
 model OAuthToken {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   userId       String
-  provider     String   // e.g. "GOOGLE"
-  accessToken  String   @db.Text // AES-256-GCM encrypted
-  refreshToken String?  @db.Text // AES-256-GCM encrypted
+  provider     String // e.g. "GOOGLE"
+  accessToken  String    @db.Text // AES-256-GCM encrypted
+  refreshToken String?   @db.Text // AES-256-GCM encrypted
   expiresAt    DateTime?
   scope        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -125,12 +125,14 @@ model Organization {
   slug    String  @unique
   logoUrl String?
 
-  memberships Membership[]
-  clients     Client[]
-  programs    ProgramInfo[]
-  templates   ChecklistTemplate[]
-  aiJobs      AiJob[]
-  hwpxTemplates HwpxTemplate[]
+  memberships    Membership[]
+  clients        Client[]
+  programs       ProgramInfo[]
+  templates      ChecklistTemplate[]
+  aiJobs         AiJob[]
+  hwpxTemplates  HwpxTemplate[]
+  scraperJobs    ScraperJob[]
+  scraperApiKeys ScraperApiKey[]
 
   plan         String  @default("free")
   quotaAiJobs  Int     @default(100)
@@ -211,131 +213,134 @@ enum ProgramCategory {
 }
 
 model Client {
-  id                String       @id @default(cuid())
-  orgId             String
-  name              String
-  businessNumber    String?
-  ceoName           String?
-  industry          String?
-  address           String?
-  phone             String?
-  email             String?
-  website           String?
-  memo              String?
-  status            ClientStatus @default(ACTIVE)
-  assignedToId      String?
-  assignedToUser    User?    @relation("ClientAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  id             String       @id @default(cuid())
+  orgId          String
+  name           String
+  businessNumber String?
+  ceoName        String?
+  industry       String?
+  address        String?
+  phone          String?
+  email          String?
+  website        String?
+  memo           String?
+  status         ClientStatus @default(ACTIVE)
+  assignedToId   String?
+  assignedToUser User?        @relation("ClientAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
 
-  employeeCount     Int?
-  capitalAmount     Decimal?
-  foundedDate       DateTime?
-  region            String?
-  isVenture         Boolean      @default(false)
-  isInnoBiz         Boolean      @default(false)
-  isMainBiz         Boolean      @default(false)
-  isSocial          Boolean      @default(false)
-  ventureValidUntil DateTime?
+  employeeCount      Int?
+  capitalAmount      Decimal?
+  foundedDate        DateTime?
+  region             String?
+  isVenture          Boolean   @default(false)
+  isInnoBiz          Boolean   @default(false)
+  isMainBiz          Boolean   @default(false)
+  isSocial           Boolean   @default(false)
+  ventureValidUntil  DateTime?
   businessStatus     String?
   businessVerifiedAt DateTime?
-  corpCode          String?
+  corpCode           String?
   financialsSyncedAt DateTime?
-  masterProfile     Json?
-  profileBlocks     Json?
-  onboardedAt       DateTime?
+  masterProfile      Json?
+  profileBlocks      Json?
+  onboardedAt        DateTime?
 
-  contacts          Contact[]
-  financials        ClientFinancial[]
-  achievements      ClientAchievement[]
-  certificates      Certificate[]
-  projects          Project[]
-  documents         Document[]
-  journals          ResearchJournal[]
-  meetings          Meeting[]
-  financialReports  FinancialReport[]
-  schedules         Schedule[]
-  emailLogs         EmailLog[]
-  estimates         Estimate[]
-  contracts         Contract[]
-  portalTokens      PortalToken[]
+  contacts           Contact[]
+  financials         ClientFinancial[]
+  achievements       ClientAchievement[]
+  certificates       Certificate[]
+  projects           Project[]
+  documents          Document[]
+  journals           ResearchJournal[]
+  meetings           Meeting[]
+  financialReports   FinancialReport[]
+  schedules          Schedule[]
+  emailLogs          EmailLog[]
+  estimates          Estimate[]
+  contracts          Contract[]
+  portalTokens       PortalToken[]
+  portalCertificates ClientCertificate[]
+  portalAccounts     ClientPortalAccount[]
+  scraperJobs        ScraperJob[]
 
-  organization      Organization @relation(fields: [orgId], references: [id])
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  organization Organization @relation(fields: [orgId], references: [id])
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   @@index([orgId])
   @@index([assignedToId])
 }
 
 model Contact {
-  id                String        @id @default(cuid())
-  clientId          String
-  name              String
-  position          String?
-  department        String?
-  phone             String?
-  email             String?
-  isPrimary         Boolean       @default(false)
-  memo              String?
-  source            ContactSource @default(MANUAL)
-  businessCardUrl   String?
-  isResearcher      Boolean       @default(false)
-  researchField     String?
+  id              String        @id @default(cuid())
+  clientId        String
+  name            String
+  position        String?
+  department      String?
+  phone           String?
+  email           String?
+  isPrimary       Boolean       @default(false)
+  memo            String?
+  source          ContactSource @default(MANUAL)
+  businessCardUrl String?
+  isResearcher    Boolean       @default(false)
+  researchField   String?
 
-  journals          ResearchJournal[]
+  journals ResearchJournal[]
 
-  client            Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
 }
 
 model ClientFinancial {
-  id                String   @id @default(cuid())
-  clientId          String
-  year              Int
-  revenue           Decimal?
-  operatingProfit   Decimal?
-  netProfit         Decimal?
-  totalAssets       Decimal?
-  totalLiabilities  Decimal?
-  totalEquity       Decimal?
-  creditRating      String?
-  source            String?
+  id               String   @id @default(cuid())
+  clientId         String
+  year             Int
+  revenue          Decimal?
+  operatingProfit  Decimal?
+  netProfit        Decimal?
+  totalAssets      Decimal?
+  totalLiabilities Decimal?
+  totalEquity      Decimal?
+  creditRating     String?
+  source           String?
 
-  reports           FinancialReport[]
+  reports FinancialReport[]
 
-  client            Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@unique([clientId, year])
 }
 
 model ClientAchievement {
-  id                String          @id @default(cuid())
-  clientId          String
-  type              AchievementType
-  title             String
-  date              DateTime?
-  amount            Decimal?
-  description       String?
-  documentId        String?
+  id          String          @id @default(cuid())
+  clientId    String
+  type        AchievementType
+  title       String
+  date        DateTime?
+  amount      Decimal?
+  description String?
+  documentId  String?
 
-  client            Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
 }
 
 model Certificate {
-  id                String    @id @default(cuid())
-  clientId          String
-  type              String
-  subjectName       String
-  serialNumber      String?
-  validFrom         DateTime?
-  validTo           DateTime?
-  storagePath       String?
-  isActive          Boolean   @default(true)
+  id           String    @id @default(cuid())
+  clientId     String
+  type         String
+  subjectName  String
+  serialNumber String?
+  validFrom    DateTime?
+  validTo      DateTime?
+  storagePath  String?
+  isActive     Boolean   @default(true)
 
-  client            Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  checklistItems    ChecklistItem[]
+  client         Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  checklistItems ChecklistItem[]
 
   @@index([clientId])
 }
@@ -360,10 +365,10 @@ model ProgramInfo {
   source            String?
   externalId        String?
 
-  matchingResults   MatchingResult[]
-  schedules         Schedule[]
+  matchingResults MatchingResult[]
+  schedules       Schedule[]
 
-  organization      Organization? @relation(fields: [orgId], references: [id])
+  organization Organization? @relation(fields: [orgId], references: [id])
 
   @@unique([source, externalId])
   @@index([orgId])
@@ -381,7 +386,7 @@ model MatchingResult {
   feedbackNote      String?
   createdAt         DateTime @default(now())
 
-  program           ProgramInfo @relation(fields: [programId], references: [id], onDelete: Cascade)
+  program ProgramInfo @relation(fields: [programId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([programId])
@@ -460,42 +465,42 @@ enum JournalStatus {
 }
 
 model Project {
-  id                String        @id @default(cuid())
-  clientId          String
-  programId         String?
-  parentId          String?
-  type              ProjectType
-  title             String
-  status            ProjectStatus @default(INTAKE)
-  priority          Priority      @default(MEDIUM)
-  assignedToId      String?
-  assignedToUser    User?    @relation("ProjectAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
-  dueDate           DateTime?
-  submissionDate    DateTime?
-  memo              String?
-  metadata          Json?
+  id             String        @id @default(cuid())
+  clientId       String
+  programId      String?
+  parentId       String?
+  type           ProjectType
+  title          String
+  status         ProjectStatus @default(INTAKE)
+  priority       Priority      @default(MEDIUM)
+  assignedToId   String?
+  assignedToUser User?         @relation("ProjectAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  dueDate        DateTime?
+  submissionDate DateTime?
+  memo           String?
+  metadata       Json?
 
-  feeType           FeeType?
-  feeAmount         Decimal?
-  successRate       Decimal?
-  isPaid            Boolean       @default(false)
+  feeType     FeeType?
+  feeAmount   Decimal?
+  successRate Decimal?
+  isPaid      Boolean  @default(false)
 
-  children          Project[]       @relation("ProjectTree")
-  parent            Project?        @relation("ProjectTree", fields: [parentId], references: [id])
-  members           ProjectMember[]
-  checklist         ChecklistItem[]
-  documents         Document[]
-  meetings          Meeting[]
-  aiJobs            AiJob[]
-  estimates         Estimate[]
-  contracts         Contract[]
-  emailLogs         EmailLog[]
-  comments          ProjectComment[]
-  portalTokens      PortalToken[]
+  children     Project[]        @relation("ProjectTree")
+  parent       Project?         @relation("ProjectTree", fields: [parentId], references: [id])
+  members      ProjectMember[]
+  checklist    ChecklistItem[]
+  documents    Document[]
+  meetings     Meeting[]
+  aiJobs       AiJob[]
+  estimates    Estimate[]
+  contracts    Contract[]
+  emailLogs    EmailLog[]
+  comments     ProjectComment[]
+  portalTokens PortalToken[]
 
-  client            Client       @relation(fields: [clientId], references: [id])
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  client    Client   @relation(fields: [clientId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([clientId])
   @@index([programId])
@@ -503,66 +508,66 @@ model Project {
 }
 
 model ProjectMember {
-  id                String            @id @default(cuid())
-  projectId         String
-  userId            String
-  role              ProjectMemberRole @default(MEMBER)
+  id        String            @id @default(cuid())
+  projectId String
+  userId    String
+  role      ProjectMemberRole @default(MEMBER)
 
-  project           Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([projectId, userId])
 }
 
 model ChecklistTemplate {
-  id                String      @id @default(cuid())
-  orgId             String?     /// Null = platform-wide shared template
-  projectType       ProjectType
-  name              String
-  description       String?
-  isRequired        Boolean     @default(true)
-  sortOrder         Int         @default(0)
+  id          String      @id @default(cuid())
+  orgId       String? /// Null = platform-wide shared template
+  projectType ProjectType
+  name        String
+  description String?
+  isRequired  Boolean     @default(true)
+  sortOrder   Int         @default(0)
 
-  organization      Organization? @relation(fields: [orgId], references: [id])
-  items             ChecklistTemplateItem[]
+  organization Organization?           @relation(fields: [orgId], references: [id])
+  items        ChecklistTemplateItem[]
 
   @@index([orgId, projectType])
   @@index([projectType])
 }
 
 model ChecklistTemplateItem {
-  id                String            @id @default(cuid())
-  templateId        String
-  name              String
-  description       String?
-  isRequired        Boolean           @default(true)
-  sortOrder         Int               @default(0)
-  itemType          ChecklistItemType @default(DOCUMENT)
-  certificateType   String?
+  id              String            @id @default(cuid())
+  templateId      String
+  name            String
+  description     String?
+  isRequired      Boolean           @default(true)
+  sortOrder       Int               @default(0)
+  itemType        ChecklistItemType @default(DOCUMENT)
+  certificateType String?
 
-  template          ChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  template ChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
   @@index([templateId])
 }
 
 model ChecklistItem {
-  id                String            @id @default(cuid())
-  projectId         String
-  name              String
-  description       String?
-  isRequired        Boolean           @default(true)
-  itemType          ChecklistItemType @default(DOCUMENT)
-  status            DocStatus         @default(PENDING)
-  requestedAt       DateTime?
-  uploadedAt        DateTime?
-  documentId        String?
-  certificateId     String?
-  certificateType   String?           /// Expected cert type (벤처기업확인서, 사업자등록증 등)
+  id              String            @id @default(cuid())
+  projectId       String
+  name            String
+  description     String?
+  isRequired      Boolean           @default(true)
+  itemType        ChecklistItemType @default(DOCUMENT)
+  status          DocStatus         @default(PENDING)
+  requestedAt     DateTime?
+  uploadedAt      DateTime?
+  documentId      String?
+  certificateId   String?
+  certificateType String? /// Expected cert type (벤처기업확인서, 사업자등록증 등)
 
-  project           Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  certificate       Certificate? @relation(fields: [certificateId], references: [id])
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  certificate Certificate? @relation(fields: [certificateId], references: [id])
 
   @@index([projectId])
 }
@@ -573,64 +578,64 @@ enum ChecklistItemType {
 }
 
 model Document {
-  id                String      @id @default(cuid())
-  clientId          String
-  projectId         String?
-  name              String
-  fileUrl           String
-  fileType          String
-  category          DocCategory
-  ocrStatus         OcrStatus   @default(NONE)
-  ocrResult         Json?
-  uploadToken       String?     @unique
-  tokenExpiresAt    DateTime?
-  expiresAt         DateTime?
-  autoRenew         Boolean     @default(false)
-  version           Int         @default(1)
-  parentDocId       String?
-  verifyResult      Json?
-  verifiedAt        DateTime?
+  id             String      @id @default(cuid())
+  clientId       String
+  projectId      String?
+  name           String
+  fileUrl        String
+  fileType       String
+  category       DocCategory
+  ocrStatus      OcrStatus   @default(NONE)
+  ocrResult      Json?
+  uploadToken    String?     @unique
+  tokenExpiresAt DateTime?
+  expiresAt      DateTime?
+  autoRenew      Boolean     @default(false)
+  version        Int         @default(1)
+  parentDocId    String?
+  verifyResult   Json?
+  verifiedAt     DateTime?
 
-  client            Client   @relation(fields: [clientId], references: [id])
-  project           Project? @relation(fields: [projectId], references: [id])
-  createdAt         DateTime @default(now())
+  client    Client   @relation(fields: [clientId], references: [id])
+  project   Project? @relation(fields: [projectId], references: [id])
+  createdAt DateTime @default(now())
 
   @@index([clientId])
   @@index([projectId])
 }
 
 model DocumentEmbedding {
-  id                String @id @default(cuid())
-  sourceType        String
-  sourceId          String
-  content           String
-  embedding         Unsupported("vector(1536)")
-  metadata          Json?
+  id         String                      @id @default(cuid())
+  sourceType String
+  sourceId   String
+  content    String
+  embedding  Unsupported("vector(1536)")
+  metadata   Json?
 
   @@unique([sourceType, sourceId])
 }
 
 model ResearchJournal {
-  id                   String        @id @default(cuid())
-  clientId             String
-  researcherContactId  String
-  date                 DateTime
-  title                String
-  content              String
-  objectives           String?
-  results              String?
-  nextSteps            String?
-  hours                Decimal?
-  attachments          Json?
-  status               JournalStatus @default(DRAFT)
-  approvedBy           String?
-  approvedAt           DateTime?
-  aiDraftJobId         String?
+  id                  String        @id @default(cuid())
+  clientId            String
+  researcherContactId String
+  date                DateTime
+  title               String
+  content             String
+  objectives          String?
+  results             String?
+  nextSteps           String?
+  hours               Decimal?
+  attachments         Json?
+  status              JournalStatus @default(DRAFT)
+  approvedBy          String?
+  approvedAt          DateTime?
+  aiDraftJobId        String?
 
-  client               Client  @relation(fields: [clientId], references: [id])
-  researcher           Contact @relation(fields: [researcherContactId], references: [id])
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  client     Client   @relation(fields: [clientId], references: [id])
+  researcher Contact  @relation(fields: [researcherContactId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([clientId])
   @@index([researcherContactId])
@@ -736,50 +741,50 @@ enum ContractStatus {
 }
 
 model Meeting {
-  id                String   @id @default(cuid())
-  projectId         String?
-  clientId          String
-  title             String
-  date              DateTime
-  location          String?
-  recordingUrl      String?
+  id           String   @id @default(cuid())
+  projectId    String?
+  clientId     String
+  title        String
+  date         DateTime
+  location     String?
+  recordingUrl String?
 
-  attendees         MeetingAttendee[]
-  transcript        MeetingTranscript?
-  actionItems       ActionItem[]
-  emailLogs         EmailLog[]
+  attendees   MeetingAttendee[]
+  transcript  MeetingTranscript?
+  actionItems ActionItem[]
+  emailLogs   EmailLog[]
 
-  client            Client   @relation(fields: [clientId], references: [id])
-  project           Project? @relation(fields: [projectId], references: [id])
-  createdAt         DateTime @default(now())
+  client    Client   @relation(fields: [clientId], references: [id])
+  project   Project? @relation(fields: [projectId], references: [id])
+  createdAt DateTime @default(now())
 
   @@index([clientId])
   @@index([projectId])
 }
 
 model MeetingAttendee {
-  id                String  @id @default(cuid())
-  meetingId         String
-  contactId         String?
-  userId            String?
-  name              String
-  role              String?
+  id        String  @id @default(cuid())
+  meetingId String
+  contactId String?
+  userId    String?
+  name      String
+  role      String?
 
-  meeting           Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 
   @@index([meetingId])
 }
 
 model MeetingTranscript {
-  id                String  @id @default(cuid())
-  meetingId         String  @unique
-  rawTranscript     String
-  summary           String?
-  keyDecisions      Json?
-  sentiment         String?
-  aiJobId           String?
+  id            String  @id @default(cuid())
+  meetingId     String  @unique
+  rawTranscript String
+  summary       String?
+  keyDecisions  Json?
+  sentiment     String?
+  aiJobId       String?
 
-  meeting           Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 }
 
 model ActionItem {
@@ -792,29 +797,29 @@ model ActionItem {
   status            ActionStatus @default(OPEN)
   linkedChecklistId String?
 
-  meeting           Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 
   @@index([meetingId])
 }
 
 model AiJob {
-  id                String     @id @default(cuid())
-  orgId             String
-  projectId         String?
-  type              AiJobType
-  tier              AiTier
-  status            JobStatus  @default(QUEUED)
-  input             Json
-  output            Json?
-  cost              Decimal?
-  durationMs        Int?
-  errorMessage      String?
-  skillPatternId    String?
+  id             String    @id @default(cuid())
+  orgId          String
+  projectId      String?
+  type           AiJobType
+  tier           AiTier
+  status         JobStatus @default(QUEUED)
+  input          Json
+  output         Json?
+  cost           Decimal?
+  durationMs     Int?
+  errorMessage   String?
+  skillPatternId String?
 
-  skillPattern      SkillPattern? @relation(fields: [skillPatternId], references: [id])
-  project           Project?      @relation(fields: [projectId], references: [id])
-  organization      Organization  @relation(fields: [orgId], references: [id])
-  createdAt         DateTime      @default(now())
+  skillPattern SkillPattern? @relation(fields: [skillPatternId], references: [id])
+  project      Project?      @relation(fields: [projectId], references: [id])
+  organization Organization  @relation(fields: [orgId], references: [id])
+  createdAt    DateTime      @default(now())
 
   @@index([orgId])
   @@index([projectId])
@@ -822,26 +827,26 @@ model AiJob {
 }
 
 model SkillPattern {
-  id                String   @id @default(cuid())
-  name              String
-  taskType          String
-  inputSchema       Json
-  outputSchema      Json
-  promptTemplate    String?
-  successCount      Int      @default(0)
-  lastUsedAt        DateTime?
-  isFineTuned       Boolean  @default(false)
-  status            FineTuneStatus @default(IDLE)
-  errorMessage      String?
-  sampleInput       Json?
-  sampleOutput      Json?
-  loraAdapterUrl    String?
-  fineTuneStartedAt DateTime?
+  id                  String         @id @default(cuid())
+  name                String
+  taskType            String
+  inputSchema         Json
+  outputSchema        Json
+  promptTemplate      String?
+  successCount        Int            @default(0)
+  lastUsedAt          DateTime?
+  isFineTuned         Boolean        @default(false)
+  status              FineTuneStatus @default(IDLE)
+  errorMessage        String?
+  sampleInput         Json?
+  sampleOutput        Json?
+  loraAdapterUrl      String?
+  fineTuneStartedAt   DateTime?
   fineTuneCompletedAt DateTime?
-  promotedAt        DateTime?
+  promotedAt          DateTime?
 
-  aiJobs            AiJob[]
-  createdAt         DateTime @default(now())
+  aiJobs    AiJob[]
+  createdAt DateTime @default(now())
 
   @@index([status])
   @@index([taskType, status])
@@ -858,51 +863,53 @@ enum FineTuneStatus {
 }
 
 model AutomationLog {
-  id                String    @id @default(cuid())
-  clientId          String?
-  type              AutoType
-  target            String
-  status            JobStatus
-  resultUrl         String?
-  errorMessage      String?
-  detail            Json?
-  executedAt        DateTime  @default(now())
+  id           String    @id @default(cuid())
+  clientId     String?
+  type         AutoType
+  target       String
+  status       JobStatus
+  resultUrl    String?
+  errorMessage String?
+  detail       Json?
+  executedAt   DateTime  @default(now())
+
+  scraperJob ScraperJob?
 
   @@index([type, status])
   @@index([executedAt])
 }
 
 model Notification {
-  id                String           @id @default(cuid())
-  userId            String
-  type              NotificationType
-  title             String
-  body              String?
-  link              String?
-  isRead            Boolean          @default(false)
+  id     String           @id @default(cuid())
+  userId String
+  type   NotificationType
+  title  String
+  body   String?
+  link   String?
+  isRead Boolean          @default(false)
 
-  user              User @relation(fields: [userId], references: [id])
-  createdAt         DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
 
   @@index([userId])
 }
 
 model EmailLog {
-  id                String    @id @default(cuid())
-  meetingId         String?
-  clientId          String?
-  projectId         String?
-  to                String
-  subject           String
-  type              EmailType
-  channel           String    @default("email")
-  resendMessageId   String?
-  sentAt            DateTime  @default(now())
-  openedAt          DateTime?
+  id              String    @id @default(cuid())
+  meetingId       String?
+  clientId        String?
+  projectId       String?
+  to              String
+  subject         String
+  type            EmailType
+  channel         String    @default("email")
+  resendMessageId String?
+  sentAt          DateTime  @default(now())
+  openedAt        DateTime?
 
-  meeting           Meeting? @relation(fields: [meetingId], references: [id])
-  client            Client?  @relation(fields: [clientId], references: [id])
-  project           Project? @relation(fields: [projectId], references: [id])
+  meeting Meeting? @relation(fields: [meetingId], references: [id])
+  client  Client?  @relation(fields: [clientId], references: [id])
+  project Project? @relation(fields: [projectId], references: [id])
 
   @@index([clientId])
   @@index([meetingId])
@@ -910,23 +917,23 @@ model EmailLog {
 }
 
 model Schedule {
-  id                String       @id @default(cuid())
-  orgId             String
-  clientId          String?
-  projectId         String?
-  programId         String?
-  title             String
-  description       String?
-  type              ScheduleType
-  startDate         DateTime
-  endDate           DateTime?
-  isAllDay          Boolean      @default(false)
-  reminderDays      Int[]        @default([7, 3, 1])
-  googleCalendarId  String?
+  id               String       @id @default(cuid())
+  orgId            String
+  clientId         String?
+  projectId        String?
+  programId        String?
+  title            String
+  description      String?
+  type             ScheduleType
+  startDate        DateTime
+  endDate          DateTime?
+  isAllDay         Boolean      @default(false)
+  reminderDays     Int[]        @default([7, 3, 1])
+  googleCalendarId String?
 
-  client            Client?      @relation(fields: [clientId], references: [id])
-  program           ProgramInfo? @relation(fields: [programId], references: [id])
-  createdAt         DateTime     @default(now())
+  client    Client?      @relation(fields: [clientId], references: [id])
+  program   ProgramInfo? @relation(fields: [programId], references: [id])
+  createdAt DateTime     @default(now())
 
   @@index([orgId])
   @@index([clientId])
@@ -934,60 +941,60 @@ model Schedule {
 }
 
 model FinancialReport {
-  id                  String           @id @default(cuid())
-  clientId            String
-  clientFinancialId   String?
-  year                Int
-  analysis            Json?
-  adjustments         Json?
-  reportUrl           String?
+  id                String  @id @default(cuid())
+  clientId          String
+  clientFinancialId String?
+  year              Int
+  analysis          Json?
+  adjustments       Json?
+  reportUrl         String?
 
-  client              Client           @relation(fields: [clientId], references: [id])
-  clientFinancial     ClientFinancial? @relation(fields: [clientFinancialId], references: [id])
-  createdAt           DateTime         @default(now())
+  client          Client           @relation(fields: [clientId], references: [id])
+  clientFinancial ClientFinancial? @relation(fields: [clientFinancialId], references: [id])
+  createdAt       DateTime         @default(now())
 
   @@unique([clientId, year])
 }
 
 model Estimate {
-  id                String         @id @default(cuid())
-  projectId         String?
-  clientId          String
-  estimateNumber    String         @unique
-  items             Json
-  totalAmount       Decimal
-  taxAmount         Decimal?
-  validUntil        DateTime?
-  status            EstimateStatus @default(DRAFT)
-  documentId        String?
-  sentAt            DateTime?
+  id             String         @id @default(cuid())
+  projectId      String?
+  clientId       String
+  estimateNumber String         @unique
+  items          Json
+  totalAmount    Decimal
+  taxAmount      Decimal?
+  validUntil     DateTime?
+  status         EstimateStatus @default(DRAFT)
+  documentId     String?
+  sentAt         DateTime?
 
-  client            Client   @relation(fields: [clientId], references: [id])
-  project           Project? @relation(fields: [projectId], references: [id])
-  createdAt         DateTime @default(now())
+  client    Client   @relation(fields: [clientId], references: [id])
+  project   Project? @relation(fields: [projectId], references: [id])
+  createdAt DateTime @default(now())
 
   @@index([clientId])
 }
 
 model Contract {
-  id                String         @id @default(cuid())
-  projectId         String?
-  clientId          String
-  contractNumber    String         @unique
-  title             String
-  partyA            Json
-  partyB            Json
-  terms             Json
-  totalAmount       Decimal?
-  startDate         DateTime?
-  endDate           DateTime?
-  status            ContractStatus @default(DRAFT)
-  documentId        String?
-  signedAt          DateTime?
+  id             String         @id @default(cuid())
+  projectId      String?
+  clientId       String
+  contractNumber String         @unique
+  title          String
+  partyA         Json
+  partyB         Json
+  terms          Json
+  totalAmount    Decimal?
+  startDate      DateTime?
+  endDate        DateTime?
+  status         ContractStatus @default(DRAFT)
+  documentId     String?
+  signedAt       DateTime?
 
-  client            Client   @relation(fields: [clientId], references: [id])
-  project           Project? @relation(fields: [projectId], references: [id])
-  createdAt         DateTime @default(now())
+  client    Client   @relation(fields: [clientId], references: [id])
+  project   Project? @relation(fields: [projectId], references: [id])
+  createdAt DateTime @default(now())
 
   @@index([clientId])
 }
@@ -997,15 +1004,15 @@ model Contract {
 // ========================================
 
 model ProjectComment {
-  id          String   @id @default(cuid())
-  projectId   String
-  authorId    String
-  body        String
-  mentions    String[] // user IDs mentioned via @
+  id        String   @id @default(cuid())
+  projectId String
+  authorId  String
+  body      String
+  mentions  String[] // user IDs mentioned via @
 
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([projectId])
   @@index([authorId])
@@ -1018,31 +1025,31 @@ enum PortalTokenScope {
 }
 
 model PortalToken {
-  id          String           @id @default(cuid())
-  token       String           @unique @default(cuid())
-  projectId   String?
-  clientId    String
-  scope       PortalTokenScope @default(FULL)
-  expiresAt   DateTime?
-  createdBy   String
+  id        String           @id @default(cuid())
+  token     String           @unique @default(cuid())
+  projectId String?
+  clientId  String
+  scope     PortalTokenScope @default(FULL)
+  expiresAt DateTime?
+  createdBy String
 
-  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  journals    PortalJournal[]
-  createdAt   DateTime @default(now())
+  project   Project?        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  client    Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  journals  PortalJournal[]
+  createdAt DateTime        @default(now())
 
   @@index([projectId])
   @@index([clientId])
 }
 
 model PortalJournal {
-  id          String      @id @default(cuid())
+  id          String   @id @default(cuid())
   tokenId     String
   title       String
   content     String
-  submittedAt DateTime    @default(now())
+  submittedAt DateTime @default(now())
 
-  token       PortalToken @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+  token PortalToken @relation(fields: [tokenId], references: [id], onDelete: Cascade)
 
   @@index([tokenId])
 }
@@ -1058,25 +1065,25 @@ enum EventCategory {
 }
 
 model AnalyticsEvent {
-  id        String        @id @default(cuid())
+  id String @id @default(cuid())
 
   userId    String?
   orgId     String?
   sessionId String
 
-  category  EventCategory
-  action    String
-  label     String?
-  value     Float?
+  category EventCategory
+  action   String
+  label    String?
+  value    Float?
 
-  path      String?
-  referrer  String?
+  path     String?
+  referrer String?
 
   metadata  Json?
   userAgent String?
   ip        String?
 
-  createdAt DateTime      @default(now())
+  createdAt DateTime @default(now())
 
   @@index([orgId, createdAt])
   @@index([category, createdAt])
@@ -1086,14 +1093,14 @@ model AnalyticsEvent {
 }
 
 model DailyMetric {
-  id        String   @id @default(cuid())
-  date      DateTime @db.Date
-  orgId     String?
+  id    String   @id @default(cuid())
+  date  DateTime @db.Date
+  orgId String?
 
-  pageViews      Int @default(0)
-  uniqueUsers    Int @default(0)
-  sessions       Int @default(0)
-  avgSessionSec  Int @default(0)
+  pageViews     Int @default(0)
+  uniqueUsers   Int @default(0)
+  sessions      Int @default(0)
+  avgSessionSec Int @default(0)
 
   projectsCreated    Int @default(0)
   documentsProcessed Int @default(0)
@@ -1151,9 +1158,136 @@ model HwpxTemplate {
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @updatedAt
 
-  org         Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  createdBy   User          @relation("HwpxTemplateCreator", fields: [createdById], references: [id])
+  org       Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  createdBy User          @relation("HwpxTemplateCreator", fields: [createdById], references: [id])
 
   @@index([orgId, category])
   @@index([createdById])
+}
+
+// ========================================
+// Scraper / Portal automation (WI-318b)
+// See .flowset/contracts/scraper-data.md
+// ========================================
+
+enum ScraperJobStatus {
+  QUEUED
+  PICKED_UP
+  RUNNING
+  COMPLETED
+  FAILED
+  EXPIRED
+  CANCELLED
+}
+
+enum CredentialsKind {
+  CERTIFICATE
+  USERPW
+}
+
+enum PortalKind {
+  HOMETAX
+  MINWON24
+  INSURANCE
+}
+
+model ScraperJob {
+  id       String @id @default(cuid())
+  orgId    String
+  clientId String
+
+  type   AutoType
+  target String
+  params Json?
+
+  status         ScraperJobStatus @default(QUEUED)
+  pickedUpAt     DateTime?
+  pickedUpBy     String?
+  leaseExpiresAt DateTime?
+  completedAt    DateTime?
+
+  credentialsKind CredentialsKind
+  credentialsRef  String
+
+  automationLogId String?        @unique
+  automationLog   AutomationLog? @relation(fields: [automationLogId], references: [id])
+
+  createdById String
+  createdAt   DateTime @default(now())
+
+  org    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  client Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, status])
+  @@index([status, leaseExpiresAt])
+  @@index([clientId])
+  @@index([createdById])
+}
+
+model ScraperApiKey {
+  id          String    @id @default(cuid())
+  orgId       String
+  label       String
+  tokenHash   String    @unique
+  prefix      String
+  lastUsedAt  DateTime?
+  lastUsedIp  String?
+  revokedAt   DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([tokenHash])
+}
+
+model ClientCertificate {
+  id                 String   @id @default(cuid())
+  clientId           String
+  subject            String
+  issuer             String
+  serialNumber       String
+  validFrom          DateTime
+  validTo            DateTime
+  pfxCiphertext      String   @db.Text
+  passwordCiphertext String   @db.Text
+  createdById        String
+  createdAt          DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([validTo])
+}
+
+model ClientPortalAccount {
+  id                 String     @id @default(cuid())
+  clientId           String
+  portal             PortalKind
+  userId             String
+  passwordCiphertext String     @db.Text
+  createdById        String
+  createdAt          DateTime   @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, portal])
+  @@index([clientId])
+}
+
+model ScraperRepairLog {
+  id            String     @id @default(cuid())
+  jobId         String?
+  portal        PortalKind
+  page          String
+  element       String
+  oldSelector   String
+  newSelector   String
+  repairedBy    String
+  screenshotUrl String?
+  createdAt     DateTime   @default(now())
+
+  @@index([portal, createdAt])
+  @@index([jobId])
 }
