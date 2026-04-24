@@ -138,7 +138,7 @@
 - Electron: BrowserWindow + 트레이
 - 네이티브 녹음: 시스템 마이크
 - 인증서: PKCS#12 관리
-- 포털 자동화: 홈택스/민원24/4대보험/VENTUREIN/KOITA
+- 포털 자동화: 홈택스/민원24/4대보험
 - 셀프 리페어: 포털 셀렉터 자동 복구
 - AutomationLog API: 포털 자동화 이력 조회
 - 오프라인 캐시: SQLite + 동기화

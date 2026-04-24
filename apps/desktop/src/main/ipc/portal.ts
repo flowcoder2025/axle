@@ -10,14 +10,12 @@ import { randomUUID } from "crypto";
 import { HometaxPageObject } from "../portal/page-objects/hometax";
 import { Minwon24PageObject } from "../portal/page-objects/minwon24";
 import { InsurancePageObject } from "../portal/page-objects/insurance";
-import { VentureinPageObject } from "../portal/page-objects/venturein";
-import { KoitaPageObject } from "../portal/page-objects/koita";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export type PortalName = "hometax" | "minwon24" | "insurance" | "venturein" | "koita";
+export type PortalName = "hometax" | "minwon24" | "insurance";
 
 export interface PortalSession {
   sessionId: string;
@@ -55,10 +53,6 @@ function createPageObject(portal: PortalName) {
       return new Minwon24PageObject();
     case "insurance":
       return new InsurancePageObject();
-    case "venturein":
-      return new VentureinPageObject();
-    case "koita":
-      return new KoitaPageObject();
     default: {
       const _exhaustive: never = portal;
       throw new Error(`Unknown portal: ${_exhaustive}`);
