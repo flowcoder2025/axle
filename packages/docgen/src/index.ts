@@ -93,10 +93,14 @@ export type { ImageGenerateOptions } from "./generators/image-generator.js";
 export { convertMermaid } from "./converters/mermaid-to-png.js";
 export type { MermaidOptions } from "./converters/mermaid-to-png.js";
 
-// ── Org Chart Generator (WI-327) ────────────────────────────────────────────
-export { generateOrgChartMermaid } from "./generators/org-chart.js";
+// ── Org Chart Generator (WI-327, WI-329) ────────────────────────────────────
+export {
+  generateOrgChartMermaid,
+  generateOrgChartDocx,
+} from "./generators/org-chart.js";
 export type {
   OrgChartStructure,
   OrgChartDepartment,
   OrgChartMember,
+  OrgChartDocxOptions,
 } from "./generators/org-chart.js";
