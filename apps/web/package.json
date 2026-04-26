@@ -27,6 +27,7 @@
     "@sentry/nextjs": "^10.49.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
+    "@vercel/blob": "^2.3.3",
     "bcryptjs": "^3.0.3",
     "googleapis": "^171.4.0",
     "html-to-image": "^1.11.13",

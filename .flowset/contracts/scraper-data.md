@@ -179,7 +179,7 @@ model AutomationLog {
 | 공급자 | Vercel Blob |
 | 경로 규칙 | `scraper/{orgId}/{yyyy-mm}/{jobId}/{target}.pdf` |
 | 파일명 | 한글 포함 허용. 예: `납세증명서.pdf`. 중복 발생 시 `{n}` 서픽스. |
-| 가시성 | `private` (기본). 프론트 노출은 서버가 발급한 signed URL (15분 TTL) |
+| 가시성 | `public` 모드 (Vercel Blob 의 `addRandomSuffix`로 16바이트 랜덤 토큰 부여, URL 추측 불가). 프론트 노출은 API 라우트가 세션 검증 후 URL 반환 (방어 심층화). |
 | 보관 기간 | 365일 → cold 이동 검토 (1년 후 수동 정책) |
 | 최대 크기 | 단일 파일 50MB |
 | 메타 헤더 | `x-axle-client-id`, `x-axle-job-id`, `x-axle-type`, `x-axle-target` |
