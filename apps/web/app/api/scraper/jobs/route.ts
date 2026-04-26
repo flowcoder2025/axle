@@ -15,6 +15,69 @@ import { scraperJobCreateSchema } from "@/lib/validations/scraper-job";
 export const dynamic = "force-dynamic";
 
 /**
+ * GET /api/scraper/jobs?clientId=...&limit=50
+ *
+ * Internal endpoint — lists jobs for the caller's org. The scraper does not
+ * call this (it uses GET /api/scraper/jobs/next, a separate authenticated
+ * polling endpoint). The web UI calls this to render the job-queue tab.
+ */
+export async function GET(req: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return unauthorizedResponse();
+    if (!user.orgId) return forbiddenResponse("No active organization");
+
+    const url = new URL(req.url);
+    const clientId = url.searchParams.get("clientId");
+    const limitRaw = url.searchParams.get("limit");
+    const parsedLimit = limitRaw ? Number.parseInt(limitRaw, 10) : 50;
+    const limit = Number.isFinite(parsedLimit)
+      ? Math.min(Math.max(parsedLimit, 1), 200)
+      : 50;
+
+    if (clientId) {
+      const client = await prisma.client.findFirst({
+        where: { id: clientId, orgId: user.orgId },
+        select: { id: true },
+      });
+      if (!client) return notFoundResponse("Client");
+    }
+
+    const jobs = await prisma.scraperJob.findMany({
+      where: {
+        orgId: user.orgId,
+        ...(clientId ? { clientId } : {}),
+      },
+      select: {
+        id: true,
+        clientId: true,
+        type: true,
+        target: true,
+        status: true,
+        credentialsKind: true,
+        credentialsRef: true,
+        createdAt: true,
+        completedAt: true,
+        automationLogId: true,
+        automationLog: {
+          select: {
+            id: true,
+            resultUrl: true,
+            errorMessage: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    });
+
+    return NextResponse.json({ data: jobs });
+  } catch (err) {
+    return handleInternalError(err);
+  }
+}
+
+/**
  * POST /api/scraper/jobs
  *
  * Internal endpoint — called from the AXLE web UI (session auth) to enqueue

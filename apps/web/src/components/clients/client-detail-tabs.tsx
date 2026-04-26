@@ -9,6 +9,8 @@ import { GapAnalysisPanel } from "./gap-analysis-panel";
 import { DocumentRequestTab } from "./document-request-tab";
 import { MasterProfileTab } from "./master-profile-tab";
 import { OrgChartTab } from "./org-chart-tab";
+import { PortalCredentialsTab } from "./portal-credentials-tab";
+import { ScraperJobsTab } from "./scraper-jobs-tab";
 
 // ---------------------------------------------------------------------------
 // Minimal Client shape passed from server component
@@ -80,6 +82,8 @@ const TABS = [
   { id: "projects", label: "프로젝트" },
   { id: "documents", label: "서류 요청" },
   { id: "certificates", label: "인증서" },
+  { id: "portal-credentials", label: "포털 자격증명" },
+  { id: "scraper-jobs", label: "포털 자동화" },
   { id: "achievements", label: "성과" },
   { id: "gap", label: "Gap 분석" },
 ] as const;
@@ -137,6 +141,12 @@ export function ClientDetailTabs({ clientId, client }: ClientDetailTabsProps) {
         )}
         {activeTab === "certificates" && (
           <CertificateList clientId={clientId} />
+        )}
+        {activeTab === "portal-credentials" && (
+          <PortalCredentialsTab clientId={clientId} />
+        )}
+        {activeTab === "scraper-jobs" && (
+          <ScraperJobsTab clientId={clientId} />
         )}
         {activeTab === "achievements" && (
           <ClientAchievementList clientId={clientId} />

@@ -38,6 +38,10 @@
 | /api/clients | Client CRUD | 1 |
 | /api/clients/[id]/contacts | Contact CRUD | 1 |
 | /api/clients/[id]/certificates | Certificate CRUD | 1 |
+| /api/clients/[id]/portal-credentials | 포털 인증서/계정 목록 | 18 |
+| /api/clients/[id]/portal-credentials/certificates | PFX 업로드/삭제 | 18 |
+| /api/clients/[id]/portal-credentials/accounts | 포털 ID/PW CRUD | 18 |
+| /api/scraper/jobs (GET) | 스크래퍼 작업 목록 (web UI) | 18 |
 | /api/clients/[id]/financials | Financial CRUD | 11 |
 | /api/clients/[id]/achievements | Achievement CRUD | 11 |
 | /api/clients/[id]/financial-reports | Report 생성 | 11 |
