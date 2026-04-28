@@ -526,7 +526,8 @@
 - [ ] WI-318-3-feat Vercel Blob 업로드 + signed URL 발급 유틸 + log-sanitizer 확장(credentials redaction) | L1:Phase18 > L2:Portal > L3:Storage
 - [ ] WI-318-4-feat flowvue-scraper AxleApiClient + SCRAPER_MODE=axle 분기 + polling loop | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
 - [ ] WI-318-5-feat flowvue-scraper pages/hometax_certificate.py — 납세증명서 발급 PoC | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
-- [ ] WI-318-6-feat Electron UI 축소 (flowvue-scraper subprocess 런처 + 로그뷰어) / 웹 UI job 생성 폼 + AutomationLog 결과 PDF 다운로드 | L1:Phase18 > L2:Portal > L3:UI
+- [x] WI-318-6-feat 자격증명 CRUD + Client 탭 UI + 스크래퍼 작업 큐 (PR #96, 30b5e2f) | L1:Phase18 > L2:Portal > L3:UI
+  - 원래 task line의 "Electron UI 축소" 부분은 N/A — flowvue-scraper는 처음부터 Electron UI가 없는 순수 Python CLI 프로젝트. `run-scraper.ps1` 가 이미 subprocess 런처 + 로그뷰어 역할 수행 (venv heal/auto-repair, retry, 일자별 로그 append) → 별도 축소 작업 불필요.
 - [ ] WI-319-1-feat flowvue-scraper pages/minwon24_certificate.py — 민원24 증명서 발급 | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
 - [ ] WI-319-2-feat 민원24 발급 UI + 증명서 유형 카탈로그 | L1:Phase18 > L2:Portal > L3:UI
 - [ ] WI-320-1-feat flowvue-scraper pages/insurance_*.py — 4대보험 가입자명부/납부확인 | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
