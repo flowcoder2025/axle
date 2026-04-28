@@ -525,7 +525,8 @@
 - [ ] WI-318-2-feat ScraperJob / ScraperApiKey / ScraperRepairLog / ClientCertificate / ClientPortalAccount Prisma 모델 + Credentials AES-256-GCM 암호화 | L1:Phase18 > L2:Portal > L3:DB
 - [ ] WI-318-3-feat Vercel Blob 업로드 + signed URL 발급 유틸 + log-sanitizer 확장(credentials redaction) | L1:Phase18 > L2:Portal > L3:Storage
 - [ ] WI-318-4-feat flowvue-scraper AxleApiClient + SCRAPER_MODE=axle 분기 + polling loop | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
-- [ ] WI-318-5-feat flowvue-scraper pages/hometax_certificate.py — 납세증명서 발급 PoC | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
+- [x] WI-318-5-feat flowvue-scraper pages/hometax_certificate.py — 납세증명서 발급 PoC (외부 PR flowcoder2025/flowvue-scraper#2, c3dd9fe) | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
+  - 메뉴 코드 / 발급 폼 셀렉터에 TODO[pfx-validate] 마킹 — 사용자 PFX 환경에서 1회 실측 검증 필요. ruff + pytest 3 신규 PASS.
 - [x] WI-318-6-feat 자격증명 CRUD + Client 탭 UI + 스크래퍼 작업 큐 (PR #96, 30b5e2f) | L1:Phase18 > L2:Portal > L3:UI
   - 원래 task line의 "Electron UI 축소" 부분은 N/A — flowvue-scraper는 처음부터 Electron UI가 없는 순수 Python CLI 프로젝트. `run-scraper.ps1` 가 이미 subprocess 런처 + 로그뷰어 역할 수행 (venv heal/auto-repair, retry, 일자별 로그 append) → 별도 축소 작업 불필요.
 - [ ] WI-319-1-feat flowvue-scraper pages/minwon24_certificate.py — 민원24 증명서 발급 | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
