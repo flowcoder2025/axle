@@ -249,8 +249,18 @@
 
 ## 부록 A. 관련 문서
 
+### 본 sub-spec (AXLE 안)
+- [`./vision-and-expansion.md`](./vision-and-expansion.md) — 5-year 비전 + 확장 PBC 카탈로그 + 참고 프로젝트 매트릭스 + 거버넌스 + 수익 모델 (2026-05-04 추가)
+- [`./pbc-image-engine.md`](./pbc-image-engine.md) — Sprint Contract Top 1
+- [`./pbc-block-builder.md`](./pbc-block-builder.md) — Sprint Contract Top 2
+- [`./pbc-hr-payroll.md`](./pbc-hr-payroll.md) — Sprint Contract Top 3
+
+### 기획 워크스페이스 (외부)
 - `~/AX/기획/research/modular-platform/asset-inventory.md` — 26개 프로젝트 자산 카탈로그
 - `~/AX/기획/research/modular-platform/axle-baseline-analysis.md` — AXLE 승격 결정 근거
 - `~/AX/기획/research/modular-platform/pbc-extraction-plan.md` — Top 3 Sprint Contracts (원본)
-- `/Volumes/포터블/AXLE/PRD.md` — AXLE 메인 PRD (수정 금지)
-- `/Volumes/포터블/AXLE/.flowset/requirements.md` — AXLE 사용자 원본 요구사항 (수정 금지)
+- `~/AX/기획/research/modular-platform/vision-and-expansion.md` — 비전 (정합 본은 AXLE 안에 있음)
+
+### AXLE 본체 (수정 금지)
+- `/Volumes/포터블/AXLE/PRD.md` — AXLE 메인 PRD
+- `/Volumes/포터블/AXLE/.flowset/requirements.md` — AXLE 사용자 원본 요구사항
