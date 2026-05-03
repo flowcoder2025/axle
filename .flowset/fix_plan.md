@@ -544,3 +544,49 @@
 - [x] WI-325-feat 인증 완료 시 Certificate 레코드 자동 생성 (VENTURE/RESEARCH_INSTITUTE/PATENT/INNOBIZ 등) | L1:Phase18 > L2:CertReg > L3:AutoCreate
 - [x] WI-326-feat 인증 만료 추적 + 갱신 프로젝트 자동 제안 (90일 전 알림) | L1:Phase18 > L2:CertReg > L3:Renewal
 - [x] WI-327-feat 조직도 자동 생성기 (Mermaid → SVG/PNG, Client 상세 탭) | L1:Phase18 > L2:공통 > L3:OrgChart
+
+---
+
+## L1: Phase 19 — 메타플랫폼 Promotion (2026-05-04 추가)
+## AXLE을 다중 도메인 메타플랫폼 monorepo로 승격. 누적 자산을 PBC로 추출.
+## 상세 sub-spec: docs/specs/meta-platform/PRD.md
+## 활성화 게이트: ✅ Phase 17/18 핵심부 완료 (2026-05-04 통과, PR #99/#100)
+## 진행 룰: 동시 진행 PBC ≤ 2개 / PBC = 순수 도메인 동작 (auth/결제는 횡단)
+## 외부 의존 14건 (소부장 305-308, 연구소 310/312, 특허 313/314, 스크래퍼 318-4/319/320, PKCS#12 321)은 별도 트랙
+
+### L2: pbc-image-engine > L3: Top 1 PBC 추출 (4주, 7개 앱 통합)
+- [ ] WI-401-feat pbc-image-engine 패키지 스켈레톤 + types.ts (5 providers + 7 modes) | L1:Phase19 > L2:ImageEngine > L3:Skeleton
+- [ ] WI-402-feat FlowStudio v2 imageProvider/ 이전 (googleGenAI/vertexai/openRouter) | L1:Phase19 > L2:ImageEngine > L3:Migration
+- [ ] WI-403-feat provider 자동 선택 로직 + 단위 테스트 | L1:Phase19 > L2:ImageEngine > L3:SelectProvider
+- [ ] WI-404-feat ComfyUI Local 어댑터 + AX Studio 1개 워크플로우 검증 (Z-Image) | L1:Phase19 > L2:ImageEngine > L3:ComfyUI Local
+- [ ] WI-405-feat ComfyUI Cloud 어댑터 (ViewComfy, AX Studio Cloud) | L1:Phase19 > L2:ImageEngine > L3:ComfyUI Cloud
+- [ ] WI-406-feat FlowRetouch RETOUCH 모드 + retouch-pro/free 프리셋 (PRO_MODE_SYSTEM_PROMPT 보존) | L1:Phase19 > L2:ImageEngine > L3:Retouch
+- [ ] WI-407-refactor FlowStudio v1을 PBC로 마이그레이션 | L1:Phase19 > L2:ImageEngine > L3:Migrate v1
+- [ ] WI-408-refactor FlowStudio_re 마이그레이션 | L1:Phase19 > L2:ImageEngine > L3:Migrate re
+- [ ] WI-409-test 통합 테스트 + E2E fixture (Google GenAI 1회 + ComfyUI 1회) | L1:Phase19 > L2:ImageEngine > L3:Tests
+- [ ] WI-410-docs README + CHANGELOG (5 사용 예제) | L1:Phase19 > L2:ImageEngine > L3:Docs
+
+### L2: pbc-block-builder > L3: Top 2 PBC 추출 (4주, 21블록 4 출력)
+- [ ] WI-501-feat pbc-block-builder 스켈레톤 + types.ts | L1:Phase19 > L2:BlockBuilder > L3:Skeleton
+- [ ] WI-502-refactor 21블록 정의 이전 (FlowStudio v2 block-system-design 기반, 카테고리명 확정) | L1:Phase19 > L2:BlockBuilder > L3:Migrate
+- [ ] WI-503-feat HTML 렌더러 | L1:Phase19 > L2:BlockBuilder > L3:HTML
+- [ ] WI-504-feat React 렌더러 | L1:Phase19 > L2:BlockBuilder > L3:React
+- [ ] WI-505-feat Markdown 렌더러 | L1:Phase19 > L2:BlockBuilder > L3:Markdown
+- [ ] WI-506-feat DOCX element 렌더러 (텍스트/이미지/리스트) | L1:Phase19 > L2:BlockBuilder > L3:DOCX
+- [ ] WI-507-feat AI 카피 파이프라인 (intent → blocks, 5단계) | L1:Phase19 > L2:BlockBuilder > L3:AI Pipeline
+- [ ] WI-508-feat 4 PRESETS (랜딩/상세/SNS/문서) | L1:Phase19 > L2:BlockBuilder > L3:Presets
+- [ ] WI-509-refactor FlowStudio v2 빌더 마이그레이션 | L1:Phase19 > L2:BlockBuilder > L3:Migrate v2
+- [ ] WI-510-test 통합 테스트 + 데모 (4 출력 포맷 snapshot) | L1:Phase19 > L2:BlockBuilder > L3:Tests
+- [ ] WI-511-docs 카탈로그 README + 4 출력 포맷 비교 | L1:Phase19 > L2:BlockBuilder > L3:Docs
+
+### L2: pbc-hr-payroll > L3: Top 3 PBC 추출 (6주, FlowTeams 이전)
+- [ ] WI-601-feat pbc-hr-payroll 스켈레톤 + types.ts (camelCase InsuranceRates) | L1:Phase19 > L2:HRPayroll > L3:Skeleton
+- [ ] WI-602-feat 4대보험 rates 2025/2026 + 단위 테스트 (year-aware) | L1:Phase19 > L2:HRPayroll > L3:InsuranceRates
+- [ ] WI-603-feat 급여 계산 로직 + 10개 fixture (정규/계약/일용/시간제 × 일반/연장/공휴근로) | L1:Phase19 > L2:HRPayroll > L3:Calculate
+- [ ] WI-604-feat 근태 서비스 + AttendanceMethod별 검증 (FlowTeams enum 매핑 검증) | L1:Phase19 > L2:HRPayroll > L3:Attendance
+- [ ] WI-605-feat 휴가 서비스 + 잔여 계산 (LeaveType별) | L1:Phase19 > L2:HRPayroll > L3:Leave
+- [ ] WI-606-feat 노무자문 인터페이스 (실제 AI는 packages/ai) | L1:Phase19 > L2:HRPayroll > L3:Nomu
+- [ ] WI-607-refactor FlowTeams 도메인 모델을 PBC로 분리 (통합 schema 도메인 섹션) | L1:Phase19 > L2:HRPayroll > L3:ModelExtract
+- [ ] WI-608-refactor FlowTeams를 apps/flowteams로 이전 (FlowTeams v1 안정화 후) | L1:Phase19 > L2:HRPayroll > L3:AppMigrate
+- [ ] WI-609-test E2E 월급 정산 시나리오 | L1:Phase19 > L2:HRPayroll > L3:E2E
+- [ ] WI-610-docs API + 한국 법규 매핑 표 | L1:Phase19 > L2:HRPayroll > L3:Docs
