@@ -2,7 +2,8 @@
 
 > **위치**: `packages/pbc-block-builder/`
 > **부모 PRD**: [`./PRD.md`](./PRD.md)
-> **활성화 게이트**: AXLE Phase 17/18 완료
+> **활성화 게이트**: ✅ Phase 17/18 핵심부 완료 (2026-05-04 통과, 외부 의존 14건은 별도 트랙)
+> **fix_plan 등록**: WI-501 ~ WI-511 (11건, Phase 19)
 > **기간 추정**: 4주
 > **선행 PBC**: 없음 (image-engine과 1주 겹침 가능)
 

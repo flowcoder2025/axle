@@ -2,7 +2,8 @@
 
 > **위치**: `packages/pbc-hr-payroll/`
 > **부모 PRD**: [`./PRD.md`](./PRD.md)
-> **활성화 게이트**: AXLE Phase 17/18 완료 + FlowTeams v1 안정화
+> **활성화 게이트**: ✅ Phase 17/18 핵심부 완료 (2026-05-04 통과) + ⏳ FlowTeams v1 안정화 대기
+> **fix_plan 등록**: WI-601 ~ WI-610 (10건, Phase 19)
 > **기간 추정**: 6주
 > **선행 PBC**: 없음 (다른 PBC와 병렬 가능, 단 동시 ≤ 2)
 
