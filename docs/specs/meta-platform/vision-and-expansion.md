@@ -100,7 +100,7 @@
 | # | PBC | 출처 | 상태 |
 |---|---|---|---|
 | 1 | `pbc-image-engine` | AX Studio + FlowStudio + FlowRetouch | WI-401~410 등록 |
-| 2 | `pbc-block-builder` | FlowStudio v2 21블록 | WI-501~511 등록 |
+| 2 | `pbc-block-builder` | FlowStudio v2 23블록 | WI-501~511 등록 |
 | 3 | `pbc-hr-payroll` | FlowTeams | WI-601~610 등록 |
 
 ### 2.2 Top 10 (1년 후 목표)

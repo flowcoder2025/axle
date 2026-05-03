@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlowCoder Default — Design System</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/style.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-mono/style.min.css">
+<style>
+/* ============================================
+   FlowCoder Default — Design System Tokens
+   ============================================ */
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --surface: 0 0% 100%;
+  --surface-raised: 220 14% 97%;
+  --surface-muted: 240 5% 96%;
+  --card: 0 0% 100%;
+  --popover: 220 14% 97%;
+  --primary: 217 91% 53%;
+  --primary-foreground: 0 0% 100%;
+  --primary-hover: 224 76% 48%;
+  --secondary: 240 5% 96%;
+  --secondary-foreground: 240 6% 10%;
+  --muted: 240 5% 96%;
+  --muted-foreground: 240 4% 46%;
+  --accent: 217 91% 53%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 142 71% 38%;
+  --warning: 32 94% 44%;
+  --info: 217 91% 60%;
+  --border: 240 6% 90%;
+  --border-subtle: 240 5% 96%;
+  --input: 240 6% 90%;
+  --ring: 217 91% 53%;
+
+  --sidebar-bg: 0 0% 98%;
+  --sidebar-fg: 240 10% 3.9%;
+  --sidebar-active-bg: 217 91% 95%;
+  --sidebar-border: 240 6% 90%;
+
+  --chart-1: 211 91% 60%;
+  --chart-2: 142 71% 45%;
+  --chart-3: 38 92% 50%;
+  --chart-4: 258 90% 75%;
+  --chart-5: 330 81% 70%;
+
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 12px;
+
+  --shadow-border: 0 0 0 1px hsl(var(--border));
+  --shadow-elevation-1: 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-elevation-2: 0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
+
+  --font-sans: 'Pretendard Variable', 'Geist', system-ui, -apple-system, sans-serif;
+  --font-display: 'Geist', 'Pretendard Variable', sans-serif;
+  --font-mono: 'Geist Mono', 'SF Mono', 'JetBrains Mono', ui-monospace, monospace;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+}
+
+.dark {
+  --background: 220 18% 6%;
+  --foreground: 0 0% 98%;
+  --surface: 220 14% 12%;
+  --surface-raised: 220 11% 17%;
+  --surface-muted: 240 6% 15%;
+  --card: 220 14% 12%;
+  --popover: 220 11% 17%;
+  --primary: 211 91% 60%;
+  --primary-foreground: 220 18% 6%;
+  --primary-hover: 211 78% 53%;
+  --secondary: 240 4% 15%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 4% 15%;
+  --muted-foreground: 240 5% 65%;
+  --accent: 211 91% 60%;
+  --destructive: 0 84% 60%;
+  --success: 142 71% 45%;
+  --warning: 38 92% 50%;
+  --info: 213 94% 68%;
+  --border: 217 13% 23%;
+  --border-subtle: 240 4% 12%;
+  --input: 217 13% 23%;
+  --ring: 211 91% 60%;
+
+  --sidebar-bg: 220 18% 7%;
+  --sidebar-fg: 0 0% 98%;
+  --sidebar-active-bg: 211 91% 18%;
+  --sidebar-border: 217 13% 17%;
+
+  --shadow-elevation-1: 0 2px 8px rgba(0,0,0,0.20);
+  --shadow-elevation-2: 0 4px 12px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.20);
+}
+
+/* ============================================
+   Base
+   ============================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-sans);
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "liga" 1;
+  word-break: keep-all;
+  transition: background 200ms ease;
+}
+
+code, pre { font-family: var(--font-mono); }
+
+/* ============================================
+   Typography
+   ============================================ */
+.t-display-hero { font-family: var(--font-display); font-size: 56px; font-weight: 700; line-height: 1.05; letter-spacing: -0.04em; }
+.t-page-title { font-family: var(--font-display); font-size: 32px; font-weight: 700; line-height: 1.2; letter-spacing: -0.025em; }
+.t-section-heading { font-size: 24px; font-weight: 600; line-height: 1.3; letter-spacing: -0.02em; }
+.t-card-title { font-size: 18px; font-weight: 600; line-height: 1.4; letter-spacing: -0.01em; }
+.t-sub-title { font-size: 16px; font-weight: 600; line-height: 1.5; }
+.t-body-large { font-size: 16px; font-weight: 400; line-height: 1.6; }
+.t-body { font-size: 14px; font-weight: 400; line-height: 1.5; }
+.t-body-strong { font-size: 14px; font-weight: 500; line-height: 1.5; }
+.t-caption { font-size: 12px; font-weight: 400; line-height: 1.4; color: hsl(var(--muted-foreground)); }
+.t-caption-strong { font-size: 12px; font-weight: 500; line-height: 1.4; letter-spacing: 0.02em; text-transform: uppercase; color: hsl(var(--muted-foreground)); }
+.t-button { font-size: 14px; font-weight: 500; line-height: 1.4; }
+.t-mono-body { font-family: var(--font-mono); font-size: 13px; font-weight: 400; }
+.t-kpi { font-family: var(--font-display); font-size: 32px; font-weight: 700; line-height: 1.0; letter-spacing: -0.025em; font-feature-settings: "tnum" 1; }
+.t-tnum { font-family: var(--font-display); font-feature-settings: "tnum" 1; }
+
+.muted { color: hsl(var(--muted-foreground)); }
+
+/* ============================================
+   Container
+   ============================================ */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 var(--space-5); }
+
+/* ============================================
+   Topbar (sticky control)
+   ============================================ */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: hsla(var(--background), 0.85);
+  backdrop-filter: saturate(180%) blur(8px);
+  border-bottom: 1px solid hsl(var(--border-subtle));
+  padding: 12px 0;
+}
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-weight: 700;
+  font-size: 16px;
+}
+.brand-mark {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--chart-4)));
+  border-radius: var(--radius);
+}
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ============================================
+   Hero
+   ============================================ */
+.hero {
+  padding: var(--space-9) 0 var(--space-7);
+  border-bottom: 1px solid hsl(var(--border-subtle));
+}
+.eyebrow {
+  display: inline-block;
+  padding: 6px 12px;
+  background: hsl(var(--surface-muted));
+  color: hsl(var(--muted-foreground));
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  margin-bottom: var(--space-4);
+}
+.hero-tagline {
+  font-size: 20px;
+  color: hsl(var(--muted-foreground));
+  max-width: 720px;
+  margin-top: var(--space-4);
+  line-height: 1.6;
+}
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+.meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: hsl(var(--surface));
+  border: 1px solid hsl(var(--border));
+  border-radius: 100px;
+  font-size: 13px;
+  color: hsl(var(--muted-foreground));
+}
+.meta-pill strong { color: hsl(var(--foreground)); }
+
+/* ============================================
+   Section
+   ============================================ */
+section { padding: var(--space-7) 0; }
+section + section { border-top: 1px solid hsl(var(--border-subtle)); }
+.section-num {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: hsl(var(--primary));
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-2);
+}
+.section-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-2);
+}
+.section-lead {
+  font-size: 15px;
+  color: hsl(var(--muted-foreground));
+  max-width: 720px;
+  margin-bottom: var(--space-6);
+  line-height: 1.6;
+}
+
+/* ============================================
+   Color Swatches
+   ============================================ */
+.swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-3); }
+.swatch {
+  background: hsl(var(--surface));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-border);
+  overflow: hidden;
+  transition: box-shadow 200ms ease;
+}
+.swatch:hover { box-shadow: var(--shadow-border), var(--shadow-elevation-1); }
+.swatch-color { height: 80px; }
+.swatch-meta { padding: 12px 14px; }
+.swatch-name { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.swatch-hex { font-family: var(--font-mono); font-size: 11px; color: hsl(var(--muted-foreground)); }
+.swatch-token { font-family: var(--font-mono); font-size: 10px; color: hsl(var(--muted-foreground)); margin-top: 2px; opacity: 0.7; }
+
+/* ============================================
+   Typography Sample
+   ============================================ */
+.type-sample {
+  background: hsl(var(--surface));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-border);
+  overflow: hidden;
+}
+.type-row {
+  padding: 16px 20px;
+  border-bottom: 1px solid hsl(var(--border-subtle));
+  display: grid;
+  grid-template-columns: 200px 1fr 240px;
+  align-items: baseline;
+  gap: var(--space-4);
+}
+.type-row:last-child { border-bottom: none; }
+.type-label { font-size: 12px; color: hsl(var(--muted-foreground)); font-family: var(--font-mono); }
+.type-spec { font-family: var(--font-mono); font-size: 11px; color: hsl(var(--muted-foreground)); text-align: right; }
+
+/* ============================================
+   Spacing Scale
+   ============================================ */
+.spacing-grid { display: flex; flex-direction: column; gap: var(--space-3); }
+.spacing-row {
+  display: grid;
+  grid-template-columns: 100px 80px 1fr;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: hsl(var(--surface));
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-border);
+}
+.spacing-name { font-family: var(--font-mono); font-size: 13px; font-weight: 500; }
+.spacing-value { font-family: var(--font-mono); font-size: 13px; color: hsl(var(--muted-foreground)); }
+.spacing-bar { height: 24px; background: hsl(var(--primary) / 0.15); border-radius: var(--radius-sm); position: relative; }
+.spacing-bar::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: hsl(var(--primary)); border-radius: var(--radius-sm); }
+
+/* ============================================
+   Buttons
+   ============================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  cursor: pointer;
+  border: none;
+  transition: background 150ms ease, box-shadow 150ms ease, transform 100ms ease;
+  word-break: keep-all;
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.btn-primary:hover { background: hsl(var(--primary-hover)); }
+.btn-secondary { background: hsl(var(--surface)); color: hsl(var(--foreground)); box-shadow: var(--shadow-border); }
+.btn-secondary:hover { background: hsl(var(--surface-raised)); }
+.btn-ghost { background: transparent; color: hsl(var(--foreground)); }
+.btn-ghost:hover { background: hsl(var(--surface-muted)); }
+.btn-destructive { background: hsl(var(--destructive)); color: hsl(var(--destructive-foreground)); }
+.btn-destructive:hover { background: hsl(var(--destructive) / 0.9); }
+.btn-sm { height: 32px; padding: 0 12px; font-size: 13px; }
+.btn-lg { height: 40px; padding: 0 18px; font-size: 15px; }
+
+.btn-row { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; padding: var(--space-4); background: hsl(var(--surface)); border-radius: var(--radius-lg); box-shadow: var(--shadow-border); }
+.btn-row + .btn-row { margin-top: var(--space-2); }
+.btn-row-label { font-family: var(--font-mono); font-size: 12px; color: hsl(var(--muted-foreground)); margin-right: var(--space-3); min-width: 80px; }
+
+/* ============================================
+   Inputs
+   ============================================ */
+.input {
+  width: 100%;
+  height: 40px;
+  padding: 0 14px;
+  background: hsl(var(--surface));
+  color: hsl(var(--foreground));
+  border: none;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-border);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: box-shadow 150ms ease;
+}
+.input:focus { box-shadow: 0 0 0 2px hsl(var(--ring)), 0 0 0 6px hsl(var(--ring) / 0.15); }
+.input.error { box-shadow: 0 0 0 2px hsl(var(--destructive)); }
+.input-label { font-size: 12px; font-weight: 500; letter-spacing: 0.02em; text-transform: uppercase; color: hsl(var(--muted-foreground)); margin-bottom: 6px; display: block; }
+.input-help { font-size: 12px; color: hsl(var(--muted-foreground)); margin-top: 4px; }
+.input-help.error { color: hsl(var(--destructive)); }
+.input-group { margin-bottom: var(--space-4); }
+
+/* ============================================
+   Cards
+   ============================================ */
+.card {
+  background: hsl(var(--card));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-border);
+  padding: var(--space-5);
+  transition: box-shadow 200ms ease;
+}
+.card-elevated:hover { box-shadow: var(--shadow-border), var(--shadow-elevation-1); }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3); }
+.card-footer { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid hsl(var(--border-subtle)); display: flex; justify-content: flex-end; gap: var(--space-2); }
+.card-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4); }
+.card-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
+.card-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); }
+@media (max-width: 800px) { .card-grid-2, .card-grid-3, .card-grid-4 { grid-template-columns: 1fr; } }
+
+/* KPI card */
+.kpi-card {
+  padding: 20px;
+  background: hsl(var(--card));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-border);
+}
+.kpi-label { font-size: 12px; color: hsl(var(--muted-foreground)); margin-bottom: 8px; letter-spacing: 0.02em; text-transform: uppercase; font-weight: 500; }
+.kpi-value { font-family: var(--font-display); font-size: 28px; font-weight: 700; letter-spacing: -0.025em; font-feature-settings: "tnum" 1; line-height: 1; }
+.kpi-delta { font-size: 12px; font-weight: 500; margin-top: 6px; }
+.kpi-delta.up { color: hsl(var(--success)); }
+.kpi-delta.down { color: hsl(var(--destructive)); }
+
+/* ============================================
+   Badges
+   ============================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.badge-default { background: hsl(var(--surface-muted)); color: hsl(var(--muted-foreground)); }
+.badge-success { background: hsl(var(--success) / 0.12); color: hsl(var(--success)); }
+.badge-warning { background: hsl(var(--warning) / 0.15); color: hsl(var(--warning)); }
+.badge-destructive { background: hsl(var(--destructive) / 0.12); color: hsl(var(--destructive)); }
+.badge-info { background: hsl(var(--info) / 0.12); color: hsl(var(--info)); }
+.badge-outline { background: transparent; box-shadow: 0 0 0 1px currentColor; color: hsl(var(--muted-foreground)); }
+
+/* ============================================
+   Tables
+   ============================================ */
+.table-wrap {
+  background: hsl(var(--card));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-border);
+  overflow: hidden;
+}
+table { width: 100%; border-collapse: collapse; }
+th, td {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 13px;
+  border-bottom: 1px solid hsl(var(--border-subtle));
+}
+th {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+  background: hsl(var(--surface-raised));
+}
+td { color: hsl(var(--foreground)); }
+td.num { text-align: right; font-family: var(--font-mono); font-feature-settings: "tnum" 1; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: hsl(var(--surface-muted)); }
+
+/* ============================================
+   App Shell Demo
+   ============================================ */
+.shell-demo {
+  background: hsl(var(--background));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-border);
+  overflow: hidden;
+  height: 480px;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+}
+.shell-sidebar {
+  background: hsl(var(--sidebar-bg));
+  border-right: 1px solid hsl(var(--sidebar-border));
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+}
+.shell-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 16px;
+  font-weight: 700;
+  font-size: 15px;
+}
+.shell-section-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+  padding: 16px 8px 6px;
+}
+.shell-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  color: hsl(var(--sidebar-fg));
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.shell-nav-item:hover { background: hsl(var(--surface-muted)); }
+.shell-nav-item.active {
+  background: hsl(var(--sidebar-active-bg));
+  color: hsl(var(--primary));
+  position: relative;
+}
+.shell-nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  background: hsl(var(--primary));
+  border-radius: 2px;
+}
+.shell-nav-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  background: currentColor;
+  opacity: 0.7;
+}
+.shell-main { display: flex; flex-direction: column; overflow: hidden; }
+.shell-topbar {
+  height: 56px;
+  border-bottom: 1px solid hsl(var(--border-subtle));
+  padding: 0 var(--space-5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.shell-content { padding: var(--space-5); overflow: auto; flex: 1; }
+
+/* ============================================
+   Chart Palette
+   ============================================ */
+.chart-demo { padding: var(--space-5); background: hsl(var(--card)); border-radius: var(--radius-lg); box-shadow: var(--shadow-border); }
+.chart-svg { width: 100%; height: 200px; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-3); }
+.chart-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: hsl(var(--muted-foreground)); }
+.chart-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+/* ============================================
+   Toast
+   ============================================ */
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: hsl(var(--surface-raised));
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-border), var(--shadow-elevation-2);
+  border-left: 3px solid hsl(var(--success));
+  max-width: 360px;
+}
+.toast-icon { width: 18px; height: 18px; border-radius: 50%; background: hsl(var(--success)); flex-shrink: 0; margin-top: 2px; }
+.toast-body { flex: 1; }
+.toast-title { font-size: 13px; font-weight: 600; }
+.toast-desc { font-size: 12px; color: hsl(var(--muted-foreground)); margin-top: 2px; }
+
+/* ============================================
+   Skeleton
+   ============================================ */
+.skeleton {
+  background: linear-gradient(90deg, hsl(var(--surface-muted)) 0%, hsl(var(--surface-raised)) 50%, hsl(var(--surface-muted)) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s linear infinite;
+  border-radius: var(--radius-sm);
+  height: 14px;
+}
+@keyframes shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* ============================================
+   Anti-patterns
+   ============================================ */
+.anti {
+  background: hsl(var(--destructive) / 0.05);
+  border-left: 3px solid hsl(var(--destructive));
+  padding: var(--space-3) var(--space-4);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin-bottom: var(--space-2);
+}
+.anti-title { font-weight: 600; color: hsl(var(--destructive)); font-size: 13px; margin-bottom: 2px; }
+.anti-desc { font-size: 13px; color: hsl(var(--muted-foreground)); }
+
+/* ============================================
+   Footer
+   ============================================ */
+footer {
+  border-top: 1px solid hsl(var(--border-subtle));
+  padding: var(--space-6) 0;
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+  font-size: 13px;
+}
+footer code { background: hsl(var(--surface-muted)); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+
+/* ============================================
+   Toggle Switch
+   ============================================ */
+.toggle {
+  display: inline-flex;
+  background: hsl(var(--surface));
+  box-shadow: var(--shadow-border);
+  border-radius: var(--radius);
+  padding: 3px;
+  gap: 2px;
+}
+.toggle button {
+  background: transparent;
+  border: none;
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  border-radius: calc(var(--radius) - 3px);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+.toggle button.on {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="container topbar-inner">
+    <div class="topbar-brand">
+      <div class="brand-mark"></div>
+      <span>FlowCoder Default</span>
+      <span class="badge badge-default" style="margin-left: 8px;">v1.0.0</span>
+    </div>
+    <div class="topbar-actions">
+      <div class="toggle" id="modeToggle">
+        <button data-mode="light">☀ Light</button>
+        <button data-mode="dark" class="on">🌙 Dark</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="container hero">
+  <span class="eyebrow">Meta-Platform Baseline · open-design 9-section format</span>
+  <h1 class="t-display-hero">FlowCoder<br>Design System</h1>
+  <p class="hero-tagline">
+    다중 도메인 SaaS 캔버스. 한국어 우선 타이포그래피, 다크 기본 + 라이트 모드, Zinc 중성 톤에 깊은 블루 악센트. 컨설팅부터 콘텐츠까지 어떤 도메인이 위에서 돌아가도 시각 충돌 없이 호스팅한다.
+  </p>
+  <div class="hero-meta">
+    <span class="meta-pill">📐 <strong>8px grid</strong></span>
+    <span class="meta-pill">🅰️ <strong>Pretendard + Geist</strong></span>
+    <span class="meta-pill">🎨 <strong>Zinc + Deep Blue</strong></span>
+    <span class="meta-pill">🌗 <strong>Dark default</strong></span>
+    <span class="meta-pill">🧱 <strong>shadcn/ui New York</strong></span>
+    <span class="meta-pill">📏 <strong>radius 8/12px</strong></span>
+  </div>
+</div>
+
+<!-- COLOR -->
+<section>
+  <div class="container">
+    <div class="section-num">02 · COLOR</div>
+    <h2 class="section-title">Color Palette</h2>
+    <p class="section-lead">전 토큰은 HSL CSS 변수로 정의. shadcn/ui 호환. 화면당 accent 사용 최대 2회.</p>
+
+    <h3 class="t-card-title" style="margin-bottom: var(--space-3);">Surface & Text</h3>
+    <div class="swatch-grid" style="margin-bottom: var(--space-6);">
+      <div class="swatch"><div class="swatch-color" style="background: hsl(var(--background));"></div><div class="swatch-meta"><div class="swatch-name">Background</div><div class="swatch-hex" id="hex-bg"></div><div class="swatch-token">--background</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: hsl(var(--surface));"></div><div class="swatch-meta"><div class="swatch-name">Surface</div><div class="swatch-hex" id="hex-surface"></div><div class="swatch-token">--surface</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: hsl(var(--surface-raised));"></div><div class="swatch-meta"><div class="swatch-name">Surface Raised</div><div class="swatch-hex" id="hex-raised"></div><div class="swatch-token">--surface-raised</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: hsl(var(--surface-muted));"></div><div class="swatch-meta"><div class="swatch-name">Surface Muted</div><div class="swatch-hex" id="hex-muted"></div><div class="swatch-token">--surface-muted</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: hsl(var(--foreground));"></div><div class="swatch-meta"><div class="swatch-name">Foreground</div><div class="swatch-hex" id="hex-fg"></div><div class="swatch-token">--foreground</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: hsl(var(--muted-foreground));"></div><div class="swatch-meta"><div class="swatch-name">Muted Foreground</div><div class="swatch-hex" id="hex-mfg"></div><div class="swatch-token">--muted-foreground</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: hsl(var(--border));"></div><div class="swatch-meta"><div class="swatch-name">Border</div><div class="swatch-hex" id="hex-border"></div><div class="swatch-token">--border</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: hsl(var(--border-subtle));"></div><div class="swatch-meta"><div class="swatch-name">Border Subtle</div><div class="swatch-hex" id="hex-border-subtle"></div><div class="swatch-token">--border-subtle</div></div></div>
+    </div>
+
+    <h3 class="t-card-title" style="margin-bottom: var(--space-3);">Accent & Semantic</h3>
+    <div class="swatch-grid" style="margin-bottom: var(--space-6);">
+      <div class="swatch"><div class="swatch-color" style="background: hsl(var(--primary));"></div><div class="swatch-meta"><div class="swatch-name" style="color: hsl(var(--primary));">Primary</div><div class="swatch-hex" id="hex-primary"></div><div class="swatch-token">--primary</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: hsl(var(--success));"></div><div class="swatch-meta"><div class="swatch-name" style="color: hsl(var(--success));">Success</div><div class="swatch-hex" id="hex-success"></div><div class="swatch-token">--success</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: hsl(var(--warning));"></div><div class="swatch-meta"><div class="swatch-name" style="color: hsl(var(--warning));">Warning</div><div class="swatch-hex" id="hex-warning"></div><div class="swatch-token">--warning</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: hsl(var(--destructive));"></div><div class="swatch-meta"><div class="swatch-name" style="color: hsl(var(--destructive));">Destructive</div><div class="swatch-hex" id="hex-destructive"></div><div class="swatch-token">--destructive</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: hsl(var(--info));"></div><div class="swatch-meta"><div class="swatch-name" style="color: hsl(var(--info));">Info</div><div class="swatch-hex" id="hex-info"></div><div class="swatch-token">--info</div></div></div>
+    </div>
+
+    <h3 class="t-card-title" style="margin-bottom: var(--space-3);">Chart Palette (categorical, 5-step)</h3>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="swatch-color" style="background: hsl(var(--chart-1));"></div><div class="swatch-meta"><div class="swatch-name">Chart 1 — Primary</div><div class="swatch-token">--chart-1</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: hsl(var(--chart-2));"></div><div class="swatch-meta"><div class="swatch-name">Chart 2 — Success</div><div class="swatch-token">--chart-2</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: hsl(var(--chart-3));"></div><div class="swatch-meta"><div class="swatch-name">Chart 3 — Warning</div><div class="swatch-token">--chart-3</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: hsl(var(--chart-4));"></div><div class="swatch-meta"><div class="swatch-name">Chart 4 — Violet</div><div class="swatch-token">--chart-4</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background: hsl(var(--chart-5));"></div><div class="swatch-meta"><div class="swatch-name">Chart 5 — Pink</div><div class="swatch-token">--chart-5</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- TYPOGRAPHY -->
+<section>
+  <div class="container">
+    <div class="section-num">03 · TYPOGRAPHY</div>
+    <h2 class="section-title">Typography</h2>
+    <p class="section-lead">한글 우선: Pretendard Variable. 영문 fallback: Geist. 코드 / 숫자: Geist Mono with tnum. 가중치 400–700, 그 외 사용 금지.</p>
+
+    <div class="type-sample">
+      <div class="type-row">
+        <span class="type-label">Display Hero</span>
+        <span class="t-display-hero">메타플랫폼</span>
+        <span class="type-spec">56px / 700 / -0.04em</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">Page Title</span>
+        <span class="t-page-title">고객 관리 대시보드</span>
+        <span class="type-spec">32px / 700 / -0.025em</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">Section Heading</span>
+        <span class="t-section-heading">최근 활동</span>
+        <span class="type-spec">24px / 600 / -0.02em</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">Card Title</span>
+        <span class="t-card-title">사업계획서 작성</span>
+        <span class="type-spec">18px / 600 / -0.01em</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">Body Large</span>
+        <span class="t-body-large">컨설팅 업무를 자동화하여 사업계획서 작성 시간을 절반으로 줄입니다.</span>
+        <span class="type-spec">16px / 400 / 1.6</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">Body</span>
+        <span class="t-body">표준 UI 텍스트. 본문 단락이나 폼 레이블, 설명 문구에 사용됩니다.</span>
+        <span class="type-spec">14px / 400 / 1.5</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">Body Strong</span>
+        <span class="t-body-strong">강조된 본문 — 중요 정보, 활성 상태</span>
+        <span class="type-spec">14px / 500</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">Caption</span>
+        <span class="t-caption">2026년 5월 4일 오후 2:30 · 박현일</span>
+        <span class="type-spec">12px / 400</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">Caption Strong</span>
+        <span class="t-caption-strong">SECTION LABEL · 섹션 라벨</span>
+        <span class="type-spec">12px / 500 / 0.02em</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">Mono Body</span>
+        <span class="t-mono-body">npm install @axle/pbc-image-engine</span>
+        <span class="type-spec">13px / mono / 400</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">KPI Number</span>
+        <span class="t-kpi">1,234,567</span>
+        <span class="type-spec">32px / 700 / tnum</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SPACING -->
+<section>
+  <div class="container">
+    <div class="section-num">04 · SPACING</div>
+    <h2 class="section-title">Spacing Scale</h2>
+    <p class="section-lead">8px 그리드 + 4px 서브그리드. 모든 spacing 값은 이 스케일에서만.</p>
+
+    <div class="spacing-grid">
+      <div class="spacing-row"><span class="spacing-name">space-1</span><span class="spacing-value">4px</span><div class="spacing-bar" style="width: 4px;"></div></div>
+      <div class="spacing-row"><span class="spacing-name">space-2</span><span class="spacing-value">8px</span><div class="spacing-bar" style="width: 8px;"></div></div>
+      <div class="spacing-row"><span class="spacing-name">space-3</span><span class="spacing-value">12px</span><div class="spacing-bar" style="width: 12px;"></div></div>
+      <div class="spacing-row"><span class="spacing-name">space-4</span><span class="spacing-value">16px</span><div class="spacing-bar" style="width: 16px;"></div></div>
+      <div class="spacing-row"><span class="spacing-name">space-5</span><span class="spacing-value">24px</span><div class="spacing-bar" style="width: 24px;"></div></div>
+      <div class="spacing-row"><span class="spacing-name">space-6</span><span class="spacing-value">32px</span><div class="spacing-bar" style="width: 32px;"></div></div>
+      <div class="spacing-row"><span class="spacing-name">space-7</span><span class="spacing-value">48px</span><div class="spacing-bar" style="width: 48px;"></div></div>
+      <div class="spacing-row"><span class="spacing-name">space-8</span><span class="spacing-value">64px</span><div class="spacing-bar" style="width: 64px;"></div></div>
+      <div class="spacing-row"><span class="spacing-name">space-9</span><span class="spacing-value">96px</span><div class="spacing-bar" style="width: 96px;"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- BUTTONS -->
+<section>
+  <div class="container">
+    <div class="section-num">05 · BUTTONS</div>
+    <h2 class="section-title">Buttons</h2>
+    <p class="section-lead">4 variants × 3 sizes. Primary는 화면당 1개만.</p>
+
+    <div class="btn-row">
+      <span class="btn-row-label">Primary</span>
+      <button class="btn btn-primary btn-sm">저장</button>
+      <button class="btn btn-primary">사업계획서 생성</button>
+      <button class="btn btn-primary btn-lg">시작하기</button>
+    </div>
+    <div class="btn-row">
+      <span class="btn-row-label">Secondary</span>
+      <button class="btn btn-secondary btn-sm">취소</button>
+      <button class="btn btn-secondary">미리보기</button>
+      <button class="btn btn-secondary btn-lg">설정</button>
+    </div>
+    <div class="btn-row">
+      <span class="btn-row-label">Ghost</span>
+      <button class="btn btn-ghost btn-sm">건너뛰기</button>
+      <button class="btn btn-ghost">자세히 보기</button>
+      <button class="btn btn-ghost btn-lg">더보기</button>
+    </div>
+    <div class="btn-row">
+      <span class="btn-row-label">Destructive</span>
+      <button class="btn btn-destructive btn-sm">삭제</button>
+      <button class="btn btn-destructive">계정 비활성화</button>
+      <button class="btn btn-destructive btn-lg">데이터 삭제</button>
+    </div>
+  </div>
+</section>
+
+<!-- INPUTS -->
+<section>
+  <div class="container">
+    <div class="section-num">06 · INPUTS</div>
+    <h2 class="section-title">Inputs</h2>
+    <p class="section-lead">레이블은 항상 위. 포커스 ring 2px + outer 4px (rgba(accent, 0.15)).</p>
+
+    <div class="card-grid-2">
+      <div>
+        <div class="input-group">
+          <label class="input-label">고객 이름</label>
+          <input class="input" placeholder="(주)온고롱" />
+          <div class="input-help">정식 사업자 등록명을 입력해 주세요</div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">사업자 번호</label>
+          <input class="input" value="412-86-12345" />
+          <div class="input-help">자동 검증됩니다</div>
+        </div>
+      </div>
+      <div>
+        <div class="input-group">
+          <label class="input-label">이메일</label>
+          <input class="input error" value="invalid-email" />
+          <div class="input-help error">올바른 이메일 형식이 아닙니다</div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">메모</label>
+          <textarea class="input" style="height: 80px; padding: 12px 14px; resize: vertical;" placeholder="추가 정보를 입력해 주세요"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- KPI / CARDS -->
+<section>
+  <div class="container">
+    <div class="section-num">07 · CARDS · KPI</div>
+    <h2 class="section-title">Cards & KPI</h2>
+    <p class="section-lead">Card padding 24px (16 compact). Radius 12px. shadow-as-border + 호버 시 elevation 추가.</p>
+
+    <h3 class="t-card-title" style="margin-bottom: var(--space-3);">KPI Cards</h3>
+    <div class="card-grid-4" style="margin-bottom: var(--space-5);">
+      <div class="kpi-card">
+        <div class="kpi-label">활성 고객</div>
+        <div class="kpi-value">42</div>
+        <div class="kpi-delta up">▲ 12% 지난주</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">진행 중 프로젝트</div>
+        <div class="kpi-value">17</div>
+        <div class="kpi-delta up">▲ 3건 신규</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">월 매출</div>
+        <div class="kpi-value">₩52.4M</div>
+        <div class="kpi-delta down">▼ 4% 전월</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">합격률</div>
+        <div class="kpi-value">87%</div>
+        <div class="kpi-delta up">▲ 6% 분기</div>
+      </div>
+    </div>
+
+    <h3 class="t-card-title" style="margin-bottom: var(--space-3);">Content Card</h3>
+    <div class="card-grid-2">
+      <div class="card card-elevated">
+        <div class="card-header">
+          <div>
+            <div class="t-card-title">사업계획서 작성</div>
+            <div class="t-caption">최종 수정 2026.05.04</div>
+          </div>
+          <span class="badge badge-success">진행중</span>
+        </div>
+        <p class="t-body muted">정부 지원사업 신청을 위한 사업계획서 자동 생성 도구. AI가 마스터 프로필을 분석해 9섹션 초안을 작성합니다.</p>
+        <div class="card-footer">
+          <button class="btn btn-ghost btn-sm">미리보기</button>
+          <button class="btn btn-primary btn-sm">계속하기</button>
+        </div>
+      </div>
+      <div class="card card-elevated">
+        <div class="card-header">
+          <div>
+            <div class="t-card-title">벤처 인증 신청</div>
+            <div class="t-caption">기술성평가서 단계</div>
+          </div>
+          <span class="badge badge-warning">검토 대기</span>
+        </div>
+        <p class="t-body muted">벤처기업 인증을 위한 기술성평가서 작성 + 평가 위원회 검토. 마스터 프로필 + 재무 데이터 자동 입력.</p>
+        <div class="card-footer">
+          <button class="btn btn-ghost btn-sm">자세히</button>
+          <button class="btn btn-secondary btn-sm">서류 요청</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BADGES -->
+<section>
+  <div class="container">
+    <div class="section-num">08 · BADGES</div>
+    <h2 class="section-title">Badges</h2>
+    <p class="section-lead">Pill 형태 (radius 9999px). 의미별 tinted background.</p>
+
+    <div class="card" style="display: flex; flex-wrap: wrap; gap: var(--space-2);">
+      <span class="badge badge-default">기본</span>
+      <span class="badge badge-success">완료</span>
+      <span class="badge badge-warning">대기</span>
+      <span class="badge badge-destructive">실패</span>
+      <span class="badge badge-info">진행중</span>
+      <span class="badge badge-outline">초안</span>
+      <span class="badge badge-success">●  Active</span>
+      <span class="badge badge-warning">●  Pending</span>
+      <span class="badge badge-destructive">●  Error</span>
+    </div>
+  </div>
+</section>
+
+<!-- TABLE -->
+<section>
+  <div class="container">
+    <div class="section-num">09 · TABLE</div>
+    <h2 class="section-title">Table (compact density)</h2>
+    <p class="section-lead">테이블은 compact density 기본. 숫자 컬럼은 우측 정렬 + tnum.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>고객명</th>
+            <th>업종</th>
+            <th>상태</th>
+            <th class="num">월 매출</th>
+            <th class="num">합격률</th>
+            <th>마지막 접촉</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>(주)온고롱</strong></td>
+            <td><span class="muted">화장품 제조</span></td>
+            <td><span class="badge badge-success">활성</span></td>
+            <td class="num">₩42,500,000</td>
+            <td class="num">92%</td>
+            <td><span class="muted">2일 전</span></td>
+          </tr>
+          <tr>
+            <td><strong>(주)엠엔티</strong></td>
+            <td><span class="muted">로봇 자동화</span></td>
+            <td><span class="badge badge-info">진행중</span></td>
+            <td class="num">₩28,300,000</td>
+            <td class="num">78%</td>
+            <td><span class="muted">5일 전</span></td>
+          </tr>
+          <tr>
+            <td><strong>(주)번영에프씨</strong></td>
+            <td><span class="muted">제조</span></td>
+            <td><span class="badge badge-warning">검토 대기</span></td>
+            <td class="num">₩15,750,000</td>
+            <td class="num">65%</td>
+            <td><span class="muted">1주 전</span></td>
+          </tr>
+          <tr>
+            <td><strong>(주)딕슨</strong></td>
+            <td><span class="muted">배터리</span></td>
+            <td><span class="badge badge-success">활성</span></td>
+            <td class="num">₩67,200,000</td>
+            <td class="num">94%</td>
+            <td><span class="muted">3일 전</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- APP SHELL -->
+<section>
+  <div class="container">
+    <div class="section-num">10 · APP SHELL</div>
+    <h2 class="section-title">App Shell Pattern</h2>
+    <p class="section-lead">"메인 대시보드 → 상세 모듈 분화" — 모든 도메인 앱의 표준 구조.</p>
+
+    <div class="shell-demo">
+      <aside class="shell-sidebar">
+        <div class="shell-brand">
+          <div class="brand-mark" style="width: 24px; height: 24px;"></div>
+          <span>AXLE</span>
+        </div>
+        <div class="shell-section-label">메인</div>
+        <div class="shell-nav-item active"><div class="shell-nav-icon"></div>대시보드</div>
+        <div class="shell-nav-item"><div class="shell-nav-icon"></div>고객</div>
+        <div class="shell-nav-item"><div class="shell-nav-icon"></div>프로젝트</div>
+        <div class="shell-nav-item"><div class="shell-nav-icon"></div>일정</div>
+
+        <div class="shell-section-label">업무</div>
+        <div class="shell-nav-item"><div class="shell-nav-icon"></div>사업계획서</div>
+        <div class="shell-nav-item"><div class="shell-nav-icon"></div>인증 트랙</div>
+        <div class="shell-nav-item"><div class="shell-nav-icon"></div>견적·계약</div>
+
+        <div style="margin-top: auto;">
+          <div class="shell-nav-item"><div class="shell-nav-icon"></div>설정</div>
+        </div>
+      </aside>
+      <div class="shell-main">
+        <div class="shell-topbar">
+          <div class="t-card-title">대시보드</div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input class="input" style="width: 200px; height: 32px; font-size: 13px;" placeholder="검색..." />
+            <div class="brand-mark" style="width: 28px; height: 28px; border-radius: 50%; background: hsl(var(--primary));"></div>
+          </div>
+        </div>
+        <div class="shell-content">
+          <div class="card-grid-3" style="margin-bottom: var(--space-4);">
+            <div class="kpi-card"><div class="kpi-label">활성 고객</div><div class="kpi-value">42</div><div class="kpi-delta up">▲ 12%</div></div>
+            <div class="kpi-card"><div class="kpi-label">프로젝트</div><div class="kpi-value">17</div><div class="kpi-delta up">▲ 3건</div></div>
+            <div class="kpi-card"><div class="kpi-label">월 매출</div><div class="kpi-value">₩52.4M</div><div class="kpi-delta down">▼ 4%</div></div>
+          </div>
+          <div class="card chart-demo" style="padding: 16px;">
+            <div class="t-caption-strong" style="margin-bottom: 8px;">월간 매출 추이</div>
+            <svg class="chart-svg" viewBox="0 0 400 120" preserveAspectRatio="none">
+              <polyline points="0,90 50,75 100,80 150,55 200,65 250,40 300,45 350,30 400,35" fill="none" stroke="hsl(217 91% 53%)" stroke-width="2"/>
+              <polyline points="0,90 50,75 100,80 150,55 200,65 250,40 300,45 350,30 400,35 400,120 0,120" fill="hsl(217 91% 53% / 0.1)"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CHARTS -->
+<section>
+  <div class="container">
+    <div class="section-num">11 · CHARTS</div>
+    <h2 class="section-title">Chart Palette in Action</h2>
+    <p class="section-lead">5색 categorical 팔레트. 한 차트에서 5가지 시리즈까지.</p>
+
+    <div class="chart-demo">
+      <svg class="chart-svg" viewBox="0 0 600 200">
+        <g>
+          <line x1="0" y1="180" x2="600" y2="180" stroke="hsl(var(--border))" stroke-width="1"/>
+          <line x1="0" y1="120" x2="600" y2="120" stroke="hsl(var(--border-subtle))" stroke-width="1" stroke-dasharray="2,4"/>
+          <line x1="0" y1="60" x2="600" y2="60" stroke="hsl(var(--border-subtle))" stroke-width="1" stroke-dasharray="2,4"/>
+        </g>
+        <polyline points="20,140 80,120 140,130 200,90 260,100 320,70 380,80 440,50 500,60 560,30" fill="none" stroke="hsl(var(--chart-1))" stroke-width="2.5"/>
+        <polyline points="20,160 80,150 140,140 200,130 260,120 320,115 380,100 440,90 500,75 560,80" fill="none" stroke="hsl(var(--chart-2))" stroke-width="2.5"/>
+        <polyline points="20,170 80,165 140,150 200,160 260,140 320,135 380,130 440,125 500,120 560,110" fill="none" stroke="hsl(var(--chart-3))" stroke-width="2.5"/>
+        <polyline points="20,150 80,160 140,165 200,150 260,155 320,145 380,140 440,135 500,130 560,140" fill="none" stroke="hsl(var(--chart-4))" stroke-width="2.5"/>
+        <polyline points="20,175 80,170 140,168 200,165 260,160 320,158 380,155 440,150 500,148 560,145" fill="none" stroke="hsl(var(--chart-5))" stroke-width="2.5"/>
+      </svg>
+      <div class="chart-legend">
+        <div class="chart-legend-item"><span class="chart-dot" style="background: hsl(var(--chart-1));"></span> 매출</div>
+        <div class="chart-legend-item"><span class="chart-dot" style="background: hsl(var(--chart-2));"></span> 신규 고객</div>
+        <div class="chart-legend-item"><span class="chart-dot" style="background: hsl(var(--chart-3));"></span> 합격률</div>
+        <div class="chart-legend-item"><span class="chart-dot" style="background: hsl(var(--chart-4));"></span> 프로젝트 수</div>
+        <div class="chart-legend-item"><span class="chart-dot" style="background: hsl(var(--chart-5));"></span> 미팅 수</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TOAST / SKELETON -->
+<section>
+  <div class="container">
+    <div class="section-num">12 · FEEDBACK</div>
+    <h2 class="section-title">Toasts & Skeletons</h2>
+    <p class="section-lead">상태 변화 알림은 우측 하단 슬라이드 인. 로딩은 spinner 대신 skeleton.</p>
+
+    <div class="card-grid-2">
+      <div>
+        <h3 class="t-card-title" style="margin-bottom: var(--space-3);">Toast Variants</h3>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div class="toast">
+            <div class="toast-icon"></div>
+            <div class="toast-body"><div class="toast-title">저장되었습니다</div><div class="toast-desc">사업계획서가 정상적으로 저장되었습니다.</div></div>
+          </div>
+          <div class="toast" style="border-left-color: hsl(var(--warning));">
+            <div class="toast-icon" style="background: hsl(var(--warning));"></div>
+            <div class="toast-body"><div class="toast-title">검토가 필요합니다</div><div class="toast-desc">3건의 미해결 이슈가 있습니다.</div></div>
+          </div>
+          <div class="toast" style="border-left-color: hsl(var(--destructive));">
+            <div class="toast-icon" style="background: hsl(var(--destructive));"></div>
+            <div class="toast-body"><div class="toast-title">저장에 실패했습니다</div><div class="toast-desc">네트워크 연결을 확인해 주세요.</div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3 class="t-card-title" style="margin-bottom: var(--space-3);">Skeleton Loading</h3>
+        <div class="card">
+          <div class="skeleton" style="width: 60%; height: 18px; margin-bottom: 12px;"></div>
+          <div class="skeleton" style="width: 90%; margin-bottom: 8px;"></div>
+          <div class="skeleton" style="width: 80%; margin-bottom: 8px;"></div>
+          <div class="skeleton" style="width: 70%; margin-bottom: 16px;"></div>
+          <div style="display: flex; gap: 8px;">
+            <div class="skeleton" style="width: 80px; height: 32px;"></div>
+            <div class="skeleton" style="width: 100px; height: 32px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ANTI-PATTERNS -->
+<section>
+  <div class="container">
+    <div class="section-num">13 · DON'T</div>
+    <h2 class="section-title">Anti-patterns</h2>
+    <p class="section-lead">위반 시 PR reject. 자유와 가드레일의 균형은 가드레일 쪽이 무겁다.</p>
+
+    <div>
+      <div class="anti">
+        <div class="anti-title">❌ 화면당 accent 3회 이상</div>
+        <div class="anti-desc">primary CTA 1개 + active sidebar 1개. 그 이상은 hierarchy 희석.</div>
+      </div>
+      <div class="anti">
+        <div class="anti-title">❌ 영역 내 radius 혼용</div>
+        <div class="anti-desc">8px 버튼 옆에 16px 카드 옆에 4px 인풋 — 시각 일관성 깨짐.</div>
+      </div>
+      <div class="anti">
+        <div class="anti-title">❌ box-shadow + border 동시 사용</div>
+        <div class="anti-desc">shadow-as-border 또는 traditional border 중 하나만. 둘 다 쓰면 outline 너무 무거움.</div>
+      </div>
+      <div class="anti">
+        <div class="anti-title">❌ Bouncy / overshoot easing</div>
+        <div class="anti-desc"><code>cubic-bezier(.68, -.55, .27, 1.55)</code> 류 — UI에는 juvenile.</div>
+      </div>
+      <div class="anti">
+        <div class="anti-title">❌ 한국어 letter-spacing</div>
+        <div class="anti-desc">본문에 letter-spacing 적용하면 한글 가독성 떨어짐. Display 사이즈 한정.</div>
+      </div>
+      <div class="anti">
+        <div class="anti-title">❌ 마케팅 톤을 앱 라우트에서 사용</div>
+        <div class="anti-desc">"Awesome!", "🎉" — 도구는 도구답게.</div>
+      </div>
+      <div class="anti">
+        <div class="anti-title">❌ Spinner-only 로딩</div>
+        <div class="anti-desc">진행률을 모르는 spinner는 사용자에게 부담. Skeleton 또는 progress bar 우선.</div>
+      </div>
+      <div class="anti">
+        <div class="anti-title">❌ 사이드바 안의 사이드바</div>
+        <div class="anti-desc">중첩 navigation은 사용자 mental model 깨짐. 탭 또는 sub-page로 분기.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>FlowCoder Default Design System · v1.0.0 · 2026-05-04</p>
+    <p style="margin-top: 8px;">Source: <code>~/AX/기획/research/modular-platform/themes/flowcoder-default.design.md</code></p>
+    <p style="margin-top: 16px;">9 섹션 + 4 부록 · Pretendard + Geist · Zinc + Deep Blue · shadcn/ui New York</p>
+  </div>
+</footer>
+
+<script>
+// ========== Mode toggle ==========
+const toggle = document.getElementById('modeToggle');
+const buttons = toggle.querySelectorAll('button');
+buttons.forEach(b => {
+  b.addEventListener('click', () => {
+    buttons.forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    if (b.dataset.mode === 'dark') document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+    updateHexes();
+  });
+});
+
+// initial dark
+document.documentElement.classList.add('dark');
+
+// ========== HSL → HEX hex helpers ==========
+function hslToHex(h, s, l) {
+  l /= 100;
+  const a = s * Math.min(l, 1 - l) / 100;
+  const f = n => {
+    const k = (n + h / 30) % 12;
+    const c = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * c).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
+}
+
+function getHex(varName) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  if (!v) return '';
+  const parts = v.split(/\s+/);
+  if (parts.length < 3) return v;
+  const h = parseFloat(parts[0]);
+  const s = parseFloat(parts[1].replace('%', ''));
+  const l = parseFloat(parts[2].replace('%', ''));
+  return hslToHex(h, s, l);
+}
+
+const hexMap = {
+  'hex-bg': '--background',
+  'hex-surface': '--surface',
+  'hex-raised': '--surface-raised',
+  'hex-muted': '--surface-muted',
+  'hex-fg': '--foreground',
+  'hex-mfg': '--muted-foreground',
+  'hex-border': '--border',
+  'hex-border-subtle': '--border-subtle',
+  'hex-primary': '--primary',
+  'hex-success': '--success',
+  'hex-warning': '--warning',
+  'hex-destructive': '--destructive',
+  'hex-info': '--info',
+};
+
+function updateHexes() {
+  for (const [id, varName] of Object.entries(hexMap)) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = getHex(varName);
+  }
+}
+updateHexes();
+</script>
+
+</body>
+</html>
