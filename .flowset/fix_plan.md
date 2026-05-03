@@ -566,9 +566,9 @@
 - [ ] WI-409-test 통합 테스트 + E2E fixture (Google GenAI 1회 + ComfyUI 1회) | L1:Phase19 > L2:ImageEngine > L3:Tests
 - [ ] WI-410-docs README + CHANGELOG (5 사용 예제) | L1:Phase19 > L2:ImageEngine > L3:Docs
 
-### L2: pbc-block-builder > L3: Top 2 PBC 추출 (4주, 21블록 4 출력)
+### L2: pbc-block-builder > L3: Top 2 PBC 추출 (4주, 23블록 4 출력)
 - [ ] WI-501-feat pbc-block-builder 스켈레톤 + types.ts | L1:Phase19 > L2:BlockBuilder > L3:Skeleton
-- [ ] WI-502-refactor 21블록 정의 이전 (FlowStudio v2 block-system-design 기반, 카테고리명 확정) | L1:Phase19 > L2:BlockBuilder > L3:Migrate
+- [ ] WI-502-refactor 23블록 정의 이전 (FlowStudio v2 block-system-design 기반, 카테고리명 확정) | L1:Phase19 > L2:BlockBuilder > L3:Migrate
 - [ ] WI-503-feat HTML 렌더러 | L1:Phase19 > L2:BlockBuilder > L3:HTML
 - [ ] WI-504-feat React 렌더러 | L1:Phase19 > L2:BlockBuilder > L3:React
 - [ ] WI-505-feat Markdown 렌더러 | L1:Phase19 > L2:BlockBuilder > L3:Markdown

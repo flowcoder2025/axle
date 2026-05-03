@@ -11,7 +11,7 @@
 
 ## 1. Goal
 
-FlowStudio v2의 21블록 시스템(6 카테고리, A1~F3)을 일반화하여 **랜딩페이지·상세페이지·SNS 카드·문서 등 어디서든 재사용**할 수 있는 PBC로 추출한다.
+FlowStudio v2의 23블록 시스템(6 카테고리, A1~F3)을 일반화하여 **랜딩페이지·상세페이지·SNS 카드·문서 등 어디서든 재사용**할 수 있는 PBC로 추출한다.
 
 ---
 
@@ -137,7 +137,7 @@ packages/pbc-block-builder/
 │   │   ├── A1-hero-fullscreen.ts
 │   │   ├── A2-hero-split.ts
 │   │   ├── B1-feature-grid.ts
-│   │   ├── ...                    (총 21블록)
+│   │   ├── ...                    (총 23블록)
 │   ├── renderers/
 │   │   ├── html.ts
 │   │   ├── markdown.ts
@@ -157,7 +157,7 @@ packages/pbc-block-builder/
 
 ## 5. Acceptance Criteria
 
-- [ ] 21블록 정의가 `packages/pbc-block-builder/src/blocks/`로 이전 완료
+- [ ] 23블록 정의가 `packages/pbc-block-builder/src/blocks/`로 이전 완료
 - [ ] 4개 출력 포맷 어댑터 작동: HTML, Markdown, React component, DOCX element
 - [ ] FlowStudio v2의 상세페이지 빌더가 PBC API로 마이그레이션
 - [ ] 데모 앱(`apps/landing-demo/` 또는 `apps/axle/(marketing)`)에서 동일 PBC로 랜딩페이지 1개 생성 검증
@@ -165,7 +165,7 @@ packages/pbc-block-builder/
 - [ ] DESIGN.md theme 주입 hook 동작 (`RenderContext.theme`)
 - [ ] 단위 테스트 ≥ 80% 커버리지
 - [ ] 4가지 PRESETS 작동
-- [ ] 문서: 21블록 카탈로그 README + 4 출력 포맷 비교 예제
+- [ ] 문서: 23블록 카탈로그 README + 4 출력 포맷 비교 예제
 
 ---
 
@@ -200,7 +200,7 @@ npm run test:e2e -- --filter=apps/flowstudio
 | WI 번호 | 작업 | 추정 |
 |---|---|---|
 | WI-501-feat | pbc-block-builder 스켈레톤 + types.ts | 0.5d |
-| WI-502-refactor | 21블록 정의 이전 | 2d |
+| WI-502-refactor | 23블록 정의 이전 | 2d |
 | WI-503-feat | HTML 렌더러 | 1d |
 | WI-504-feat | React 렌더러 | 1d |
 | WI-505-feat | Markdown 렌더러 | 0.5d |
@@ -219,7 +219,7 @@ npm run test:e2e -- --filter=apps/flowstudio
 
 | 리스크 | 확률 | 영향 | 대응 |
 |---|---|---|---|
-| 21블록이 이커머스 상세페이지에 너무 특화 | 高 | 中 | 카테고리별 abstract 인터페이스 정의, variant로 분기 |
+| 23블록이 이커머스 상세페이지에 너무 특화 | 高 | 中 | 카테고리별 abstract 인터페이스 정의, variant로 분기 |
 | DOCX element 어댑터 복잡 | 中 | 低 | 1차는 핵심 블록만 지원, 나머지는 marker |
 | AI 카피 파이프라인이 OpenAI 의존 | 中 | 低 | `packages/ai/`를 통해서만 호출 (provider abstraction) |
 | 4 출력 포맷 간 일관성 검증 어려움 | 中 | 中 | snapshot 테스트로 회귀 방지 |
@@ -233,4 +233,4 @@ npm run test:e2e -- --filter=apps/flowstudio
 | 2026-05-03 | 4 출력 포맷 동시 지원 | 단일 PBC로 모든 콘텐츠 채널 커버 |
 | 2026-05-03 | DESIGN.md hook을 RenderContext로 전달 | core-design-md PBC와 분리 유지 |
 | 2026-05-03 | image-engine 의존을 선택적(optional)으로 | block-builder가 image 없이도 작동 가능 |
-| 2026-05-03 | 21블록 그대로 채택 | FlowStudio v2 명세 변경 비용 회피 |
+| 2026-05-03 | 23블록 그대로 채택 | FlowStudio v2 명세 변경 비용 회피 |

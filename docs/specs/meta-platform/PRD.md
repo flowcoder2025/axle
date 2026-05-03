@@ -92,7 +92,7 @@
 │                                                              │
 │     [PBC — 신규]                                              │
 │     pbc-image-engine/    (Top 1 — 7개 앱 통합)               │
-│     pbc-block-builder/   (Top 2 — 21블록 4 출력)             │
+│     pbc-block-builder/   (Top 2 — 23블록 4 출력)             │
 │     pbc-hr-payroll/      (Top 3 — FlowTeams 추출)            │
 │                                                              │
 │     [Core — 신규]                                             │
@@ -122,7 +122,7 @@
 
 #### L2-A2: pbc-block-builder
 > **상세 계약**: [`./pbc-block-builder.md`](./pbc-block-builder.md)
-> 출처: FlowStudio v2 21블록 (`lib/detail-page/blocks/`)
+> 출처: FlowStudio v2 23블록 (`lib/detail-page/blocks/`)
 > 출력 4종: HTML, Markdown, React, DOCX element
 > 기간: 4주
 
