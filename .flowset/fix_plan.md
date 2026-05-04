@@ -23,7 +23,7 @@
 ## L1: Foundation (Phase 0)
 
 ### L2: Monorepo 설정 > L3: Turborepo Scaffold
-- [ ] WI-001-chore Turborepo 루트 설정 | L1:Foundation > L2:Monorepo > L3:Scaffold
+- [x] WI-001-chore Turborepo 루트 설정 | L1:Foundation > L2:Monorepo > L3:Scaffold
 - [x] WI-002-chore 패키지 초기 구조 | L1:Foundation > L2:Monorepo > L3:Scaffold
 
 ### L2: 데이터베이스 > L3: Prisma 설정
@@ -158,7 +158,7 @@
 
 ### L2: 알림 > L3: 인앱 알림
 - [x] WI-047-feat Notification API (/api/notifications 16가지) | L1:Comm > L2:알림 > L3:Notification CRUD
-- [ ] WI-048-feat 알림 UI 벨+드롭다운 | L1:Comm > L2:알림 > L3:Notification UI
+- [x] WI-048-feat 알림 UI 벨+드롭다운 | L1:Comm > L2:알림 > L3:Notification UI
 
 ### L2: 알림 > L3: Web Push
 - [x] WI-049-feat Push 알림 web-push | L1:Comm > L2:알림 > L3:Push
@@ -272,14 +272,14 @@
 ### L2: 미팅 > L3: Meeting CRUD
 - [x] WI-083-feat Meeting API /api/meetings (Meeting↔Client) | L1:Meetings > L2:미팅 > L3:CRUD
 ### L2: 미팅 > L3: 녹음
-- [ ] WI-084-feat Recording Upload @axle/storage | L1:Meetings > L2:미팅 > L3:Recording
+- [x] WI-084-feat Recording Upload @axle/storage | L1:Meetings > L2:미팅 > L3:Recording
 
 ### L2: 전사 > L3: 파이프라인
-- [ ] WI-085-feat Transcription QStash Job Chain | L1:Meetings > L2:전사 > L3:Transcribe
+- [x] WI-085-feat Transcription QStash Job Chain | L1:Meetings > L2:전사 > L3:Transcribe
 ### L2: 전사 > L3: 요약
-- [ ] WI-086-feat Summary+ActionItem 추출 | L1:Meetings > L2:전사 > L3:Summary
+- [x] WI-086-feat Summary+ActionItem 추출 | L1:Meetings > L2:전사 > L3:Summary
 ### L2: 전사 > L3: 수동 입력
-- [ ] WI-087-feat Manual Transcript 붙여넣기 | L1:Meetings > L2:전사 > L3:Manual
+- [x] WI-087-feat Manual Transcript 붙여넣기 | L1:Meetings > L2:전사 > L3:Manual
 
 ### L2: 액션 > L3: ActionItem
 - [x] WI-088-feat ActionItem API /api/meetings/[id]/actions | L1:Meetings > L2:액션 > L3:ActionItem
@@ -298,35 +298,35 @@
 ### L2: 연구일지 > L3: CRUD
 - [x] WI-092-feat ResearchJournal API /api/journals | L1:Journal > L2:연구일지 > L3:CRUD
 ### L2: 연구일지 > L3: 승인
-- [ ] WI-093-feat Approval Workflow DRAFT→APPROVED | L1:Journal > L2:연구일지 > L3:Approval
+- [x] WI-093-feat Approval Workflow DRAFT→APPROVED | L1:Journal > L2:연구일지 > L3:Approval
 ### L2: 연구일지 > L3: AI 초안
-- [ ] WI-094-feat Journal AI Draft LOCAL_MLX | L1:Journal > L2:연구일지 > L3:AI Draft
+- [x] WI-094-feat Journal AI Draft LOCAL_MLX | L1:Journal > L2:연구일지 > L3:AI Draft
 
 ### L2: 연구원 > L3: 목록+리포트
-- [ ] WI-095-feat Researcher List API | L1:Journal > L2:연구원 > L3:List
-- [ ] WI-096-feat Monthly Report DOCX | L1:Journal > L2:연구원 > L3:Report
+- [x] WI-095-feat Researcher List API | L1:Journal > L2:연구원 > L3:List
+- [x] WI-096-feat Monthly Report DOCX | L1:Journal > L2:연구원 > L3:Report
 
 ### L2: UI > L3: 일지 페이지
-- [ ] WI-097-feat 일지 목록/상세/생성 UI | L1:Journal > L2:UI > L3:Pages
+- [x] WI-097-feat 일지 목록/상세/생성 UI | L1:Journal > L2:UI > L3:Pages
 
 ---
 
 ## L1: Finance (Phase 11)
 
 ### L2: 재무 > L3: Financial CRUD
-- [ ] WI-098-feat ClientFinancial API /api/clients/[id]/financials | L1:Finance > L2:재무 > L3:CRUD
+- [x] WI-098-feat ClientFinancial API /api/clients/[id]/financials | L1:Finance > L2:재무 > L3:CRUD
 ### L2: 재무 > L3: DART
-- [ ] WI-099-feat DART 재무 데이터 수집 AutomationLog | L1:Finance > L2:재무 > L3:DART
+- [x] WI-099-feat DART 재무 데이터 수집 AutomationLog | L1:Finance > L2:재무 > L3:DART
 ### L2: 재무 > L3: AI 분석
-- [ ] WI-100-feat Financial Analysis AiJob | L1:Finance > L2:재무 > L3:AI
+- [x] WI-100-feat Financial Analysis AiJob | L1:Finance > L2:재무 > L3:AI
 ### L2: 재무 > L3: 리포트
-- [ ] WI-101-feat FinancialReport DOCX | L1:Finance > L2:재무 > L3:Report
+- [x] WI-101-feat FinancialReport DOCX | L1:Finance > L2:재무 > L3:Report
 
 ### L2: 성과 > L3: Achievement
-- [ ] WI-102-feat Achievement API /api/clients/[id]/achievements | L1:Finance > L2:성과 > L3:Achievement
+- [x] WI-102-feat Achievement API /api/clients/[id]/achievements | L1:Finance > L2:성과 > L3:Achievement
 
 ### L2: 대시보드 > L3: KPI
-- [ ] WI-103-feat Analytics Dashboard Recharts | L1:Finance > L2:대시보드 > L3:Analytics
+- [x] WI-103-feat Analytics Dashboard Recharts | L1:Finance > L2:대시보드 > L3:Analytics
 ### L2: 대시보드 > L3: 재무
 - [x] WI-104-feat Finance Dashboard Recharts | L1:Finance > L2:대시보드 > L3:Finance
 
@@ -337,14 +337,14 @@
 ### L2: 팀 > L3: 타임라인
 - [x] WI-105-feat Activity Timeline 프로젝트 활동 기록 | L1:Collab > L2:팀 > L3:Timeline
 ### L2: 팀 > L3: 핸드오프
-- [ ] WI-106-feat Handoff Workflow AI 요약+메일 | L1:Collab > L2:팀 > L3:Handoff
+- [x] WI-106-feat Handoff Workflow AI 요약+메일 | L1:Collab > L2:팀 > L3:Handoff
 ### L2: 팀 > L3: 멘션
-- [ ] WI-107-feat Mention System 코멘트→알림 | L1:Collab > L2:팀 > L3:Mention
+- [x] WI-107-feat Mention System 코멘트→알림 | L1:Collab > L2:팀 > L3:Mention
 
 ### L2: 포털 > L3: 고객사 포털
-- [ ] WI-108-feat Client Portal 토큰 접근 | L1:Collab > L2:포털 > L3:Client
+- [x] WI-108-feat Client Portal 토큰 접근 | L1:Collab > L2:포털 > L3:Client
 ### L2: 포털 > L3: 연구일지 포털
-- [ ] WI-109-feat Journal Portal 연구원 작성 | L1:Collab > L2:포털 > L3:Journal
+- [x] WI-109-feat Journal Portal 연구원 작성 | L1:Collab > L2:포털 > L3:Journal
 
 ---
 
@@ -352,16 +352,16 @@
 
 ### L2: 견적 > L3: Estimate
 - [x] WI-110-feat Estimate API /api/estimates | L1:Estimates > L2:견적 > L3:CRUD
-- [ ] WI-111-feat 견적서 DOCX+이메일 | L1:Estimates > L2:견적 > L3:DOCX
+- [x] WI-111-feat 견적서 DOCX+이메일 | L1:Estimates > L2:견적 > L3:DOCX
 
 ### L2: 계약 > L3: Contract
-- [ ] WI-112-feat Contract API /api/contracts | L1:Estimates > L2:계약 > L3:CRUD
-- [ ] WI-113-feat 계약서 DOCX+전자서명 | L1:Estimates > L2:계약 > L3:DOCX
+- [x] WI-112-feat Contract API /api/contracts | L1:Estimates > L2:계약 > L3:CRUD
+- [x] WI-113-feat 계약서 DOCX+전자서명 | L1:Estimates > L2:계약 > L3:DOCX
 ### L2: 계약 > L3: 전환
-- [ ] WI-114-feat 견적→계약+프로젝트 자동 전환 | L1:Estimates > L2:계약 > L3:Conversion
+- [x] WI-114-feat 견적→계약+프로젝트 자동 전환 | L1:Estimates > L2:계약 > L3:Conversion
 
 ### L2: UI > L3: 페이지
-- [ ] WI-115-feat 견적/계약 목록/상세/생성 UI | L1:Estimates > L2:UI > L3:Pages
+- [x] WI-115-feat 견적/계약 목록/상세/생성 UI | L1:Estimates > L2:UI > L3:Pages
 
 ---
 
@@ -370,47 +370,47 @@
 ### L2: MLX > L3: 서버
 - [x] WI-116-feat MLX 프로세스 관리 | L1:AgentBridge > L2:MLX > L3:Server
 ### L2: MLX > L3: Proxy
-- [ ] WI-117-feat API Proxy MLX→OpenAI | L1:AgentBridge > L2:MLX > L3:Proxy
+- [x] WI-117-feat API Proxy MLX→OpenAI | L1:AgentBridge > L2:MLX > L3:Proxy
 
 ### L2: Claude > L3: MQ Watcher
-- [ ] WI-118-feat MQ Watcher .claude-mq/ Chokidar | L1:AgentBridge > L2:Claude > L3:Watcher
+- [x] WI-118-feat MQ Watcher .claude-mq/ Chokidar | L1:AgentBridge > L2:Claude > L3:Watcher
 ### L2: Claude > L3: 제출
-- [ ] WI-119-feat Task Submission web→QStash→MQ | L1:AgentBridge > L2:Claude > L3:Submit
+- [x] WI-119-feat Task Submission web→QStash→MQ | L1:AgentBridge > L2:Claude > L3:Submit
 
 ### L2: 전사 > L3: Whisper
-- [ ] WI-120-feat Local Transcription mlx-whisper | L1:AgentBridge > L2:전사 > L3:Whisper
+- [x] WI-120-feat Local Transcription mlx-whisper | L1:AgentBridge > L2:전사 > L3:Whisper
 
 ### L2: SkillPattern > L3: Collector
-- [ ] WI-121-feat SkillPattern Collector AiJob→패턴 | L1:AgentBridge > L2:SkillPattern > L3:Collector
+- [x] WI-121-feat SkillPattern Collector AiJob→패턴 | L1:AgentBridge > L2:SkillPattern > L3:Collector
 
 ### L2: API > L3: Routes
-- [ ] WI-122-feat Express Health/AI/Transcribe API | L1:AgentBridge > L2:API > L3:Routes
+- [x] WI-122-feat Express Health/AI/Transcribe API | L1:AgentBridge > L2:API > L3:Routes
 ### L2: API > L3: launchd
-- [ ] WI-123-feat 자동 시작 launchd | L1:AgentBridge > L2:API > L3:launchd
+- [x] WI-123-feat 자동 시작 launchd | L1:AgentBridge > L2:API > L3:launchd
 
 ---
 
 ## L1: Desktop (Phase 15)
 
 ### L2: Electron > L3: Shell
-- [ ] WI-124-feat Electron Scaffold apps/desktop | L1:Desktop > L2:Electron > L3:Shell
+- [x] WI-124-feat Electron Scaffold apps/desktop | L1:Desktop > L2:Electron > L3:Shell
 ### L2: Electron > L3: Preload
-- [ ] WI-125-feat contextBridge IPC 채널 | L1:Desktop > L2:Electron > L3:Preload
+- [x] WI-125-feat contextBridge IPC 채널 | L1:Desktop > L2:Electron > L3:Preload
 
 ### L2: 네이티브 > L3: 녹음
-- [ ] WI-126-feat Native Recording IPC recorder | L1:Desktop > L2:네이티브 > L3:Recording
+- [x] WI-126-feat Native Recording IPC recorder | L1:Desktop > L2:네이티브 > L3:Recording
 ### L2: 네이티브 > L3: 인증서
-- [ ] WI-127-feat PKCS#12 Certificate IPC cert | L1:Desktop > L2:네이티브 > L3:Cert
+- [x] WI-127-feat PKCS#12 Certificate IPC cert | L1:Desktop > L2:네이티브 > L3:Cert
 
 ### L2: 포털 > L3: 자동화
-- [ ] WI-128-feat Portal Automation 홈택스/민원24/4대보험/VENTUREIN/KOITA | L1:Desktop > L2:포털 > L3:Automation
+- [x] WI-128-feat Portal Automation 홈택스/민원24/4대보험/VENTUREIN/KOITA | L1:Desktop > L2:포털 > L3:Automation
 ### L2: 포털 > L3: 셀프 리페어
-- [ ] WI-129-feat Selector Self-Repair 포털 셀렉터 | L1:Desktop > L2:포털 > L3:Self-Repair
+- [x] WI-129-feat Selector Self-Repair 포털 셀렉터 | L1:Desktop > L2:포털 > L3:Self-Repair
 ### L2: 포털 > L3: AutomationLog
-- [ ] WI-130-feat AutomationLog API /api/automation-logs | L1:Desktop > L2:포털 > L3:AutomationLog
+- [x] WI-130-feat AutomationLog API /api/automation-logs | L1:Desktop > L2:포털 > L3:AutomationLog
 
 ### L2: 오프라인 > L3: SQLite
-- [ ] WI-131-feat Offline Cache better-sqlite3 | L1:Desktop > L2:오프라인 > L3:SQLite
+- [x] WI-131-feat Offline Cache better-sqlite3 | L1:Desktop > L2:오프라인 > L3:SQLite
 
 ---
 
@@ -419,23 +419,23 @@
 ### L2: 리마인더 > L3: doc-reminder
 - [x] WI-132-feat 서류 제출 리마인더 /api/cron/doc-reminder | L1:Cron > L2:리마인더 > L3:doc-reminder
 ### L2: 리마인더 > L3: deadline-alert
-- [ ] WI-133-feat 지원사업 마감 알림 /api/cron/deadline-alert | L1:Cron > L2:리마인더 > L3:deadline-alert
+- [x] WI-133-feat 지원사업 마감 알림 /api/cron/deadline-alert | L1:Cron > L2:리마인더 > L3:deadline-alert
 ### L2: 리마인더 > L3: journal-remind
-- [ ] WI-134-feat 연구일지 리마인더 /api/cron/journal-remind | L1:Cron > L2:리마인더 > L3:journal-remind
+- [x] WI-134-feat 연구일지 리마인더 /api/cron/journal-remind | L1:Cron > L2:리마인더 > L3:journal-remind
 ### L2: 리마인더 > L3: doc-expiry
-- [ ] WI-135-feat 서류 만료 알림 /api/cron/doc-expiry | L1:Cron > L2:리마인더 > L3:doc-expiry
+- [x] WI-135-feat 서류 만료 알림 /api/cron/doc-expiry | L1:Cron > L2:리마인더 > L3:doc-expiry
 
 ### L2: 동기화 > L3: schedule-sync
-- [ ] WI-136-feat Google Calendar 동기화 /api/cron/schedule-sync | L1:Cron > L2:동기화 > L3:schedule-sync
+- [x] WI-136-feat Google Calendar 동기화 /api/cron/schedule-sync | L1:Cron > L2:동기화 > L3:schedule-sync
 
 ### L2: AI > L3: crawler
-- [ ] WI-137-feat 크롤러 실행 /api/cron/crawler-execute | L1:Cron > L2:AI > L3:crawler
+- [x] WI-137-feat 크롤러 실행 /api/cron/crawler-execute | L1:Cron > L2:AI > L3:crawler
 ### L2: AI > L3: matching
-- [ ] WI-138-feat 매칭 갱신 /api/cron/matching-refresh | L1:Cron > L2:AI > L3:matching
+- [x] WI-138-feat 매칭 갱신 /api/cron/matching-refresh | L1:Cron > L2:AI > L3:matching
 ### L2: AI > L3: embedding
-- [ ] WI-139-feat 임베딩 생성 /api/cron/embedding-generate | L1:Cron > L2:AI > L3:embedding
+- [x] WI-139-feat 임베딩 생성 /api/cron/embedding-generate | L1:Cron > L2:AI > L3:embedding
 ### L2: AI > L3: daily-digest
-- [ ] WI-140-feat 일일 요약 메일 /api/cron/daily-digest | L1:Cron > L2:AI > L3:daily-digest
+- [x] WI-140-feat 일일 요약 메일 /api/cron/daily-digest | L1:Cron > L2:AI > L3:daily-digest
 
 ---
 
@@ -456,7 +456,7 @@
 ### L2: HWPX 편집 > L3: 양식 채우기 배선
 - [x] WI-208-feat /api/hwpx/edit POST (템플릿 ID + HwpxEdit[] → DOCX 저장) | L1:Phase17 > L2:HWPX > L3:API
 - [x] WI-209-feat HWPX 템플릿 관리 Admin (업로드 + 필드 매핑 정의) | L1:Phase17 > L2:HWPX > L3:Admin
-- [ ] WI-210-feat rhwp 채택 여부 재평가 훅 (v1.0+ 대비 adapter 인터페이스 분리) | L1:Phase17 > L2:HWPX > L3:rhwp-adapter
+- [x] WI-210-feat rhwp 채택 여부 재평가 훅 (v1.0+ 대비 adapter 인터페이스 분리) | L1:Phase17 > L2:HWPX > L3:rhwp-adapter
 
 ### L2: 크롤러 > L3: DB 저장 완결
 - [x] WI-211-feat crawler-execute cron → ProgramInfo upsert (기업마당 API) | L1:Phase17 > L2:Crawler > L3:DB Save
