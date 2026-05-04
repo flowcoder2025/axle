@@ -69,8 +69,8 @@ describe("WI-005: CRM schema — 7 models", () => {
     });
 
     it("has Json fields for masterProfile and profileBlocks", () => {
-      expect(schema).toContain("masterProfile     Json?");
-      expect(schema).toContain("profileBlocks     Json?");
+      expect(schema).toMatch(/masterProfile\s+Json\?/);
+      expect(schema).toMatch(/profileBlocks\s+Json\?/);
     });
   });
 

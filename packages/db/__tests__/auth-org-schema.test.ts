@@ -30,7 +30,7 @@ describe("WI-004: Auth/Org schema — 6 models", () => {
 
   describe("User model (Auth.js v5 compatible)", () => {
     it("has email unique field", () => {
-      expect(schema).toContain("email         String    @unique");
+      expect(schema).toMatch(/email\s+String\s+@unique/);
     });
 
     it("has emailVerified field", () => {
