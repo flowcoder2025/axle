@@ -16,8 +16,20 @@ export const checklistTemplateCreateSchema = z.object({
 
 /**
  * checklistTemplateUpdateSchema — all fields optional for PATCH.
+ *
+ * Defined explicitly (not via .partial()) because zod preserves field defaults
+ * through .partial(). With the create-schema defaults, every PATCH would
+ * silently receive scope="org", tripping the platform-admin gate in the route
+ * handler and 403-ing every org-user update.
  */
-export const checklistTemplateUpdateSchema = checklistTemplateCreateSchema.partial();
+export const checklistTemplateUpdateSchema = z.object({
+  projectType: z.nativeEnum(ProjectType).optional(),
+  name: z.string().min(1, "Name is required").optional(),
+  description: z.string().optional(),
+  isRequired: z.boolean().optional(),
+  sortOrder: z.number().int().optional(),
+  scope: z.enum(["org", "platform"]).optional(),
+});
 
 export type ChecklistTemplateCreateInput = z.infer<typeof checklistTemplateCreateSchema>;
 export type ChecklistTemplateUpdateInput = z.infer<typeof checklistTemplateUpdateSchema>;
