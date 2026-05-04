@@ -207,7 +207,7 @@ describe("GET /api/checklist-templates", () => {
     expect(body.data[0].id).toBe("tmpl-1");
     expect(body.total).toBe(1);
     expect(body.page).toBe(1);
-    expect(body.pageSize).toBe(20);
+    expect(body.pageSize).toBe(50);
   });
 
   it("filters by projectType query param", async () => {
@@ -218,7 +218,7 @@ describe("GET /api/checklist-templates", () => {
     );
     const req = makeRequest(
       "GET",
-      "http://localhost/api/checklist-templates?projectType=VENTURE_CERT",
+      "http://localhost/api/checklist-templates?scope=org&projectType=VENTURE_CERT",
     );
     await GET(req as never);
     expect(mockPrismaChecklistTemplate.findMany).toHaveBeenCalledWith(
@@ -237,7 +237,10 @@ describe("GET /api/checklist-templates", () => {
     const { GET } = await import(
       "../../app/api/checklist-templates/route"
     );
-    const req = makeRequest("GET", "http://localhost/api/checklist-templates");
+    const req = makeRequest(
+      "GET",
+      "http://localhost/api/checklist-templates?scope=org",
+    );
     await GET(req as never);
     expect(mockPrismaChecklistTemplate.findMany).toHaveBeenCalledWith(
       expect.objectContaining({

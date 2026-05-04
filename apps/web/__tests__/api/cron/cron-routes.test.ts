@@ -20,6 +20,8 @@ const mockAccount = { findMany: vi.fn() };
 const mockUser = { findMany: vi.fn() };
 const mockClient = { findMany: vi.fn(), findFirst: vi.fn() };
 const mockNotification = { count: vi.fn() };
+const mockProject = { findFirst: vi.fn() };
+const mockActionItem = { findMany: vi.fn() };
 
 vi.mock("@axle/db", () => ({
   DB_PACKAGE: "@axle/db",
@@ -35,6 +37,8 @@ vi.mock("@axle/db", () => ({
     user: mockUser,
     client: mockClient,
     notification: mockNotification,
+    project: mockProject,
+    actionItem: mockActionItem,
   },
 }));
 
@@ -74,6 +78,10 @@ const mockUpsertEmbedding = vi.fn();
 vi.mock("@axle/ai", () => ({
   generateEmbedding: mockGenerateEmbedding,
   upsertEmbedding: mockUpsertEmbedding,
+  // Builtin handlers register journal-draft which imports completeWithFallback
+  // at module load time. Even cron tests that don't exercise journal-draft
+  // need this export defined to keep the mock surface complete.
+  completeWithFallback: vi.fn(),
 }));
 
 const mockSyncCalendar = vi.fn();
@@ -204,6 +212,10 @@ describe("POST /api/cron/doc-reminder", () => {
 describe("POST /api/cron/deadline-alert", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Defaults so the route's secondary sweeps (project lookup, action-item
+    // due-soon) don't throw before the asserted code path runs.
+    mockProject.findFirst.mockResolvedValue(null);
+    mockActionItem.findMany.mockResolvedValue([]);
   });
 
   it("returns 401 for missing auth", async () => {
