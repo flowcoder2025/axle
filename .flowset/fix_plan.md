@@ -555,13 +555,13 @@
 ## 외부 의존 14건 (소부장 305-308, 연구소 310/312, 특허 313/314, 스크래퍼 318-4/319/320, PKCS#12 321)은 별도 트랙
 
 ### L2: pbc-image-engine > L3: Top 1 PBC 추출 (4주, 7개 앱 통합)
-- [ ] WI-401-feat pbc-image-engine 패키지 스켈레톤 + types.ts (5 providers + 7 modes) | L1:Phase19 > L2:ImageEngine > L3:Skeleton
-- [ ] WI-402-feat FlowStudio v2 imageProvider/ 이전 (googleGenAI/vertexai/openRouter) | L1:Phase19 > L2:ImageEngine > L3:Migration
-- [ ] WI-403-feat provider 자동 선택 로직 + 단위 테스트 | L1:Phase19 > L2:ImageEngine > L3:SelectProvider
-- [ ] WI-404-feat ComfyUI Local 어댑터 + AX Studio 1개 워크플로우 검증 (Z-Image) | L1:Phase19 > L2:ImageEngine > L3:ComfyUI Local
-- [ ] WI-405-feat ComfyUI Cloud 어댑터 (ViewComfy, AX Studio Cloud) | L1:Phase19 > L2:ImageEngine > L3:ComfyUI Cloud
-- [ ] WI-406-feat FlowRetouch RETOUCH 모드 + retouch-pro/free 프리셋 (PRO_MODE_SYSTEM_PROMPT 보존) | L1:Phase19 > L2:ImageEngine > L3:Retouch
-- [ ] WI-407-refactor FlowStudio v1을 PBC로 마이그레이션 | L1:Phase19 > L2:ImageEngine > L3:Migrate v1
+- [x] WI-401-feat pbc-image-engine 패키지 스켈레톤 + types.ts (5 providers + 7 modes) | L1:Phase19 > L2:ImageEngine > L3:Skeleton
+- [x] WI-402-feat FlowStudio v2 imageProvider/ 이전 (googleGenAI/vertexai/openRouter) | L1:Phase19 > L2:ImageEngine > L3:Migration
+- [x] WI-403-feat provider 자동 선택 로직 + 단위 테스트 | L1:Phase19 > L2:ImageEngine > L3:SelectProvider
+- [x] WI-404-feat ComfyUI Local 어댑터 + AX Studio 1개 워크플로우 검증 (Z-Image) | L1:Phase19 > L2:ImageEngine > L3:ComfyUI Local
+- [x] WI-405-feat ComfyUI Cloud 어댑터 (ViewComfy, AX Studio Cloud) | L1:Phase19 > L2:ImageEngine > L3:ComfyUI Cloud
+- [x] WI-406-feat FlowRetouch RETOUCH 모드 + retouch-pro/free 프리셋 (PRO_MODE_SYSTEM_PROMPT 보존) | L1:Phase19 > L2:ImageEngine > L3:Retouch
+- [x] WI-407-refactor FlowStudio v1을 PBC로 마이그레이션 | L1:Phase19 > L2:ImageEngine > L3:Migrate v1
 - [ ] WI-408-refactor FlowStudio_re 마이그레이션 | L1:Phase19 > L2:ImageEngine > L3:Migrate re
 - [ ] WI-409-test 통합 테스트 + E2E fixture (Google GenAI 1회 + ComfyUI 1회) | L1:Phase19 > L2:ImageEngine > L3:Tests
 - [ ] WI-410-docs README + CHANGELOG (5 사용 예제) | L1:Phase19 > L2:ImageEngine > L3:Docs
