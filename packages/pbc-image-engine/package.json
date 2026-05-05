@@ -11,6 +11,10 @@
     "./compat/flowstudio-v1": {
       "types": "./dist/compat/flowstudio-v1/index.d.ts",
       "import": "./dist/compat/flowstudio-v1/index.js"
+    },
+    "./compat/flowstudio-re": {
+      "types": "./dist/compat/flowstudio-re/index.d.ts",
+      "import": "./dist/compat/flowstudio-re/index.js"
     }
   },
   "main": "dist/index.js",

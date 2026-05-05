@@ -3,3 +3,4 @@
 - merged | chore | 패키지 초기 구조 | 782s | none
 - merged | feat | Prisma 7 Client Engine + Drive | 546s | none
 - merged | feat | 인증/조직 스키마 6개 모델 | 213s | none
+- merged | refactor | FlowStudio v1을 PBC로 마이그레이션 | 506s | none

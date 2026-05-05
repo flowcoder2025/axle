@@ -1,4 +1,4 @@
-# Codebase Map (auto-generated: 2026-04-10 12:27)
+# Codebase Map (auto-generated: 2026-05-05 11:48)
 
 ## Structure
 ./.claude/agents/evaluator.md
@@ -6,13 +6,19 @@
 ./.claude/rules/flowset-operations.md
 ./.claude/rules/project.md
 ./.claude/rules/team-roles.md
+./.claude/scheduled_tasks.lock
 ./.claude/settings.json
+./.claude/settings.local.json
 ./.editorconfig
 ./.env.example
 ./.env.local
 ./.flowset/AGENT.md
+./.flowset/completed_wis.txt
 ./.flowset/contracts/api-standard.md
 ./.flowset/contracts/data-flow.md
+./.flowset/contracts/scraper-api.md
+./.flowset/contracts/scraper-data.md
+./.flowset/contracts/sprint-316.md
 ./.flowset/contracts/sprint-template.md
 ./.flowset/eval-results/.gitkeep
 ./.flowset/fix_plan.md
@@ -21,11 +27,23 @@
 ./.flowset/hooks/commit-msg
 ./.flowset/hooks/pre-push
 ./.flowset/logs/.gitkeep
+./.flowset/logs/claude_output_1.log
+./.flowset/logs/claude_output_2.log
+./.flowset/logs/claude_output_3.log
+./.flowset/logs/claude_output_4.log
+./.flowset/logs/claude_output_5.log
+./.flowset/logs/claude_output_6.log
+./.flowset/logs/claude_output_7.log
 ./.flowset/logs/flowset.log
+./.flowset/logs/trace.jsonl
+./.flowset/loop_state.json
 ./.flowset/ownership.json
 ./.flowset/prd-state.json
 ./.flowset/PROMPT.md
+./.flowset/rag_pending.txt
 ./.flowset/rag/codebase-map.md
+./.flowset/rag/patterns.md
+./.flowset/rag/wi-history.md
 ./.flowset/requirements.md
 ./.flowset/scripts/check-cross-team-impact.sh
 ./.flowset/scripts/check-ownership.sh
@@ -49,36 +67,18 @@
 ./.flowset/scripts/vault-helpers.sh
 ./.flowset/scripts/verify-requirements.sh
 ./.flowset/specs/.gitkeep
+./.flowset/specs/portal-scraper-architecture.md
 ./.flowset/tech-debt.md
+./.flowset/verify-result.md
 ./.flowsetrc
 ./.gitattributes
 ./.github/PULL_REQUEST_TEMPLATE.md
 ./.github/workflows/ci.yml
 ./.github/workflows/commit-check.yml
-./.github/workflows/e2e.yml
+./.github/workflows/db-migrate.yml
+./.github/workflows/e2e-boundary.yml
+./.github/workflows/e2e-write.yml
 ./.gitignore
 ./.mcp.json
-./CLAUDE.md
-./docs/L0-vision/.gitkeep
-./docs/L0-vision/README.md
-./docs/L1-domain/.gitkeep
-./docs/L1-domain/agent-bridge.md
-./docs/L1-domain/ai-engine.md
-./docs/L1-domain/calendar.md
-./docs/L1-domain/collaboration.md
-./docs/L1-domain/communication.md
-./docs/L1-domain/crm.md
-./docs/L1-domain/cron.md
-./docs/L1-domain/desktop.md
-./docs/L1-domain/docgen.md
-./docs/L1-domain/documents.md
-./docs/L1-domain/estimates.md
-./docs/L1-domain/finance.md
-./docs/L1-domain/foundation.md
-./docs/L1-domain/journal.md
-./docs/L1-domain/matching.md
-./docs/L1-domain/meetings.md
-./docs/L1-domain/projects.md
-./docs/L2-module/.gitkeep
-./docs/L3-feature/.gitkeep
+./.playwright-auth/org1-member.json
 
