@@ -83,6 +83,17 @@ export type {
   GenerateCopyOptions,
 } from "./ai/index.js";
 
+// Preset compositions (WI-508).
+export {
+  PRESETS,
+  PRESET_NAMES,
+  LANDING_SAAS,
+  DETAIL_ECOMMERCE,
+  SNS_CARD,
+  BUSINESS_DOC,
+} from "./presets/index.js";
+export type { PresetName } from "./presets/index.js";
+
 // 23-block registry (WI-502).
 export {
   BLOCKS,
