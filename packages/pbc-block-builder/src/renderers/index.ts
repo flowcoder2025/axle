@@ -7,3 +7,8 @@
 
 export { HTML_RENDERERS, escapeHtml, renderBlockHtml } from "./html.js";
 export { REACT_RENDERERS, renderBlockReact } from "./react.js";
+export {
+  MARKDOWN_RENDERERS,
+  escapeMarkdown,
+  renderBlockMarkdown,
+} from "./markdown.js";

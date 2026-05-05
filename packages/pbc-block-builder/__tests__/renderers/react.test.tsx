@@ -221,9 +221,13 @@ describe("WI-504 — top-level renderBlock dispatcher", () => {
     expect(result.content).toContain('data-block-id="A1"');
   });
 
-  it("renderBlock with non-implemented outputs falls back to the placeholder", () => {
-    for (const output of RENDER_OUTPUTS) {
-      if (output === "html" || output === "react") continue;
+  it("renderBlock with not-yet-implemented outputs falls back to the placeholder", () => {
+    // WI-505 added markdown; only docx-element remains pending (WI-506).
+    const pending = RENDER_OUTPUTS.filter(
+      (o) => o !== "html" && o !== "react" && o !== "markdown",
+    );
+    expect(pending.length).toBeGreaterThan(0);
+    for (const output of pending) {
       const result = renderBlock("A1", { headline: "Hi" }, { output });
       expect(typeof result.content).toBe("string");
       expect(result.metadata?.placeholder).toBe(true);

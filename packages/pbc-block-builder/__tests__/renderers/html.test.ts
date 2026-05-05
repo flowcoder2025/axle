@@ -210,9 +210,11 @@ describe("WI-503 — top-level renderBlock dispatcher", () => {
   });
 
   it("renderBlock with not-yet-implemented outputs falls back to the placeholder", () => {
-    // WI-503 ships html; WI-504 adds react. Markdown / docx-element are still
-    // pending (WI-505 / WI-506) and must hit the placeholder fallback.
-    const pending = RENDER_OUTPUTS.filter((o) => o !== "html" && o !== "react");
+    // WI-503 ships html; WI-504 adds react; WI-505 adds markdown. Only
+    // docx-element remains pending (WI-506) and must hit the placeholder.
+    const pending = RENDER_OUTPUTS.filter(
+      (o) => o !== "html" && o !== "react" && o !== "markdown",
+    );
     expect(pending.length).toBeGreaterThan(0);
     for (const output of pending) {
       const result = renderBlock("A1", { headline: "Hi" }, { output });

@@ -22,6 +22,7 @@
 
 import { BLOCKS } from "./blocks/index.js";
 import { renderBlockHtml } from "./renderers/html.js";
+import { renderBlockMarkdown } from "./renderers/markdown.js";
 import { renderBlockReact } from "./renderers/react.js";
 import type {
   BlockId,
@@ -41,10 +42,13 @@ export function renderBlock(
   if (context.output === "react") {
     return renderBlockReact(blockId, data, context);
   }
+  if (context.output === "markdown") {
+    return renderBlockMarkdown(blockId, data, context);
+  }
 
   // Placeholder fallback — defers to the per-block `render` function the
-  // WI-502 helper installed. Each sibling renderer (WI-505..506) will swap
-  // its branch into this dispatcher at merge time.
+  // WI-502 helper installed. WI-506 will swap docx-element into this
+  // dispatcher.
   const def = BLOCKS[blockId];
   if (!def) {
     throw new Error(`renderBlock: unknown block id '${blockId}'`);
