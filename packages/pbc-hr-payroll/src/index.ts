@@ -72,6 +72,19 @@ export type {
   EnumMismatch,
 } from "./attendance/enumMapping.js";
 
+export { createKoreanLeavePolicy } from "./leave/policy.js";
+export type { LeaveAllocationPolicy } from "./leave/policy.js";
+export { createInMemoryLeaveStore } from "./leave/store.js";
+export type { LeaveRecord, LeaveStore } from "./leave/store.js";
+export {
+  countLeaveDays,
+  createLeaveService,
+} from "./leave/service.js";
+export type {
+  LeaveServiceDeps,
+  LeaveServiceImpl,
+} from "./leave/service.js";
+
 export type {
   AttendanceMethod,
   AttendanceRecord,
