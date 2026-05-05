@@ -7,3 +7,4 @@
 - merged | refactor | FlowStudio_re 마이그레이션 | 470s | none
 - merged | test | 통합 테스트 + E2E fixture (Google G | 485s | none
 - merged | docs | README + CHANGELOG (5 사용 예제) | 324s | none
+- merged | feat | pbc-block-builder 스켈레톤 + types | 475s | none
