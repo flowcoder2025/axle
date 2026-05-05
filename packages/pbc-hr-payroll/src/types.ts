@@ -188,27 +188,12 @@ export interface InsuranceRates {
 }
 
 /**
- * Forward declarations for the year-keyed rate constants. WI-602
- * populates these with the actual 2025/2026 values after the type
- * skeleton has shipped.
+ * The concrete year-keyed `InsuranceRates` constants live under
+ * `src/payroll/insuranceRates/<year>.ts` and are surfaced via the
+ * package barrel (see `index.ts`). WI-602 replaced the WI-601
+ * placeholders with the real 2025 / 2026 values; consumers should
+ * import them from `@axle/pbc-hr-payroll`, not from this types module.
  */
-export const KOREAN_INSURANCE_RATES_2025_PLACEHOLDER: InsuranceRates = {
-  year: 2025,
-  nationalPension: 0,
-  healthInsurance: 0,
-  longTermCare: 0,
-  employmentInsurance: 0,
-  industrialAccident: 0,
-};
-
-export const KOREAN_INSURANCE_RATES_2026_PLACEHOLDER: InsuranceRates = {
-  year: 2026,
-  nationalPension: 0,
-  healthInsurance: 0,
-  longTermCare: 0,
-  employmentInsurance: 0,
-  industrialAccident: 0,
-};
 
 /* ------------------------------------------------------------------ */
 /* Attendance                                                          */

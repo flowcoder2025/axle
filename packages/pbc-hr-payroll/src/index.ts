@@ -15,13 +15,17 @@ export {
   ATTENDANCE_METHODS,
   ATTENDANCE_STATUSES,
   EMPLOYMENT_TYPES,
-  KOREAN_INSURANCE_RATES_2025_PLACEHOLDER,
-  KOREAN_INSURANCE_RATES_2026_PLACEHOLDER,
   LEAVE_STATUSES,
   LEAVE_TYPES,
   PAYROLL_STATUSES,
   SALARY_TYPES,
 } from "./types.js";
+
+export {
+  KOREAN_INSURANCE_RATES_2025,
+  KOREAN_INSURANCE_RATES_2026,
+  getInsuranceRatesForYear,
+} from "./payroll/insuranceRates/index.js";
 
 export type {
   AttendanceMethod,
