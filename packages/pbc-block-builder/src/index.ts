@@ -45,6 +45,10 @@ export {
 } from "./categories.js";
 export type { BlockCategoryMeta } from "./categories.js";
 
+// HTML renderer + dispatcher (WI-503).
+export { escapeHtml, renderBlockHtml, HTML_RENDERERS } from "./renderers/html.js";
+export { renderBlock, renderComposition } from "./render.js";
+
 // 23-block registry (WI-502).
 export {
   BLOCKS,
