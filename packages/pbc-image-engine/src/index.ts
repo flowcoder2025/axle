@@ -30,6 +30,7 @@ export type {
 } from "./types.js";
 
 export {
+  ComfyUICloudProvider,
   ComfyUILocalProvider,
   GoogleGenAIProvider,
   OpenRouterImageProvider,
@@ -41,6 +42,7 @@ export {
   registerWorkflow,
 } from "./providers/index.js";
 export type {
+  ComfyUICloudOptions,
   ComfyUIHistoryEntry,
   ComfyUIHistoryResponse,
   ComfyUILocalOptions,
