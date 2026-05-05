@@ -45,6 +45,14 @@ model User {
   pushSubscriptions PushSubscription[]
   hwpxTemplates     HwpxTemplate[]     @relation("HwpxTemplateCreator")
 
+  // pbc-hr-payroll back-relations (WI-607).
+  employments       Employment[]       @relation("EmploymentUser")
+  attendances       Attendance[]       @relation("AttendanceUser")
+  payrolls          Payroll[]          @relation("PayrollUser")
+  leaves            Leave[]            @relation("LeaveUser")
+  nomuConsultations NomuConsultation[] @relation("NomuUser")
+  workSchedules     WorkSchedule[]     @relation("WorkScheduleUser")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -133,6 +141,14 @@ model Organization {
   hwpxTemplates  HwpxTemplate[]
   scraperJobs    ScraperJob[]
   scraperApiKeys ScraperApiKey[]
+
+  // pbc-hr-payroll back-relations (WI-607).
+  employments       Employment[]       @relation("EmploymentOrg")
+  attendances       Attendance[]       @relation("AttendanceOrg")
+  payrolls          Payroll[]          @relation("PayrollOrg")
+  leaves            Leave[]            @relation("LeaveOrg")
+  nomuConsultations NomuConsultation[] @relation("NomuOrg")
+  workSchedules     WorkSchedule[]     @relation("WorkScheduleOrg")
 
   plan         String  @default("free")
   quotaAiJobs  Int     @default(100)
@@ -1290,4 +1306,205 @@ model ScraperRepairLog {
 
   @@index([portal, createdAt])
   @@index([jobId])
+}
+
+// ========================================
+// HR Payroll Domain (PBC: pbc-hr-payroll)
+// ========================================
+// 통합 schema의 도메인 섹션 — packages/pbc-hr-payroll가 소유.
+// 모델 변경 시 packages/pbc-hr-payroll의 Prisma store 어댑터
+// (attendance/leave/nomu prismaStore.ts) 동기화 필수.
+// 결정 (spec §10): Prisma multi-schema 1차 보류 → 통합 schema의
+// 섹션 분리만 적용 (빌드 단순).
+
+enum EmploymentType {
+  FULL_TIME
+  CONTRACT
+  DAILY
+  PART_TIME
+}
+
+enum SalaryType {
+  MONTHLY
+  HOURLY
+  DAILY
+}
+
+enum AttendanceMethod {
+  QR
+  IP
+  GPS
+  MANUAL
+}
+
+enum AttendanceStatus {
+  NORMAL
+  LATE
+  EARLY_LEAVE
+  ABSENT
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  CONDOLENCE
+  MATERNITY
+  PATERNITY
+  OTHER
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum PayrollStatus {
+  DRAFT
+  CALCULATED
+  PAID
+  CANCELLED
+}
+
+model Employment {
+  id             String         @id @default(cuid())
+  userId         String
+  organizationId String
+  type           EmploymentType
+  salaryType     SalaryType
+  baseSalary     Decimal        @db.Decimal(14, 2)
+  hourlyRate     Decimal?       @db.Decimal(12, 2)
+  startedAt      DateTime
+  endedAt        DateTime?
+
+  user         User         @relation("EmploymentUser", fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation("EmploymentOrg", fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, userId])
+  @@index([userId])
+}
+
+model Attendance {
+  id             String           @id @default(cuid())
+  userId         String
+  organizationId String
+  checkInAt      DateTime
+  checkOutAt     DateTime?
+  method         AttendanceMethod
+  status         AttendanceStatus @default(NORMAL)
+  reason         String?
+
+  user         User         @relation("AttendanceUser", fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation("AttendanceOrg", fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, checkInAt])
+  @@index([organizationId, checkInAt])
+}
+
+model Payroll {
+  id                 String        @id @default(cuid())
+  userId             String
+  organizationId     String
+  periodYear         Int
+  periodMonth        Int
+  gross              Decimal       @db.Decimal(14, 2)
+  net                Decimal       @db.Decimal(14, 2)
+  status             PayrollStatus @default(DRAFT)
+  insuranceRatesYear Int
+
+  user         User          @relation("PayrollUser", fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization  @relation("PayrollOrg", fields: [organizationId], references: [id], onDelete: Cascade)
+  items        PayrollItem[]
+
+  calculatedAt DateTime?
+  paidAt       DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([userId, periodYear, periodMonth])
+  @@index([organizationId, periodYear, periodMonth])
+}
+
+model PayrollItem {
+  id        String  @id @default(cuid())
+  payrollId String
+  category  String
+  type      String
+  amount    Decimal @db.Decimal(14, 2)
+
+  payroll Payroll @relation(fields: [payrollId], references: [id], onDelete: Cascade)
+
+  @@index([payrollId])
+}
+
+model Leave {
+  id              String      @id @default(cuid())
+  userId          String
+  organizationId  String
+  type            LeaveType
+  startDate       DateTime
+  endDate         DateTime
+  days            Int
+  status          LeaveStatus @default(PENDING)
+  reason          String?
+  approverId      String?
+  rejectionReason String?
+
+  user         User         @relation("LeaveUser", fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation("LeaveOrg", fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, startDate])
+  @@index([organizationId, startDate])
+}
+
+model NomuConsultation {
+  id                 String   @id @default(cuid())
+  organizationId     String
+  userId             String?
+  question           String
+  redactedQuestion   String
+  topicCategory      String
+  topicConfidence    Float
+  answer             String
+  citations          String[]
+  validationValid    Boolean?
+  validationReason   String?
+  validationWarnings String[] @default([])
+
+  organization Organization @relation("NomuOrg", fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?        @relation("NomuUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, createdAt])
+}
+
+model WorkSchedule {
+  id             String @id @default(cuid())
+  userId         String
+  organizationId String
+  dayOfWeek      Int
+  startTime      String
+  endTime        String
+  graceMinutes   Int    @default(0)
+
+  user         User         @relation("WorkScheduleUser", fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation("WorkScheduleOrg", fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, dayOfWeek])
+  @@index([organizationId])
 }
