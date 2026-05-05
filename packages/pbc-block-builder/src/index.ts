@@ -70,6 +70,19 @@ export type {
   DocxRun,
 } from "./renderers/docx-element.js";
 
+// AI copy pipeline (WI-507).
+export {
+  generateCopy,
+  validateBlockData,
+  createDeterministicCopyProvider,
+} from "./ai/index.js";
+export type {
+  BlockCopyRequest,
+  CopyBrief,
+  CopyProvider,
+  GenerateCopyOptions,
+} from "./ai/index.js";
+
 // 23-block registry (WI-502).
 export {
   BLOCKS,
