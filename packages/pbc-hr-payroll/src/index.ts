@@ -61,6 +61,11 @@ export {
   createInMemoryAttendanceStore,
 } from "./attendance/store.js";
 export type { AttendanceStore } from "./attendance/store.js";
+export { createPrismaAttendanceStore } from "./attendance/prismaStore.js";
+export type {
+  PrismaAttendanceDelegateLike,
+  PrismaAttendanceStoreOptions,
+} from "./attendance/prismaStore.js";
 export {
   FLOWTEAMS_ATTENDANCE_METHODS,
   FLOWTEAMS_ATTENDANCE_STATUSES,
@@ -90,6 +95,8 @@ export type {
   NomuConsultationRecord,
   NomuConsultationStore,
 } from "./nomu/store.js";
+export { createPrismaNomuConsultationStore } from "./nomu/prismaStore.js";
+export type { PrismaNomuConsultationDelegateLike } from "./nomu/prismaStore.js";
 export type {
   NomuAiClient,
   NomuAiGenerateInput,
@@ -102,6 +109,11 @@ export { createKoreanLeavePolicy } from "./leave/policy.js";
 export type { LeaveAllocationPolicy } from "./leave/policy.js";
 export { createInMemoryLeaveStore } from "./leave/store.js";
 export type { LeaveRecord, LeaveStore } from "./leave/store.js";
+export { createPrismaLeaveStore } from "./leave/prismaStore.js";
+export type {
+  PrismaLeaveDelegateLike,
+  PrismaLeaveStoreOptions,
+} from "./leave/prismaStore.js";
 export {
   countLeaveDays,
   createLeaveService,
