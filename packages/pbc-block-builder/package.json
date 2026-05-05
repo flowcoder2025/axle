@@ -7,6 +7,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./compat/flowstudio-v2": {
+      "types": "./dist/compat/flowstudio-v2/index.d.ts",
+      "import": "./dist/compat/flowstudio-v2/index.js"
     }
   },
   "main": "dist/index.js",
