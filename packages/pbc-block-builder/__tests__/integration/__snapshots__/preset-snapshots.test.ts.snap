@@ -1,0 +1,1396 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`WI-510 — preset × output snapshots > business-doc — docx-element snapshot 1`] = `
+[
+  [
+    {
+      "level": 1,
+      "runs": [
+        {
+          "text": "[Document title]",
+        },
+      ],
+      "type": "heading",
+    },
+    {
+      "runs": [
+        {
+          "text": "[Subtitle / engagement reference]",
+        },
+      ],
+      "type": "paragraph",
+    },
+  ],
+  [
+    {
+      "level": 2,
+      "runs": [
+        {
+          "text": "About",
+        },
+      ],
+      "type": "heading",
+    },
+    {
+      "runs": [
+        {
+          "text": "[One-paragraph organizational summary tailored to this audience.]",
+        },
+      ],
+      "type": "paragraph",
+    },
+  ],
+  [
+    {
+      "runs": [
+        {
+          "text": "Problem we are solving",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "items": [
+        {
+          "runs": [
+            {
+              "text": "[Pain point 1 — concrete and measurable]",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "text": "[Pain point 2 — concrete and measurable]",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "text": "[Pain point 3 — concrete and measurable]",
+            },
+          ],
+        },
+      ],
+      "ordered": false,
+      "type": "list",
+    },
+  ],
+  [
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "[Solution component 1]",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "text": "[How it addresses the problem above.]",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "[Solution component 2]",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "text": "[How it addresses the problem above.]",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "[Solution component 3]",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "text": "[How it addresses the problem above.]",
+        },
+      ],
+      "type": "paragraph",
+    },
+  ],
+  [
+    {
+      "items": [
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "[KPI value]",
+            },
+            {
+              "text": " Expected impact",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "[Weeks or months]",
+            },
+            {
+              "text": " Timeline",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "[Headcount]",
+            },
+            {
+              "text": " Team",
+            },
+          ],
+        },
+      ],
+      "ordered": false,
+      "type": "list",
+    },
+  ],
+  [
+    {
+      "level": 3,
+      "runs": [
+        {
+          "text": "Scope",
+        },
+      ],
+      "type": "heading",
+    },
+    {
+      "items": [
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "In scope: ",
+            },
+            {
+              "text": "[Bullet 1, bullet 2]",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Out of scope: ",
+            },
+            {
+              "text": "[Bullet 1, bullet 2]",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Assumptions: ",
+            },
+            {
+              "text": "[Bullet 1, bullet 2]",
+            },
+          ],
+        },
+      ],
+      "ordered": false,
+      "type": "list",
+    },
+  ],
+  [
+    {
+      "items": [
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Discovery",
+            },
+            {
+              "text": " — [Goals and success criteria.]",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Design",
+            },
+            {
+              "text": " — [Architecture and review gates.]",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Build",
+            },
+            {
+              "text": " — [Iteration plan and demos.]",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Launch",
+            },
+            {
+              "text": " — [Rollout and acceptance.]",
+            },
+          ],
+        },
+      ],
+      "ordered": true,
+      "type": "list",
+    },
+  ],
+  [
+    {
+      "items": [
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Shipping: ",
+            },
+            {
+              "text": "[Delivery / hand-off terms]",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Returns: ",
+            },
+            {
+              "text": "[Revision / change-order policy]",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Payment: ",
+            },
+            {
+              "text": "[Milestones or schedule]",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Confidentiality: ",
+            },
+            {
+              "text": "[NDA reference]",
+            },
+          ],
+        },
+      ],
+      "ordered": false,
+      "type": "list",
+    },
+  ],
+]
+`;
+
+exports[`WI-510 — preset × output snapshots > business-doc — html snapshot 1`] = `
+"<section class="pbc-block pbc-A1 pbc-A1--split-half" data-block-id="A1"><div class="pbc-A1__inner"><h1 class="pbc-A1__headline">[Document title]</h1><p class="pbc-A1__tagline">[Subtitle / engagement reference]</p></div></section>
+
+<section class="pbc-block pbc-C4 pbc-C4--mission-statement" data-block-id="C4"><h2 class="pbc-C4__headline">About</h2><div class="pbc-C4__body">[One-paragraph organizational summary tailored to this audience.]</div></section>
+
+<section class="pbc-block pbc-A3 pbc-A3--question-list" data-block-id="A3"><p class="pbc-A3__intro">Problem we are solving</p><ul class="pbc-A3__list"><li class="pbc-A3__point">[Pain point 1 — concrete and measurable]</li><li class="pbc-A3__point">[Pain point 2 — concrete and measurable]</li><li class="pbc-A3__point">[Pain point 3 — concrete and measurable]</li></ul></section>
+
+<section class="pbc-block pbc-B1 pbc-B1--number-list" data-block-id="B1"><ul class="pbc-B1__list"><li class="pbc-B1__item"><h3 class="pbc-B1__title">[Solution component 1]</h3><p class="pbc-B1__desc">[How it addresses the problem above.]</p></li><li class="pbc-B1__item"><h3 class="pbc-B1__title">[Solution component 2]</h3><p class="pbc-B1__desc">[How it addresses the problem above.]</p></li><li class="pbc-B1__item"><h3 class="pbc-B1__title">[Solution component 3]</h3><p class="pbc-B1__desc">[How it addresses the problem above.]</p></li></ul></section>
+
+<section class="pbc-block pbc-C5 pbc-C5--stat-card" data-block-id="C5"><ul class="pbc-C5__list"><li class="pbc-C5__item"><span class="pbc-C5__value">[KPI value]</span><span class="pbc-C5__label">Expected impact</span></li><li class="pbc-C5__item"><span class="pbc-C5__value">[Weeks or months]</span><span class="pbc-C5__label">Timeline</span></li><li class="pbc-C5__item"><span class="pbc-C5__value">[Headcount]</span><span class="pbc-C5__label">Team</span></li></ul></section>
+
+<section class="pbc-block pbc-D1 pbc-D1--simple-table" data-block-id="D1"><table class="pbc-D1__table"><caption>Scope</caption><tbody><tr><th scope="row">In scope</th><td>[Bullet 1, bullet 2]</td></tr><tr><th scope="row">Out of scope</th><td>[Bullet 1, bullet 2]</td></tr><tr><th scope="row">Assumptions</th><td>[Bullet 1, bullet 2]</td></tr></tbody></table></section>
+
+<section class="pbc-block pbc-D2 pbc-D2--step-list" data-block-id="D2"><ol class="pbc-D2__steps"><li class="pbc-D2__step"><h4>Discovery</h4><p>[Goals and success criteria.]</p></li><li class="pbc-D2__step"><h4>Design</h4><p>[Architecture and review gates.]</p></li><li class="pbc-D2__step"><h4>Build</h4><p>[Iteration plan and demos.]</p></li><li class="pbc-D2__step"><h4>Launch</h4><p>[Rollout and acceptance.]</p></li></ol></section>
+
+<section class="pbc-block pbc-E4 pbc-E4--policy-table" data-block-id="E4"><div class="pbc-E4__shipping"><strong>Shipping</strong> [Delivery / hand-off terms]</div><div class="pbc-E4__return"><strong>Returns</strong> [Revision / change-order policy]</div><dl class="pbc-E4__policies"><dt>Payment</dt><dd>[Milestones or schedule]</dd><dt>Confidentiality</dt><dd>[NDA reference]</dd></dl></section>"
+`;
+
+exports[`WI-510 — preset × output snapshots > business-doc — markdown snapshot 1`] = `
+"<!-- pbc:A1 variant=split-half -->
+
+# \\[Document title\\]
+
+\\[Subtitle / engagement reference\\]
+
+<!-- pbc:C4 variant=mission-statement -->
+
+## About
+
+\\[One-paragraph organizational summary tailored to this audience.\\]
+
+<!-- pbc:A3 variant=question-list -->
+
+Problem we are solving
+
+- \\[Pain point 1 — concrete and measurable\\]
+- \\[Pain point 2 — concrete and measurable\\]
+- \\[Pain point 3 — concrete and measurable\\]
+
+<!-- pbc:B1 variant=number-list -->
+
+### \\[Solution component 1\\]
+
+\\[How it addresses the problem above.\\]
+
+### \\[Solution component 2\\]
+
+\\[How it addresses the problem above.\\]
+
+### \\[Solution component 3\\]
+
+\\[How it addresses the problem above.\\]
+
+<!-- pbc:C5 variant=stat-card -->
+
+- **\\[KPI value\\]** Expected impact
+- **\\[Weeks or months\\]** Timeline
+- **\\[Headcount\\]** Team
+
+<!-- pbc:D1 variant=simple-table -->
+
+### Scope
+
+| Label | Value |
+| --- | --- |
+| In scope | \\[Bullet 1, bullet 2\\] |
+| Out of scope | \\[Bullet 1, bullet 2\\] |
+| Assumptions | \\[Bullet 1, bullet 2\\] |
+
+<!-- pbc:D2 variant=step-list -->
+
+1. **Discovery** — \\[Goals and success criteria.\\]
+2. **Design** — \\[Architecture and review gates.\\]
+3. **Build** — \\[Iteration plan and demos.\\]
+4. **Launch** — \\[Rollout and acceptance.\\]
+
+<!-- pbc:E4 variant=policy-table -->
+
+- **Shipping** \\[Delivery / hand-off terms\\]
+- **Returns** \\[Revision / change-order policy\\]
+- **Payment** \\[Milestones or schedule\\]
+- **Confidentiality** \\[NDA reference\\]
+"
+`;
+
+exports[`WI-510 — preset × output snapshots > detail-ecommerce — docx-element snapshot 1`] = `
+[
+  [
+    {
+      "alt": "[Product name]",
+      "src": "placeholder://hero",
+      "type": "image",
+    },
+    {
+      "level": 1,
+      "runs": [
+        {
+          "text": "[Product name]",
+        },
+      ],
+      "type": "heading",
+    },
+    {
+      "runs": [
+        {
+          "text": "[Single-line value proposition]",
+        },
+      ],
+      "type": "paragraph",
+    },
+  ],
+  [
+    {
+      "level": 3,
+      "runs": [
+        {
+          "text": "Before: Before",
+        },
+      ],
+      "type": "heading",
+    },
+    {
+      "runs": [
+        {
+          "text": "[The customer's pain point]",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "level": 3,
+      "runs": [
+        {
+          "text": "After: After",
+        },
+      ],
+      "type": "heading",
+    },
+    {
+      "runs": [
+        {
+          "text": "[The transformation your product delivers]",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "italic": true,
+          "text": "[One-line caption]",
+        },
+      ],
+      "type": "paragraph",
+    },
+  ],
+  [
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "[Key benefit 1]",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "text": "[Two-sentence explanation grounded in real customer outcomes.]",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "[Key benefit 2]",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "text": "[Two-sentence explanation grounded in real customer outcomes.]",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "[Key benefit 3]",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "text": "[Two-sentence explanation grounded in real customer outcomes.]",
+        },
+      ],
+      "type": "paragraph",
+    },
+  ],
+  [
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "4.8 / 5 (0)",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "italic": true,
+          "text": ""[Replace with a real customer quote]"",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "text": "— [Customer name] · YYYY-MM-DD (5/5)",
+        },
+      ],
+      "type": "paragraph",
+    },
+  ],
+  [
+    {
+      "level": 3,
+      "runs": [
+        {
+          "text": "Specifications",
+        },
+      ],
+      "type": "heading",
+    },
+    {
+      "items": [
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Material: ",
+            },
+            {
+              "text": "[e.g. Aluminum 6061]",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Weight: ",
+            },
+            {
+              "text": "[e.g. 1.2kg]",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Origin: ",
+            },
+            {
+              "text": "[e.g. Made in Korea]",
+            },
+          ],
+        },
+      ],
+      "ordered": false,
+      "type": "list",
+    },
+  ],
+  [
+    {
+      "items": [
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Main product",
+            },
+            {
+              "text": " ×1",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "User manual",
+            },
+            {
+              "text": " ×1",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Warranty card",
+            },
+            {
+              "text": " ×1",
+            },
+          ],
+        },
+      ],
+      "ordered": false,
+      "type": "list",
+    },
+  ],
+  [
+    {
+      "items": [
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Black",
+            },
+            {
+              "text": " (#111111)",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "White",
+            },
+            {
+              "text": " (#FAFAFA)",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Sand",
+            },
+            {
+              "text": " (#D6C9A8)",
+            },
+            {
+              "italic": true,
+              "text": " — unavailable",
+            },
+          ],
+        },
+      ],
+      "ordered": false,
+      "type": "list",
+    },
+  ],
+  [
+    {
+      "level": 3,
+      "runs": [
+        {
+          "text": "First-purchase discount",
+        },
+      ],
+      "type": "heading",
+    },
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "10% off",
+        },
+        {
+          "text": " · ",
+        },
+        {
+          "text": "WELCOME10",
+        },
+        {
+          "text": " · ",
+        },
+        {
+          "italic": true,
+          "text": "~2026-12-31",
+        },
+      ],
+      "type": "paragraph",
+    },
+  ],
+  [
+    {
+      "items": [
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Shipping: ",
+            },
+            {
+              "text": "Free shipping on orders over ₩50,000",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Returns: ",
+            },
+            {
+              "text": "30-day exchange / return policy",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Order cutoff: ",
+            },
+            {
+              "text": "2 PM KST same-day shipping",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "Carrier: ",
+            },
+            {
+              "text": "CJ Logistics",
+            },
+          ],
+        },
+      ],
+      "ordered": false,
+      "type": "list",
+    },
+  ],
+  [
+    {
+      "runs": [
+        {
+          "italic": true,
+          "text": "₩49,000",
+        },
+        {
+          "text": " ",
+        },
+        {
+          "bold": true,
+          "text": "₩39,000",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "text": "Only a few left in stock",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "Add to cart → /cart/add",
+        },
+      ],
+      "type": "paragraph",
+    },
+  ],
+]
+`;
+
+exports[`WI-510 — preset × output snapshots > detail-ecommerce — html snapshot 1`] = `
+"<section class="pbc-block pbc-A1 pbc-A1--full-bleed" data-block-id="A1"><div class="pbc-A1__inner" style="background-image:url('placeholder://hero')"><h1 class="pbc-A1__headline">[Product name]</h1><p class="pbc-A1__tagline">[Single-line value proposition]</p></div></section>
+
+<section class="pbc-block pbc-B2 pbc-B2--side-by-side" data-block-id="B2"><div class="pbc-B2__pair"><figure class="pbc-B2__before"><figcaption><strong>Before</strong> <span>[The customer&#39;s pain point]</span></figcaption></figure><figure class="pbc-B2__after"><figcaption><strong>After</strong> <span>[The transformation your product delivers]</span></figcaption></figure></div><p class="pbc-B2__caption">[One-line caption]</p></section>
+
+<section class="pbc-block pbc-B1 pbc-B1--icon-grid" data-block-id="B1"><ul class="pbc-B1__list"><li class="pbc-B1__item"><h3 class="pbc-B1__title">[Key benefit 1]</h3><p class="pbc-B1__desc">[Two-sentence explanation grounded in real customer outcomes.]</p></li><li class="pbc-B1__item"><h3 class="pbc-B1__title">[Key benefit 2]</h3><p class="pbc-B1__desc">[Two-sentence explanation grounded in real customer outcomes.]</p></li><li class="pbc-B1__item"><h3 class="pbc-B1__title">[Key benefit 3]</h3><p class="pbc-B1__desc">[Two-sentence explanation grounded in real customer outcomes.]</p></li></ul></section>
+
+<section class="pbc-block pbc-C2 pbc-C2--review-card" data-block-id="C2"><p class="pbc-C2__summary">4.8 / 5 (0)</p><ul class="pbc-C2__list"><li class="pbc-C2__review"><div class="pbc-C2__rating" aria-label="5 of 5">5</div><blockquote class="pbc-C2__quote">[Replace with a real customer quote]</blockquote><cite class="pbc-C2__cite">[Customer name] · YYYY-MM-DD</cite></li></ul></section>
+
+<section class="pbc-block pbc-D1 pbc-D1--simple-table" data-block-id="D1"><table class="pbc-D1__table"><caption>Specifications</caption><tbody><tr><th scope="row">Material</th><td>[e.g. Aluminum 6061]</td></tr><tr><th scope="row">Weight</th><td>[e.g. 1.2kg]</td></tr><tr><th scope="row">Origin</th><td>[e.g. Made in Korea]</td></tr></tbody></table></section>
+
+<section class="pbc-block pbc-D3 pbc-D3--grid-layout" data-block-id="D3"><ul class="pbc-D3__list"><li class="pbc-D3__item"><span class="pbc-D3__name">Main product</span><span class="pbc-D3__qty">×1</span></li><li class="pbc-D3__item"><span class="pbc-D3__name">User manual</span><span class="pbc-D3__qty">×1</span></li><li class="pbc-D3__item"><span class="pbc-D3__name">Warranty card</span><span class="pbc-D3__qty">×1</span></li></ul></section>
+
+<section class="pbc-block pbc-F2 pbc-F2--swatch-grid" data-block-id="F2"><ul class="pbc-F2__list"><li class="pbc-F2__option"><span class="pbc-F2__swatch" style="background-color:#111111" aria-hidden="true"></span><span class="pbc-F2__name">Black</span></li><li class="pbc-F2__option"><span class="pbc-F2__swatch" style="background-color:#FAFAFA" aria-hidden="true"></span><span class="pbc-F2__name">White</span></li><li class="pbc-F2__option" data-unavailable="true"><span class="pbc-F2__swatch" style="background-color:#D6C9A8" aria-hidden="true"></span><span class="pbc-F2__name">Sand</span></li></ul></section>
+
+<section class="pbc-block pbc-E2 pbc-E2--coupon-card" data-block-id="E2"><h3 class="pbc-E2__title">First-purchase discount</h3><span class="pbc-E2__discount">10% off</span><code class="pbc-E2__code">WELCOME10</code><time class="pbc-E2__expiry">~2026-12-31</time></section>
+
+<section class="pbc-block pbc-E4 pbc-E4--info-box" data-block-id="E4"><div class="pbc-E4__shipping"><strong>Shipping</strong> Free shipping on orders over ₩50,000</div><div class="pbc-E4__return"><strong>Returns</strong> 30-day exchange / return policy</div><dl class="pbc-E4__policies"><dt>Order cutoff</dt><dd>2 PM KST same-day shipping</dd><dt>Carrier</dt><dd>CJ Logistics</dd></dl></section>
+
+<section class="pbc-block pbc-E1 pbc-E1--sticky-bottom" data-block-id="E1"><div class="pbc-E1__price-block"><span class="pbc-E1__original">₩49,000</span><span class="pbc-E1__price">₩39,000</span></div><p class="pbc-E1__urgency">Only a few left in stock</p><a class="pbc-E1__cta" href="/cart/add">Add to cart</a></section>"
+`;
+
+exports[`WI-510 — preset × output snapshots > detail-ecommerce — markdown snapshot 1`] = `
+"<!-- pbc:A1 variant=full-bleed -->
+
+![](placeholder://hero)
+
+# \\[Product name\\]
+
+\\[Single-line value proposition\\]
+
+<!-- pbc:B2 variant=side-by-side -->
+
+### Before: Before
+
+\\[The customer's pain point\\]
+
+### After: After
+
+\\[The transformation your product delivers\\]
+
+> \\[One-line caption\\]
+
+<!-- pbc:B1 variant=icon-grid -->
+
+### \\[Key benefit 1\\]
+
+\\[Two-sentence explanation grounded in real customer outcomes.\\]
+
+### \\[Key benefit 2\\]
+
+\\[Two-sentence explanation grounded in real customer outcomes.\\]
+
+### \\[Key benefit 3\\]
+
+\\[Two-sentence explanation grounded in real customer outcomes.\\]
+
+<!-- pbc:C2 variant=review-card -->
+
+**4.8 / 5** (0)
+
+> \\[Replace with a real customer quote\\]
+> — \\[Customer name\\] · YYYY-MM-DD (5/5)
+
+<!-- pbc:D1 variant=simple-table -->
+
+### Specifications
+
+| Label | Value |
+| --- | --- |
+| Material | \\[e.g. Aluminum 6061\\] |
+| Weight | \\[e.g. 1.2kg\\] |
+| Origin | \\[e.g. Made in Korea\\] |
+
+<!-- pbc:D3 variant=grid-layout -->
+
+- **Main product** ×1
+- **User manual** ×1
+- **Warranty card** ×1
+
+<!-- pbc:F2 variant=swatch-grid -->
+
+- **Black** (#111111)
+- **White** (#FAFAFA)
+- **Sand** (#D6C9A8) — *unavailable*
+
+<!-- pbc:E2 variant=coupon-card -->
+
+### First-purchase discount
+**10% off**
+\`WELCOME10\`
+~ 2026-12-31
+
+<!-- pbc:E4 variant=info-box -->
+
+- **Shipping** Free shipping on orders over ₩50,000
+- **Returns** 30-day exchange / return policy
+- **Order cutoff** 2 PM KST same-day shipping
+- **Carrier** CJ Logistics
+
+<!-- pbc:E1 variant=sticky-bottom -->
+
+~~₩49,000~~ **₩39,000**
+
+> Only a few left in stock
+
+[Add to cart](/cart/add)
+"
+`;
+
+exports[`WI-510 — preset × output snapshots > landing-saas — docx-element snapshot 1`] = `
+[
+  [
+    {
+      "level": 1,
+      "runs": [
+        {
+          "text": "Ship faster. Stress less.",
+        },
+      ],
+      "type": "heading",
+    },
+    {
+      "runs": [
+        {
+          "text": "The opinionated platform that turns your ideas into production in days, not months.",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "Start free trial → /signup",
+        },
+      ],
+      "type": "paragraph",
+    },
+  ],
+  [
+    {
+      "runs": [
+        {
+          "text": "If any of these sound familiar, you are in the right place.",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "items": [
+        {
+          "runs": [
+            {
+              "text": "Shipping a new feature takes weeks of plumbing work",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "text": "Your CI is flaky and nobody owns it",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "text": "Onboarding a new engineer costs a sprint",
+            },
+          ],
+        },
+      ],
+      "ordered": false,
+      "type": "list",
+    },
+  ],
+  [
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "One-command setup",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "text": "Go from clone to running in 60 seconds — no env shaming.",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "Built-in observability",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "text": "Logs, traces, and metrics wired in by default. Find issues before customers do.",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "Convention over configuration",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "text": "Sane defaults that scale from prototype to production.",
+        },
+      ],
+      "type": "paragraph",
+    },
+  ],
+  [
+    {
+      "items": [
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "2,400+",
+            },
+            {
+              "text": " Teams shipping daily",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "47s",
+            },
+            {
+              "text": " Average deploy time",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "72",
+            },
+            {
+              "text": " Customer NPS",
+            },
+          ],
+        },
+      ],
+      "ordered": false,
+      "type": "list",
+    },
+  ],
+  [
+    {
+      "items": [
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "SOC 2 Type II",
+            },
+            {
+              "text": " (AICPA · 2025)",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "ISO 27001",
+            },
+            {
+              "text": " (ISO · 2024)",
+            },
+          ],
+        },
+        {
+          "runs": [
+            {
+              "bold": true,
+              "text": "GDPR Ready",
+            },
+            {
+              "text": " (EU)",
+            },
+          ],
+        },
+      ],
+      "ordered": false,
+      "type": "list",
+    },
+  ],
+  [
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "Is there a free tier?",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "text": "Yes — every account starts on the free tier. No credit card required.",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "Can I self-host?",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "text": "Enterprise plans include a self-hosted option with the same feature set.",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "How does pricing scale?",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "text": "Pricing scales with active developers, not with usage spikes.",
+        },
+      ],
+      "type": "paragraph",
+    },
+  ],
+  [
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "$0",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "text": "Cancel anytime. No credit card required.",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "Start free trial → /signup",
+        },
+      ],
+      "type": "paragraph",
+    },
+  ],
+]
+`;
+
+exports[`WI-510 — preset × output snapshots > landing-saas — html snapshot 1`] = `
+"<section class="pbc-block pbc-A1 pbc-A1--full-bleed" data-block-id="A1"><div class="pbc-A1__inner"><h1 class="pbc-A1__headline">Ship faster. Stress less.</h1><p class="pbc-A1__tagline">The opinionated platform that turns your ideas into production in days, not months.</p><a class="pbc-A1__cta" href="/signup">Start free trial</a></div></section>
+
+<section class="pbc-block pbc-A3" data-block-id="A3"><p class="pbc-A3__intro">If any of these sound familiar, you are in the right place.</p><ul class="pbc-A3__list"><li class="pbc-A3__point">Shipping a new feature takes weeks of plumbing work</li><li class="pbc-A3__point">Your CI is flaky and nobody owns it</li><li class="pbc-A3__point">Onboarding a new engineer costs a sprint</li></ul></section>
+
+<section class="pbc-block pbc-B1 pbc-B1--icon-grid" data-block-id="B1"><ul class="pbc-B1__list"><li class="pbc-B1__item"><span class="pbc-B1__icon" aria-hidden="true">⚡</span><h3 class="pbc-B1__title">One-command setup</h3><p class="pbc-B1__desc">Go from clone to running in 60 seconds — no env shaming.</p></li><li class="pbc-B1__item"><span class="pbc-B1__icon" aria-hidden="true">📈</span><h3 class="pbc-B1__title">Built-in observability</h3><p class="pbc-B1__desc">Logs, traces, and metrics wired in by default. Find issues before customers do.</p></li><li class="pbc-B1__item"><span class="pbc-B1__icon" aria-hidden="true">🧭</span><h3 class="pbc-B1__title">Convention over configuration</h3><p class="pbc-B1__desc">Sane defaults that scale from prototype to production.</p></li></ul></section>
+
+<section class="pbc-block pbc-C5 pbc-C5--stat-card" data-block-id="C5"><ul class="pbc-C5__list"><li class="pbc-C5__item"><span class="pbc-C5__value">2,400+</span><span class="pbc-C5__label">Teams shipping daily</span></li><li class="pbc-C5__item"><span class="pbc-C5__value">47<small>s</small></span><span class="pbc-C5__label">Average deploy time</span></li><li class="pbc-C5__item"><span class="pbc-C5__value">72</span><span class="pbc-C5__label">Customer NPS</span></li></ul></section>
+
+<section class="pbc-block pbc-C1 pbc-C1--badge-row" data-block-id="C1"><ul class="pbc-C1__list"><li class="pbc-C1__item"><span class="pbc-C1__name">SOC 2 Type II</span><span class="pbc-C1__meta">AICPA · 2025</span></li><li class="pbc-C1__item"><span class="pbc-C1__name">ISO 27001</span><span class="pbc-C1__meta">ISO · 2024</span></li><li class="pbc-C1__item"><span class="pbc-C1__name">GDPR Ready</span><span class="pbc-C1__meta">EU</span></li></ul></section>
+
+<section class="pbc-block pbc-E3 pbc-E3--accordion" data-block-id="E3"><div class="pbc-E3__list"><details class="pbc-E3__item"><summary>Is there a free tier?</summary><div class="pbc-E3__answer">Yes — every account starts on the free tier. No credit card required.</div></details><details class="pbc-E3__item"><summary>Can I self-host?</summary><div class="pbc-E3__answer">Enterprise plans include a self-hosted option with the same feature set.</div></details><details class="pbc-E3__item"><summary>How does pricing scale?</summary><div class="pbc-E3__answer">Pricing scales with active developers, not with usage spikes.</div></details></div></section>
+
+<section class="pbc-block pbc-E1 pbc-E1--sticky-bottom" data-block-id="E1"><div class="pbc-E1__price-block"><span class="pbc-E1__price">$0</span></div><p class="pbc-E1__urgency">Cancel anytime. No credit card required.</p><a class="pbc-E1__cta" href="/signup">Start free trial</a></section>"
+`;
+
+exports[`WI-510 — preset × output snapshots > landing-saas — markdown snapshot 1`] = `
+"<!-- pbc:A1 variant=full-bleed -->
+
+# Ship faster. Stress less.
+
+The opinionated platform that turns your ideas into production in days, not months.
+
+[Start free trial](/signup)
+
+<!-- pbc:A3 -->
+
+If any of these sound familiar, you are in the right place.
+
+- Shipping a new feature takes weeks of plumbing work
+- Your CI is flaky and nobody owns it
+- Onboarding a new engineer costs a sprint
+
+<!-- pbc:B1 variant=icon-grid -->
+
+### One-command setup
+
+Go from clone to running in 60 seconds — no env shaming.
+
+### Built-in observability
+
+Logs, traces, and metrics wired in by default. Find issues before customers do.
+
+### Convention over configuration
+
+Sane defaults that scale from prototype to production.
+
+<!-- pbc:C5 variant=stat-card -->
+
+- **2,400+** Teams shipping daily
+- **47s** Average deploy time
+- **72** Customer NPS
+
+<!-- pbc:C1 variant=badge-row -->
+
+- **SOC 2 Type II** (AICPA · 2025)
+- **ISO 27001** (ISO · 2024)
+- **GDPR Ready** (EU)
+
+<!-- pbc:E3 variant=accordion -->
+
+**Is there a free tier?**
+
+Yes — every account starts on the free tier. No credit card required.
+
+**Can I self-host?**
+
+Enterprise plans include a self-hosted option with the same feature set.
+
+**How does pricing scale?**
+
+Pricing scales with active developers, not with usage spikes.
+
+<!-- pbc:E1 variant=sticky-bottom -->
+
+**$0**
+
+> Cancel anytime. No credit card required.
+
+[Start free trial](/signup)
+"
+`;
+
+exports[`WI-510 — preset × output snapshots > sns-card — docx-element snapshot 1`] = `
+[
+  [
+    {
+      "alt": "[Hook headline]",
+      "src": "placeholder://card-bg",
+      "type": "image",
+    },
+    {
+      "level": 1,
+      "runs": [
+        {
+          "text": "[Hook headline]",
+        },
+      ],
+      "type": "heading",
+    },
+  ],
+  [
+    {
+      "level": 2,
+      "runs": [
+        {
+          "text": "[One-line zinger that earns the swipe]",
+        },
+      ],
+      "type": "heading",
+    },
+  ],
+  [
+    {
+      "alt": "Lifestyle shot",
+      "src": "placeholder://lifestyle",
+      "type": "image",
+    },
+  ],
+  [
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "—",
+        },
+      ],
+      "type": "paragraph",
+    },
+    {
+      "runs": [
+        {
+          "bold": true,
+          "text": "Link in bio → /bio",
+        },
+      ],
+      "type": "paragraph",
+    },
+  ],
+]
+`;
+
+exports[`WI-510 — preset × output snapshots > sns-card — html snapshot 1`] = `
+"<section class="pbc-block pbc-A1 pbc-A1--overlay-text" data-block-id="A1"><div class="pbc-A1__inner" style="background-image:url('placeholder://card-bg')"><h1 class="pbc-A1__headline">[Hook headline]</h1></div></section>
+
+<section class="pbc-block pbc-A2 pbc-A2--bold-center" data-block-id="A2"><p class="pbc-A2__line">[One-line zinger that earns the swipe]</p></section>
+
+<section class="pbc-block pbc-F1 pbc-F1--full-photo" data-block-id="F1"><div class="pbc-F1__gallery"><img src="placeholder://lifestyle" alt="Lifestyle shot" style="aspect-ratio:1 / 1"></div></section>
+
+<section class="pbc-block pbc-E1 pbc-E1--inline-banner" data-block-id="E1"><div class="pbc-E1__price-block"><span class="pbc-E1__price">—</span></div><a class="pbc-E1__cta" href="/bio">Link in bio</a></section>"
+`;
+
+exports[`WI-510 — preset × output snapshots > sns-card — markdown snapshot 1`] = `
+"<!-- pbc:A1 variant=overlay-text -->
+
+![](placeholder://card-bg)
+
+# \\[Hook headline\\]
+
+<!-- pbc:A2 variant=bold-center -->
+
+## \\[One-line zinger that earns the swipe\\]
+
+<!-- pbc:F1 variant=full-photo -->
+
+![Lifestyle shot](placeholder://lifestyle)
+
+<!-- pbc:E1 variant=inline-banner -->
+
+**—**
+
+[Link in bio](/bio)
+"
+`;
