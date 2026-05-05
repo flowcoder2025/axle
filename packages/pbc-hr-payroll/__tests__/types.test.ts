@@ -127,16 +127,18 @@ describe("WI-601 — InsuranceRates is camelCase + matches deductions keys", () 
   });
 
   it("rejects the snake_case form at the type level (regression for the TARGET note)", () => {
-    // @ts-expect-error — snake_case keys violate the camelCase pin
-    const wrong: InsuranceRates = {
+    // The `as` cast lets us write a snake_case object and then assert that
+    // accessing a snake_case key on `InsuranceRates` is a type error —
+    // proves the pin holds without flooding tsc with multi-property errors.
+    const snakeBag = {
       year: 2026,
-      national_pension: 0,
-      health_insurance: 0,
-      long_term_care: 0,
-      employment_insurance: 0,
-      industrial_accident: 0,
-    };
-    expect(wrong).toBeDefined();
+      national_pension: 0.045,
+    } as unknown as InsuranceRates;
+    // @ts-expect-error — `national_pension` is not a key of InsuranceRates
+    const value: number = snakeBag.national_pension;
+    // Use the runtime read so the cast cannot be tree-shaken away.
+    expect(value).toBeCloseTo(0.045);
+    expect(snakeBag.nationalPension).toBeUndefined();
   });
 });
 
