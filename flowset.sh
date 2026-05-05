@@ -695,13 +695,22 @@ count_tasks() {
   # Count locally completed that aren't already [x] in fix_plan
   local extra_completed=0
   if [[ -f "$COMPLETED_FILE" ]]; then
-    # Pre-extract [x] lines once; avoids per-iteration awk and the
+    # Pre-extract [x] / [ ] lines once; avoids per-iteration awk and the
     # `if ! awk | grep` pattern that misbehaves under bash 3.2 with
     # `set -uo pipefail` (always reports not-found).
-    local fix_x_lines
+    local fix_all_lines fix_x_lines
+    fix_all_lines=$(awk '/^```/{f=!f} !f && /^\- \[[ x]\]/' "$FIX_PLAN" 2>/dev/null || true)
     fix_x_lines=$(awk '/^```/{f=!f} !f && /^\- \[x\]/' "$FIX_PLAN" 2>/dev/null || true)
     while IFS= read -r prefix; do
       [[ -z "$prefix" ]] && continue
+      # Skip prefixes not registered in fix_plan at all (e.g. sub-numbered
+      # WIs from regression PRs). Without this, recover_completed_from_history
+      # accumulates git-log prefixes that aren't tracked in fix_plan, which
+      # over-inflates extra_completed past `total` and forces unchecked=0
+      # ("All tasks complete" false positive).
+      local in_fix="n"
+      printf '%s' "$fix_all_lines" | grep -qF -- "$prefix" && in_fix="y"
+      [[ "$in_fix" != "y" ]] && continue
       # If fix_plan already has [x] for this prefix, skip (avoid double count)
       local found="n"
       printf '%s' "$fix_x_lines" | grep -qF -- "$prefix" && found="y"
