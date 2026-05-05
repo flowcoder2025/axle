@@ -52,6 +52,13 @@ export { renderBlock, renderComposition } from "./render.js";
 // React renderer (WI-504).
 export { renderBlockReact, REACT_RENDERERS } from "./renderers/react.js";
 
+// Markdown renderer (WI-505).
+export {
+  escapeMarkdown,
+  renderBlockMarkdown,
+  MARKDOWN_RENDERERS,
+} from "./renderers/markdown.js";
+
 // 23-block registry (WI-502).
 export {
   BLOCKS,
