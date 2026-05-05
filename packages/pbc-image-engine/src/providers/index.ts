@@ -24,6 +24,9 @@ export type { OpenRouterOptions } from "./openRouter.js";
 export { ComfyUILocalProvider } from "./comfyuiLocal.js";
 export type { ComfyUILocalOptions } from "./comfyuiLocal.js";
 
+export { ComfyUICloudProvider } from "./comfyuiCloud.js";
+export type { ComfyUICloudOptions } from "./comfyuiCloud.js";
+
 export {
   Z_IMAGE_WORKFLOW,
   defaultWorkflowIdForMode,
