@@ -115,6 +115,24 @@ export interface PayrollInput {
    * additive on top of `baseSalary` for the gross calculation.
    */
   allowances?: Array<{ type: string; amount: number }>;
+
+  /**
+   * Optional WI-603 fields used by `calculatePayroll` to derive the
+   * 가산임금 (overtime / holiday premium). They stay optional so the
+   * WI-601 type contract is unchanged for consumers that only ship the
+   * monthly base salary.
+   */
+  employmentType?: EmploymentType;
+  salaryType?: SalaryType;
+  /**
+   * 통상시급 (ordinary hourly wage). Required for HOURLY/DAILY salary
+   * types when premium hours are present; ignored for MONTHLY (the
+   * calculator derives 통상시급 = baseSalary / 209 — Korean standard
+   * 월 소정근로시간).
+   */
+  hourlyRate?: number;
+  /** 공휴근로 hours (휴일근로 ≤ 8h, 가산률 1.5x — same as overtime). */
+  holidayHours?: number;
 }
 
 /**

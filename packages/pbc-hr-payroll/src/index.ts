@@ -27,6 +27,15 @@ export {
   getInsuranceRatesForYear,
 } from "./payroll/insuranceRates/index.js";
 
+export { calculatePayroll } from "./payroll/calculate.js";
+export type { CalculatePayrollOptions } from "./payroll/calculate.js";
+export {
+  calculateInsuranceDeductions,
+  calculateMonthlyIncomeTax,
+  computeOrdinaryHourlyWage,
+} from "./payroll/deductions.js";
+export type { InsuranceDeductionBreakdown } from "./payroll/deductions.js";
+
 export type {
   AttendanceMethod,
   AttendanceRecord,
