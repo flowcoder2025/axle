@@ -37,3 +37,42 @@ export type {
   RenderOutput,
   RenderResult,
 } from "./types.js";
+
+// Block category metadata (WI-502).
+export {
+  BLOCK_CATEGORY_NAMES,
+  getCategoryMeta,
+} from "./categories.js";
+export type { BlockCategoryMeta } from "./categories.js";
+
+// 23-block registry (WI-502).
+export {
+  BLOCKS,
+  getBlock,
+  listBlockIds,
+  listBlocksByCategory,
+  A1_HERO_VISUAL,
+  A2_ONELINE_HOOK,
+  A3_PROBLEM_STATEMENT,
+  B1_FEATURE_CARDS,
+  B2_BEFORE_AFTER,
+  B3_KEY_INGREDIENT,
+  B4_USP_FULLSHOT,
+  C1_CERTIFICATION,
+  C2_REVIEWS,
+  C3_MEDIA_COVERAGE,
+  C4_BRAND_STORY,
+  C5_NUMBERS,
+  D1_SPEC_TABLE,
+  D2_USAGE_GUIDE,
+  D3_PACKAGE_CONTENTS,
+  D4_SIZE_GUIDE,
+  E1_CTA_BANNER,
+  E2_PROMOTION,
+  E3_FAQ,
+  E4_SHIPPING,
+  F1_LIFESTYLE,
+  F2_COLOR_OPTIONS,
+  F3_DIVIDER,
+} from "./blocks/index.js";
+export type { RegisteredBlockId } from "./blocks/index.js";
