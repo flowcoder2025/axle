@@ -580,7 +580,7 @@
 - [x] WI-511-docs 카탈로그 README + 4 출력 포맷 비교 | L1:Phase19 > L2:BlockBuilder > L3:Docs
 
 ### L2: pbc-hr-payroll > L3: Top 3 PBC 추출 (6주, FlowTeams 이전)
-- [ ] WI-601-feat pbc-hr-payroll 스켈레톤 + types.ts (camelCase InsuranceRates) | L1:Phase19 > L2:HRPayroll > L3:Skeleton
+- [x] WI-601-feat pbc-hr-payroll 스켈레톤 + types.ts (camelCase InsuranceRates) | L1:Phase19 > L2:HRPayroll > L3:Skeleton
 - [x] WI-602-feat 4대보험 rates 2025/2026 + 단위 테스트 (year-aware) | L1:Phase19 > L2:HRPayroll > L3:InsuranceRates
 - [x] WI-603-feat 급여 계산 로직 + 10개 fixture (정규/계약/일용/시간제 × 일반/연장/공휴근로) | L1:Phase19 > L2:HRPayroll > L3:Calculate
 - [x] WI-604-feat 근태 서비스 + AttendanceMethod별 검증 (FlowTeams enum 매핑 검증) | L1:Phase19 > L2:HRPayroll > L3:Attendance
