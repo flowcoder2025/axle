@@ -695,10 +695,17 @@ count_tasks() {
   # Count locally completed that aren't already [x] in fix_plan
   local extra_completed=0
   if [[ -f "$COMPLETED_FILE" ]]; then
+    # Pre-extract [x] lines once; avoids per-iteration awk and the
+    # `if ! awk | grep` pattern that misbehaves under bash 3.2 with
+    # `set -uo pipefail` (always reports not-found).
+    local fix_x_lines
+    fix_x_lines=$(awk '/^```/{f=!f} !f && /^\- \[x\]/' "$FIX_PLAN" 2>/dev/null || true)
     while IFS= read -r prefix; do
       [[ -z "$prefix" ]] && continue
       # If fix_plan already has [x] for this prefix, skip (avoid double count)
-      if ! awk '/^```/{f=!f} !f && /^\- \[x\]/' "$FIX_PLAN" 2>/dev/null | grep -qF -- "$prefix"; then
+      local found="n"
+      printf '%s' "$fix_x_lines" | grep -qF -- "$prefix" && found="y"
+      if [[ "$found" != "y" ]]; then
         extra_completed=$((extra_completed + 1))
       fi
     done < "$COMPLETED_FILE"

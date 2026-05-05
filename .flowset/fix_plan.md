@@ -502,20 +502,20 @@
 - [x] WI-304-feat 벤처 체크리스트 템플릿 seed (연구개발비/인력/매출 기준 증빙 12종) | L1:Phase18 > L2:Venture > L3:Checklist
 
 ### L2: 소부장 인증 > L3: 기술자립도 평가
-- [ ] WI-305-feat SOBOOJANG_CERT 프로젝트 타입 schema 확정 (enum 정비) + 한글 라벨 통일 | L1:Phase18 > L2:SOBOOJANG > L3:Schema
-- [ ] WI-306-feat 소부장 품목 마스터 데이터 seed (산업부 고시 품목) + Client 품목 매핑 | L1:Phase18 > L2:SOBOOJANG > L3:Data
-- [ ] WI-307-feat 기술자립도 평가 엔진 (품목별 해외의존도/국산화율 AI 분석) | L1:Phase18 > L2:SOBOOJANG > L3:Engine
-- [ ] WI-308-feat 소부장 신청서 HWPX 템플릿 + 자동 채우기 + 증빙 체크리스트 | L1:Phase18 > L2:SOBOOJANG > L3:Doc
+- [x] WI-305-feat SOBOOJANG_CERT 프로젝트 타입 schema 확정 (enum 정비) + 한글 라벨 통일 | L1:Phase18 > L2:SOBOOJANG > L3:Schema
+- [x] WI-306-feat 소부장 품목 마스터 데이터 seed (산업부 고시 품목) + Client 품목 매핑 | L1:Phase18 > L2:SOBOOJANG > L3:Data
+- [x] WI-307-feat 기술자립도 평가 엔진 (품목별 해외의존도/국산화율 AI 분석) | L1:Phase18 > L2:SOBOOJANG > L3:Engine
+- [x] WI-308-feat 소부장 신청서 HWPX 템플릿 + 자동 채우기 + 증빙 체크리스트 | L1:Phase18 > L2:SOBOOJANG > L3:Doc
 
 ### L2: 기업부설연구소 > L3: 설립/인정 자동화
 - [x] WI-309-feat 연구소 연구원 증빙 체크리스트 템플릿 seed (학위/경력/4대보험) | L1:Phase18 > L2:Institute > L3:Checklist
-- [ ] WI-310-feat 연구시설 증빙 수집 UI (도면/사진/임대차계약 업로드) | L1:Phase18 > L2:Institute > L3:Facility
+- [x] WI-310-feat 연구시설 증빙 수집 UI (도면/사진/임대차계약 업로드) | L1:Phase18 > L2:Institute > L3:Facility
 - [x] WI-311-feat KOITA 신고서 HWPX 템플릿 + 자동 채우기 (masterProfile + 연구원 목록) | L1:Phase18 > L2:Institute > L3:KOITA Doc
-- [ ] WI-312-feat 연구소 설립 후 연구일지 관리 자동 연결 (Journal 모듈 트리거) | L1:Phase18 > L2:Institute > L3:Journal Link
+- [x] WI-312-feat 연구소 설립 후 연구일지 관리 자동 연결 (Journal 모듈 트리거) | L1:Phase18 > L2:Institute > L3:Journal Link
 
 ### L2: 특허 > L3: 선행기술 조사 + 명세서
-- [ ] WI-313-feat KIPRIS 선행기술 API 연동 + AI 요약 (CLI_CLAUDE) | L1:Phase18 > L2:Patent > L3:PriorArt
-- [ ] WI-314-feat 특허 명세서 초안 생성 API + UI (patent-draft.ts 배선) | L1:Phase18 > L2:Patent > L3:Draft
+- [x] WI-313-feat KIPRIS 선행기술 API 연동 + AI 요약 (CLI_CLAUDE) | L1:Phase18 > L2:Patent > L3:PriorArt
+- [x] WI-314-feat 특허 명세서 초안 생성 API + UI (patent-draft.ts 배선) | L1:Phase18 > L2:Patent > L3:Draft
 - [x] WI-315-feat 발명신고서/직무발명 체크리스트 템플릿 seed | L1:Phase18 > L2:Patent > L3:Checklist
 
 ### L2: 포털 자동 등록 > L3: Desktop Playwright (Phase 15 확장)
@@ -524,16 +524,16 @@
 - [x] WI-318-1-feat AXLE /api/scraper/* 엔드포인트 5종 신설 (health/jobs/results/repair/report) + X-Scraper-Key 인증 | L1:Phase18 > L2:Portal > L3:API
 - [x] WI-318-2-feat ScraperJob / ScraperApiKey / ScraperRepairLog / ClientCertificate / ClientPortalAccount Prisma 모델 + Credentials AES-256-GCM 암호화 | L1:Phase18 > L2:Portal > L3:DB
 - [x] WI-318-3-feat Vercel Blob 업로드 + signed URL 발급 유틸 + log-sanitizer 확장(credentials redaction) | L1:Phase18 > L2:Portal > L3:Storage
-- [ ] WI-318-4-feat flowvue-scraper AxleApiClient + SCRAPER_MODE=axle 분기 + polling loop | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
+- [x] WI-318-4-feat flowvue-scraper AxleApiClient + SCRAPER_MODE=axle 분기 + polling loop | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
 - [x] WI-318-5-feat flowvue-scraper pages/hometax_certificate.py — 납세증명서 발급 PoC (외부 PR flowcoder2025/flowvue-scraper#2, c3dd9fe) | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
   - 메뉴 코드 / 발급 폼 셀렉터에 TODO[pfx-validate] 마킹 — 사용자 PFX 환경에서 1회 실측 검증 필요. ruff + pytest 3 신규 PASS.
 - [x] WI-318-6-feat 자격증명 CRUD + Client 탭 UI + 스크래퍼 작업 큐 (PR #96, 30b5e2f) | L1:Phase18 > L2:Portal > L3:UI
   - 원래 task line의 "Electron UI 축소" 부분은 N/A — flowvue-scraper는 처음부터 Electron UI가 없는 순수 Python CLI 프로젝트. `run-scraper.ps1` 가 이미 subprocess 런처 + 로그뷰어 역할 수행 (venv heal/auto-repair, retry, 일자별 로그 append) → 별도 축소 작업 불필요.
-- [ ] WI-319-1-feat flowvue-scraper pages/minwon24_certificate.py — 민원24 증명서 발급 | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
-- [ ] WI-319-2-feat 민원24 발급 UI + 증명서 유형 카탈로그 | L1:Phase18 > L2:Portal > L3:UI
-- [ ] WI-320-1-feat flowvue-scraper pages/insurance_*.py — 4대보험 가입자명부/납부확인 | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
-- [ ] WI-320-2-feat 4대보험 UI + 조회 필터 (연월/사업장) | L1:Phase18 > L2:Portal > L3:UI
-- [ ] WI-321-feat PKCS#12 내부 전자서명(계약서 서명 등 비-포털 용도) — 포털 로그인 PFX는 flowvue-scraper 처리로 별도 | L1:Phase18 > L2:Internal > L3:PKCS12
+- [x] WI-319-1-feat flowvue-scraper pages/minwon24_certificate.py — 민원24 증명서 발급 | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
+- [x] WI-319-2-feat 민원24 발급 UI + 증명서 유형 카탈로그 | L1:Phase18 > L2:Portal > L3:UI
+- [x] WI-320-1-feat flowvue-scraper pages/insurance_*.py — 4대보험 가입자명부/납부확인 | L1:Phase18 > L2:Portal > L3:Scraper(외부 저장소)
+- [x] WI-320-2-feat 4대보험 UI + 조회 필터 (연월/사업장) | L1:Phase18 > L2:Portal > L3:UI
+- [x] WI-321-feat PKCS#12 내부 전자서명(계약서 서명 등 비-포털 용도) — 포털 로그인 PFX는 flowvue-scraper 처리로 별도 | L1:Phase18 > L2:Internal > L3:PKCS12
 
 ### L2: BUNDLE 워크플로우 > L3: 통합 진행 관리
 - [x] WI-322-feat BUNDLE 하위 프로젝트 진행률 롤업 대시보드 (벤처+연구소+특허 한 화면) | L1:Phase18 > L2:Bundle > L3:Dashboard
