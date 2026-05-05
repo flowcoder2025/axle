@@ -1,0 +1,25 @@
+{
+  "_comment": "Real-shape sample of ComfyUI's GET /history/{prompt_id} response after a successful run. Top-level key is the prompt_id. status.status_str === 'success' marks completion. outputs[<nodeId>].images carries the file refs the adapter then pulls via /view. Node id `7` matches the SaveImage node id in the Z-Image default workflow (src/providers/comfyui/workflows.ts). Replace if refreshing against a different workflow.",
+  "fixture-prompt-id-0001": {
+    "prompt": [1, "fixture-prompt-id-0001", { "7": { "class_type": "SaveImage" } }],
+    "outputs": {
+      "7": {
+        "images": [
+          {
+            "filename": "axle_z-image_00001_.png",
+            "subfolder": "axle",
+            "type": "output"
+          }
+        ]
+      }
+    },
+    "status": {
+      "status_str": "success",
+      "completed": true,
+      "messages": [
+        ["execution_start", { "prompt_id": "fixture-prompt-id-0001", "timestamp": 0 }],
+        ["execution_success", { "prompt_id": "fixture-prompt-id-0001", "timestamp": 1 }]
+      ]
+    }
+  }
+}

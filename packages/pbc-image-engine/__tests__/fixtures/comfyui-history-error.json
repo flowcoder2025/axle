@@ -1,0 +1,23 @@
+{
+  "_comment": "Real-shape sample of ComfyUI's GET /history/{prompt_id} after an execution error. status.status_str === 'error' triggers the adapter's UNKNOWN/retryable mapping. messages[].execution_error carries the underlying node failure.",
+  "fixture-prompt-id-error-0002": {
+    "prompt": [1, "fixture-prompt-id-error-0002", { "3": { "class_type": "KSampler" } }],
+    "outputs": {},
+    "status": {
+      "status_str": "error",
+      "completed": false,
+      "messages": [
+        [
+          "execution_error",
+          {
+            "prompt_id": "fixture-prompt-id-error-0002",
+            "node_id": "3",
+            "node_type": "KSampler",
+            "exception_type": "RuntimeError",
+            "exception_message": "CUDA out of memory"
+          }
+        ]
+      ]
+    }
+  }
+}

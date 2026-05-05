@@ -1,0 +1,24 @@
+{
+  "_comment": "Real-shape sample of a successful Google Generative Language API response for an image-generation model (gemini-3-pro-image-preview). Captured shape per https://ai.google.dev/api/generate-content. The inline base64 is replaced with a 1x1 transparent PNG so this fixture stays small and copyright-free. Refresh procedure: see __tests__/fixtures/README.md.",
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "inlineData": {
+              "mimeType": "image/png",
+              "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkAAIAAAoAAv/lxKUAAAAASUVORK5CYII="
+            }
+          }
+        ]
+      },
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 12,
+    "candidatesTokenCount": 0,
+    "totalTokenCount": 12
+  }
+}

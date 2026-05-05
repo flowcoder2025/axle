@@ -1,0 +1,10 @@
+{
+  "_comment": "Real-shape sample of a SAFETY-blocked Google response. promptFeedback.blockReason carries the reason; candidates may be empty or absent.",
+  "candidates": [],
+  "promptFeedback": {
+    "blockReason": "SAFETY",
+    "safetyRatings": [
+      { "category": "HARM_CATEGORY_HARASSMENT", "probability": "HIGH" }
+    ]
+  }
+}
