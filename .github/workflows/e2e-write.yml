@@ -202,6 +202,16 @@ jobs:
             ERROR=$(echo "$line" | node -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).error)")
             FILE=$(echo "$line" | node -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).file)")
 
+            # Skip when no WI prefix can be derived from the failing test title.
+            # flowset.sh's inject_regression_wis() parses the issue title for a
+            # WI-NNN pattern and exits under set -e when none is found, which
+            # blocks the whole loop. Tests not tied to a specific WI should be
+            # tracked through CI logs, not auto-issues.
+            if [ "$WI_NUM" = "UNKNOWN" ] || [ -z "$WI_NUM" ]; then
+              echo "Skipping issue creation — no WI prefix in test title: $TITLE"
+              continue
+            fi
+
             EXISTING=$(gh issue list --label regression --search "$WI_NUM" --state open --json number,title --jq "[.[] | select(.title | test(\"^${WI_NUM}[^0-9]\"))] | length" 2>/dev/null || echo "0")
             if [ "$EXISTING" != "0" ]; then
               echo "Skipping $WI_NUM - regression issue already exists"
