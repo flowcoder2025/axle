@@ -63,3 +63,16 @@ export type {
 
 export { getDefaultPreferences, selectProvider } from "./selectProvider.js";
 export type { SelectProviderOptions } from "./selectProvider.js";
+
+export {
+  FREE_MODE_SYSTEM_PROMPT,
+  PRESETS,
+  PRO_MODE_SYSTEM_PROMPT,
+  RETOUCH_FREE,
+  RETOUCH_PRO,
+  applyPreset,
+  getPreset,
+  listPresetIds,
+  registerPreset,
+} from "./presets/index.js";
+export type { Preset } from "./presets/index.js";
