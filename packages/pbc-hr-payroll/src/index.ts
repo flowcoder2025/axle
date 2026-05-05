@@ -36,6 +36,42 @@ export {
 } from "./payroll/deductions.js";
 export type { InsuranceDeductionBreakdown } from "./payroll/deductions.js";
 
+export {
+  verifyAttendanceContext,
+  verifyGpsAttendance,
+  verifyIpAttendance,
+  verifyManualAttendance,
+  verifyQrAttendance,
+} from "./attendance/methods.js";
+export type {
+  AttendanceCheckInInput,
+  AttendanceVerificationPolicy,
+  Geofence,
+  VerificationResult,
+} from "./attendance/methods.js";
+export {
+  createAttendanceService,
+} from "./attendance/service.js";
+export type {
+  AttendanceCheckOutInput,
+  AttendanceServiceDeps,
+  AttendanceServiceImpl,
+} from "./attendance/service.js";
+export {
+  createInMemoryAttendanceStore,
+} from "./attendance/store.js";
+export type { AttendanceStore } from "./attendance/store.js";
+export {
+  FLOWTEAMS_ATTENDANCE_METHODS,
+  FLOWTEAMS_ATTENDANCE_STATUSES,
+  verifyDefaultFlowTeamsAttendanceEnumMapping,
+  verifyFlowTeamsAttendanceEnumMapping,
+} from "./attendance/enumMapping.js";
+export type {
+  EnumMappingResult,
+  EnumMismatch,
+} from "./attendance/enumMapping.js";
+
 export type {
   AttendanceMethod,
   AttendanceRecord,
