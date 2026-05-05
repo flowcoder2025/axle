@@ -20,3 +20,24 @@ export type { VertexAIOptions } from "./vertexai.js";
 
 export { OpenRouterImageProvider } from "./openRouter.js";
 export type { OpenRouterOptions } from "./openRouter.js";
+
+export { ComfyUILocalProvider } from "./comfyuiLocal.js";
+export type { ComfyUILocalOptions } from "./comfyuiLocal.js";
+
+export {
+  Z_IMAGE_WORKFLOW,
+  defaultWorkflowIdForMode,
+  getWorkflow,
+  listWorkflowIds,
+  registerWorkflow,
+} from "./comfyui/workflows.js";
+export type {
+  ComfyUIHistoryEntry,
+  ComfyUIHistoryResponse,
+  ComfyUINode,
+  ComfyUINodeRef,
+  ComfyUIPrompt,
+  ComfyUIPromptResponse,
+  ComfyUIWorkflow,
+  ComfyUIWorkflowBuilder,
+} from "./comfyui/types.js";

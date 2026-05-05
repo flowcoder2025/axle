@@ -30,11 +30,26 @@ export type {
 } from "./types.js";
 
 export {
+  ComfyUILocalProvider,
   GoogleGenAIProvider,
   OpenRouterImageProvider,
   VertexAIProvider,
+  Z_IMAGE_WORKFLOW,
+  defaultWorkflowIdForMode,
+  getWorkflow,
+  listWorkflowIds,
+  registerWorkflow,
 } from "./providers/index.js";
 export type {
+  ComfyUIHistoryEntry,
+  ComfyUIHistoryResponse,
+  ComfyUILocalOptions,
+  ComfyUINode,
+  ComfyUINodeRef,
+  ComfyUIPrompt,
+  ComfyUIPromptResponse,
+  ComfyUIWorkflow,
+  ComfyUIWorkflowBuilder,
   DirectApiProvider,
   FetchLike,
   GoogleGenAIOptions,
