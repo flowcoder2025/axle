@@ -1,0 +1,36 @@
+{
+  "name": "@axle/pbc-block-builder",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "lint": "eslint src/",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "peerDependencies": {
+    "@axle/pbc-image-engine": "*"
+  },
+  "peerDependenciesMeta": {
+    "@axle/pbc-image-engine": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@axle/pbc-image-engine": "*",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
