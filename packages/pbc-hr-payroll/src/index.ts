@@ -72,6 +72,32 @@ export type {
   EnumMismatch,
 } from "./attendance/enumMapping.js";
 
+export {
+  classifyNomuTopic,
+  redactNomuPii,
+} from "./nomu/preprocess.js";
+export type {
+  NomuTopic,
+  NomuTopicCategory,
+} from "./nomu/preprocess.js";
+export {
+  extractKoreanLaborLawCitations,
+  validateNomuAnswer,
+} from "./nomu/validate.js";
+export type { NomuValidationResult } from "./nomu/validate.js";
+export { createInMemoryNomuConsultationStore } from "./nomu/store.js";
+export type {
+  NomuConsultationRecord,
+  NomuConsultationStore,
+} from "./nomu/store.js";
+export type {
+  NomuAiClient,
+  NomuAiGenerateInput,
+  NomuAiGenerateOutput,
+} from "./nomu/aiClient.js";
+export { createNomuConsultationService } from "./nomu/consultation.js";
+export type { NomuConsultationServiceDeps } from "./nomu/consultation.js";
+
 export { createKoreanLeavePolicy } from "./leave/policy.js";
 export type { LeaveAllocationPolicy } from "./leave/policy.js";
 export { createInMemoryLeaveStore } from "./leave/store.js";
