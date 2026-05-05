@@ -233,16 +233,10 @@ describe("WI-505 — top-level renderBlock dispatcher", () => {
     expect(dispatched.content).toBe(direct.content);
   });
 
-  it("renderBlock with not-yet-implemented outputs falls back to the placeholder", () => {
-    // Only docx-element remains pending after WI-505.
-    const pending = RENDER_OUTPUTS.filter(
-      (o) => o !== "html" && o !== "react" && o !== "markdown",
-    );
-    expect(pending.length).toBeGreaterThan(0);
-    for (const output of pending) {
+  it("every RENDER_OUTPUT now has a real renderer (no placeholder fallback after WI-506)", () => {
+    for (const output of RENDER_OUTPUTS) {
       const result = renderBlock("A1", { headline: "Hi" }, { output });
-      expect(typeof result.content).toBe("string");
-      expect(result.metadata?.placeholder).toBe(true);
+      expect(result.metadata?.placeholder).not.toBe(true);
       expect(result.metadata?.output).toBe(output);
     }
   });
