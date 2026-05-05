@@ -43,3 +43,6 @@ export type {
   ProviderRuntimeOptions,
   VertexAIOptions,
 } from "./providers/index.js";
+
+export { getDefaultPreferences, selectProvider } from "./selectProvider.js";
+export type { SelectProviderOptions } from "./selectProvider.js";
