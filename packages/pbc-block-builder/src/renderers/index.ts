@@ -12,3 +12,12 @@ export {
   escapeMarkdown,
   renderBlockMarkdown,
 } from "./markdown.js";
+export {
+  DOCX_RENDERERS,
+  renderBlockDocxElement,
+} from "./docx-element.js";
+export type {
+  DocxElement,
+  DocxListItem,
+  DocxRun,
+} from "./docx-element.js";

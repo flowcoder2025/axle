@@ -59,6 +59,17 @@ export {
   MARKDOWN_RENDERERS,
 } from "./renderers/markdown.js";
 
+// DOCX-element renderer (WI-506).
+export {
+  renderBlockDocxElement,
+  DOCX_RENDERERS,
+} from "./renderers/docx-element.js";
+export type {
+  DocxElement,
+  DocxListItem,
+  DocxRun,
+} from "./renderers/docx-element.js";
+
 // 23-block registry (WI-502).
 export {
   BLOCKS,

@@ -21,6 +21,7 @@
  */
 
 import { BLOCKS } from "./blocks/index.js";
+import { renderBlockDocxElement } from "./renderers/docx-element.js";
 import { renderBlockHtml } from "./renderers/html.js";
 import { renderBlockMarkdown } from "./renderers/markdown.js";
 import { renderBlockReact } from "./renderers/react.js";
@@ -45,10 +46,13 @@ export function renderBlock(
   if (context.output === "markdown") {
     return renderBlockMarkdown(blockId, data, context);
   }
+  if (context.output === "docx-element") {
+    return renderBlockDocxElement(blockId, data, context);
+  }
 
-  // Placeholder fallback — defers to the per-block `render` function the
-  // WI-502 helper installed. WI-506 will swap docx-element into this
-  // dispatcher.
+  // Placeholder fallback for any future RenderOutput value — defers to the
+  // per-block placeholder render so the contract still holds for unknown
+  // outputs added to the union later.
   const def = BLOCKS[blockId];
   if (!def) {
     throw new Error(`renderBlock: unknown block id '${blockId}'`);
