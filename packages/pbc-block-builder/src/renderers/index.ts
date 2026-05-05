@@ -6,3 +6,4 @@
  */
 
 export { HTML_RENDERERS, escapeHtml, renderBlockHtml } from "./html.js";
+export { REACT_RENDERERS, renderBlockReact } from "./react.js";
