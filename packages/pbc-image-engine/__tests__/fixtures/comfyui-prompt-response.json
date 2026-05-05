@@ -1,0 +1,6 @@
+{
+  "_comment": "Real-shape sample of ComfyUI's POST /prompt response. prompt_id is the handle used to poll /history. node_errors is empty on success; non-empty entries surface as INVALID_INPUT in the adapter.",
+  "prompt_id": "fixture-prompt-id-0001",
+  "number": 1,
+  "node_errors": {}
+}

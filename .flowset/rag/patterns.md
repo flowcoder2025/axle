@@ -4,3 +4,4 @@
 - merged | feat | Prisma 7 Client Engine + Drive | 546s | none
 - merged | feat | 인증/조직 스키마 6개 모델 | 213s | none
 - merged | refactor | FlowStudio v1을 PBC로 마이그레이션 | 506s | none
+- merged | refactor | FlowStudio_re 마이그레이션 | 470s | none
