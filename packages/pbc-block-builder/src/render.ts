@@ -22,6 +22,7 @@
 
 import { BLOCKS } from "./blocks/index.js";
 import { renderBlockHtml } from "./renderers/html.js";
+import { renderBlockReact } from "./renderers/react.js";
 import type {
   BlockId,
   PageComposition,
@@ -37,9 +38,12 @@ export function renderBlock(
   if (context.output === "html") {
     return renderBlockHtml(blockId, data, context);
   }
+  if (context.output === "react") {
+    return renderBlockReact(blockId, data, context);
+  }
 
   // Placeholder fallback — defers to the per-block `render` function the
-  // WI-502 helper installed. Each sibling renderer (WI-504..506) will swap
+  // WI-502 helper installed. Each sibling renderer (WI-505..506) will swap
   // its branch into this dispatcher at merge time.
   const def = BLOCKS[blockId];
   if (!def) {
