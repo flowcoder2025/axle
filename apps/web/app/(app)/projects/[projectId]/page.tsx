@@ -44,25 +44,38 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const project = await prisma.project.findFirst({
-    where: { id: projectId, client: { orgId: user.orgId } },
-    include: {
-      assignedToUser: { select: { id: true, name: true, email: true } },
-      client: { select: { id: true, name: true } },
-      _count: { select: { checklist: true, documents: true, members: true } },
-      children: {
-        select: {
-          id: true,
-          title: true,
-          type: true,
-          status: true,
-          checklist: { select: { status: true } },
-          _count: { select: { documents: true } },
+  let project;
+  try {
+    project = await prisma.project.findFirst({
+      where: { id: projectId, client: { orgId: user.orgId } },
+      include: {
+        assignedToUser: { select: { id: true, name: true, email: true } },
+        client: { select: { id: true, name: true } },
+        _count: { select: { checklist: true, documents: true, members: true } },
+        children: {
+          select: {
+            id: true,
+            title: true,
+            type: true,
+            status: true,
+            checklist: { select: { status: true } },
+            _count: { select: { documents: true } },
+          },
+          orderBy: { createdAt: "asc" },
         },
-        orderBy: { createdAt: "asc" },
       },
-    },
-  });
+    });
+  } catch (e) {
+    // Diagnostic: surface server-side throw to stdout so CI logs capture the
+    // stack. Boundary E2E has been failing for project detail page without
+    // visible cause; this lets us see the actual prisma error location.
+    console.error("[project-detail-debug] findFirst failed", {
+      projectId,
+      orgId: user.orgId,
+      error: e,
+    });
+    throw e;
+  }
 
   if (!project) {
     notFound();
@@ -71,21 +84,34 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   // Resolve program metadata + the org's program catalog for the wizard's
   // selector. Only one of these is surfaced: if the project is pre-linked to a
   // program, we skip the catalog fetch.
-  const linkedProgram = project.programId
-    ? await prisma.programInfo.findFirst({
-        where: { id: project.programId },
-        select: { id: true, name: true },
-      })
-    : null;
+  let linkedProgram;
+  let availablePrograms;
+  try {
+    linkedProgram = project.programId
+      ? await prisma.programInfo.findFirst({
+          where: { id: project.programId },
+          select: { id: true, name: true },
+        })
+      : null;
 
-  const availablePrograms = linkedProgram
-    ? []
-    : await prisma.programInfo.findMany({
-        where: { OR: [{ orgId: user.orgId }, { orgId: null }] },
-        select: { id: true, name: true, agency: true },
-        orderBy: { applicationEnd: "asc" },
-        take: 50,
-      });
+    availablePrograms = linkedProgram
+      ? []
+      : await prisma.programInfo.findMany({
+          where: { OR: [{ orgId: user.orgId }, { orgId: null }] },
+          select: { id: true, name: true, agency: true },
+          orderBy: { applicationEnd: "asc" },
+          take: 50,
+        });
+  } catch (e) {
+    // Diagnostic: same pattern as the project query above.
+    console.error("[project-detail-debug] programInfo lookup failed", {
+      projectId,
+      orgId: user.orgId,
+      programId: project.programId,
+      error: e,
+    });
+    throw e;
+  }
 
   // Serialize for client components
   const serialized = {
