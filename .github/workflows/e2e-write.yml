@@ -84,13 +84,31 @@ jobs:
       - name: Start Supabase local stack
         # Brings up Postgres (with pgvector) + Storage API behind the local
         # Supabase API gateway. Excludes services we don't use to keep startup
-        # under ~60s. supabase start exposes credentials via `status -o env`.
+        # under ~60s. Uses `status -o json` (more stable across CLI versions
+        # than `-o env`, which has changed key names in recent releases).
         run: |
           supabase start \
             --exclude realtime,studio,inbucket,functions,imgproxy,vector,edge_runtime,analytics
-          # Persist URLs/keys for subsequent steps. `supabase status -o env`
-          # prints lines like API_URL="http://127.0.0.1:54321".
-          eval "$(supabase status -o env)"
+
+          # Print env-form for debugging visibility (key names may vary by
+          # CLI version) without exposing secrets in the run log.
+          echo "::group::supabase status -o env (keys only)"
+          supabase status -o env | sed -E 's/=.+/=<masked>/' || true
+          echo "::endgroup::"
+
+          STATUS_JSON="$(supabase status -o json)"
+          DB_URL="$(echo "$STATUS_JSON" | jq -r '.DB_URL')"
+          API_URL="$(echo "$STATUS_JSON" | jq -r '.API_URL')"
+          # SERVICE_ROLE_KEY field name has been stable in JSON output across
+          # CLI versions even when the env-format keys changed.
+          SERVICE_ROLE_KEY="$(echo "$STATUS_JSON" | jq -r '.SERVICE_ROLE_KEY')"
+
+          if [ -z "$SERVICE_ROLE_KEY" ] || [ "$SERVICE_ROLE_KEY" = "null" ]; then
+            echo "::error::SERVICE_ROLE_KEY missing in supabase status JSON"
+            echo "$STATUS_JSON" | jq 'keys' || true
+            exit 1
+          fi
+
           {
             echo "DATABASE_URL=$DB_URL"
             echo "DIRECT_URL=$DB_URL"
