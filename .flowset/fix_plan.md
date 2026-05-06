@@ -590,3 +590,10 @@
 - [x] WI-608-refactor FlowTeams를 apps/flowteams로 이전 (FlowTeams v1 안정화 후) | L1:Phase19 > L2:HRPayroll > L3:AppMigrate
 - [x] WI-609-test E2E 월급 정산 시나리오 | L1:Phase19 > L2:HRPayroll > L3:E2E
 - [x] WI-610-docs API + 한국 법규 매핑 표 | L1:Phase19 > L2:HRPayroll > L3:Docs
+
+### L2: meta-platform-gap > L3: 사양 대비 누락분 보강 (audit 2026-05-07)
+- [ ] WI-611-feat pbc-image-engine `generate()` + `getEstimatedCost()` orchestrator 구현 (provider 직접 호출 우회 제거) | L1:Phase19 > L2:Gap > L3:ImageOrchestrator
+- [ ] WI-612-feat pbc-hr-payroll `createPayrollService` 팩토리 + `generateStatement` (HTML/markdown 우선) | L1:Phase19 > L2:Gap > L3:PayrollFactory
+- [ ] WI-613-feat packages/core-design-md 신규 PBC — DESIGN.md 토큰 파서 + Tailwind/CSS var 주입 hook | L1:Phase19 > L2:Gap > L3:CoreDesignMd
+- [ ] WI-614-feat apps/web (marketing)에 pbc-block-builder 사용 데모 페이지 (renderComposition 실호출) | L1:Phase19 > L2:Gap > L3:BlockBuilderDemo
+- [ ] WI-615-refactor apps/flowteams에 app-shell-ux 표준 sidebar+topbar 적용 (packages/ui sidebar 재사용) | L1:Phase19 > L2:Gap > L3:FlowTeamsShell
