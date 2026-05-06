@@ -1489,7 +1489,7 @@ ${rag_context}"
         --output-format json \
         --append-system-prompt "$context" \
         --allowedTools "$ALLOWED_TOOLS" \
-        "${max_turns_args[@]}" \
+        ${max_turns_args[@]+"${max_turns_args[@]}"} \
         > "$logfile" 2>&1
     ) &
     pids+=($!)
