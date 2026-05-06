@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>apps/flowteams — HR shell (현존, 5 페이지)</title>
+<link rel="stylesheet" href="../shared/design-tokens.css">
+</head>
+<body>
+<div class="wf-page">
+  <aside class="wf-sidebar">
+    <h1>FlowTeams</h1>
+    <nav>
+      <span class="section-label">HR</span>
+      <a href="#home" class="active">홈</a>
+      <a href="#payroll">급여</a>
+      <a href="#attendance">근태</a>
+      <a href="#leave">연차</a>
+      <a href="#nomu">노무 자문</a>
+      <span class="section-label">★ WI-615 추가 예정</span>
+      <a href="#" class="muted">표준 sidebar+topbar 적용</a>
+    </nav>
+  </aside>
+
+  <div class="wf-main">
+    <header class="wf-topbar">
+      <h2>apps/flowteams — HR thin shell</h2>
+      <div class="actions">
+        <span class="tag">Next.js 16</span>
+        <span class="tag tag-accent">@axle/pbc-hr-payroll</span>
+      </div>
+    </header>
+
+    <main class="wf-content">
+
+      <div class="doc-note">
+        <strong>역할</strong>: HR 도메인 thin shell. 모든 비즈니스 로직은 <code>@axle/pbc-hr-payroll</code>에 위임.
+        <strong>현재 상태</strong>: 4개 데모 페이지(서버 사이드 계산 결과 JSON 출력 수준).
+        <strong>WI-615</strong>에서 표준 shell(sidebar+topbar) 적용. <strong>WI-612</strong>에서 PayrollService 팩토리 사용으로 전환.
+      </div>
+
+      <h2 class="section-title" id="home">① 홈</h2>
+      <div class="page-card">
+        <header><h3>FlowTeams 홈</h3><span class="route">/</span></header>
+        <div class="body grid-2">
+          <div class="box"><span class="label">소개</span><p>"HR thin shell — pbc-hr-payroll 데모"</p></div>
+          <div class="box"><span class="label">데모 링크 4개</span><p>→ /payroll · /attendance · /leave · /nomu</p></div>
+        </div>
+      </div>
+
+      <h2 class="section-title" id="payroll">② 급여 계산</h2>
+      <div class="page-card">
+        <header><h3>Payroll Demo</h3><span class="route">/payroll</span></header>
+        <div class="body col">
+          <div class="grid-2">
+            <div class="box"><span class="label">Input (서버측 fixed)</span><p>월급 3,000,000 / 정규직 / 2026-05<br>연장 10h / 휴일 4h</p></div>
+            <div class="box"><span class="label">Output</span><p>실수령액 + 공제 breakdown<br>4대보험 + 소득세</p></div>
+          </div>
+          <div class="box" style="border-color: var(--accent); background: var(--sidebar-active-bg);">
+            <span class="label tag-accent">WI-612 변경</span>
+            <p><code>calculatePayroll(input)</code> → <code>createPayrollService({prisma}).calculate(input)</code> 로 전환.<br>generateStatement(period) 호출하여 markdown/HTML 명세서 표시.</p>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="section-title" id="attendance">③ 근태</h2>
+      <div class="page-card">
+        <header><h3>Attendance Demo</h3><span class="route">/attendance</span></header>
+        <div class="body grid-2">
+          <div class="box"><span class="label">Methods 4종</span><p>QR / IP / GPS / MANUAL</p></div>
+          <div class="box"><span class="label">Service</span><p>createAttendanceService({prisma}).recordCheckIn(...)</p></div>
+        </div>
+      </div>
+
+      <h2 class="section-title" id="leave">④ 연차</h2>
+      <div class="page-card">
+        <header><h3>Leave Demo</h3><span class="route">/leave</span></header>
+        <div class="body grid-2">
+          <div class="box"><span class="label">Korean Policy</span><p>&lt;1y: 월 1일<br>1-3y: 15일<br>3y+: 가산</p></div>
+          <div class="box"><span class="label">Flow</span><p>request → approve/reject → balance</p></div>
+        </div>
+      </div>
+
+      <h2 class="section-title" id="nomu">⑤ 노무 자문</h2>
+      <div class="page-card">
+        <header><h3>Nomu Demo</h3><span class="route">/nomu</span></header>
+        <div class="body col">
+          <div class="grid-2">
+            <div class="box"><span class="label">Topic 분류</span><p>9개 법령 인용 인식<br>(근로기준법, 최저임금법 등)</p></div>
+            <div class="box"><span class="label">AI Client</span><p>placeholder (deterministic)<br>v1 안정화 후 실 AI</p></div>
+          </div>
+          <div class="box"><span class="label">Validate</span><p>답변 인용 형식 검증 + redact PII</p></div>
+        </div>
+      </div>
+
+      <h2 class="section-title">★ WI-615: 표준 Shell 적용</h2>
+      <div class="page-card" style="border: 2px solid var(--accent);">
+        <header><h3>변경 요약</h3><span class="route">app-shell-ux.md 준수</span></header>
+        <div class="body col">
+          <div class="grid-2">
+            <div class="box"><span class="label tag-warn">현재</span><p>layout.tsx에 metadata만<br>sidebar/topbar 없음<br>(데모 수준 페이지)</p></div>
+            <div class="box"><span class="label tag-accent">WI-615 후</span><p>SidebarProvider + AppSidebar(4 메뉴) + TopBar<br>data-testid="flowteams-shell"<br>@axle/ui Sidebar 재사용</p></div>
+          </div>
+          <div class="box"><span class="label">제약</span><p>AXLE web sidebar 코드 변경 금지. flowteams만 손댐. 신규 디자인 토큰 발명 금지.</p></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>
