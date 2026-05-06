@@ -34,6 +34,9 @@ import type { ProjectType } from "@prisma/client";
 // Subpath import — types.ts has no runtime deps, so the client bundle stays
 // free of server-only dependencies (docx, pdf-parse, etc.).
 import { VENTURE_BUSINESS_PLAN_SECTIONS } from "@axle/docgen/sections";
+import { SUPPORTED_PROJECT_TYPES } from "./business-plan-wizard.constants";
+
+export { SUPPORTED_PROJECT_TYPES } from "./business-plan-wizard.constants";
 
 export const WIZARD_SECTIONS: ReadonlyArray<{
   id: string;
@@ -52,13 +55,6 @@ export const WIZARD_SECTIONS: ReadonlyArray<{
   minChars: s.minChars,
   maxChars: s.maxChars,
 }));
-
-export const SUPPORTED_PROJECT_TYPES: ReadonlySet<ProjectType> = new Set<ProjectType>([
-  "BUSINESS_PLAN",
-  "VENTURE_CERT",
-  "RESEARCH_INSTITUTE",
-  "BUNDLE",
-]);
 
 export const POLL_INTERVAL_MS = 5_000;
 export const POLL_MAX_DURATION_MS = 10 * 60 * 1_000; // 10 minutes

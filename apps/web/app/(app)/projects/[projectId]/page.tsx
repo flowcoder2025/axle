@@ -6,10 +6,10 @@ import { Button } from "@axle/ui";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { ProjectStatusBadge } from "../../../../src/components/projects/project-status-badge";
 import { ProjectDetailTabs } from "../../../../src/components/projects/project-detail-tabs";
-import {
-  BusinessPlanWizard,
-  SUPPORTED_PROJECT_TYPES,
-} from "../../../../src/components/projects/business-plan-wizard";
+import { BusinessPlanWizard } from "../../../../src/components/projects/business-plan-wizard";
+// Imported from a non-"use client" module so the Set's prototype methods
+// survive RSC server-side serialization. See business-plan-wizard.constants.ts.
+import { SUPPORTED_PROJECT_TYPES } from "../../../../src/components/projects/business-plan-wizard.constants";
 import { VentureTechAssessmentButton } from "../../../../src/components/projects/venture-tech-assessment-button";
 import { ResearchInstituteNotificationButton } from "../../../../src/components/projects/research-institute-notification-button";
 import {
