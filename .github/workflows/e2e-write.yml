@@ -1,7 +1,9 @@
 # .github/workflows/e2e-write.yml
-# Write (DB-mutating) E2E tests — run against an ephemeral Postgres service so we can
-# freely create/update/delete without touching prod. Also absorbs the @smoke run that
-# previously lived in e2e.yml, and keeps the regression-issue automation on main push.
+# Write (DB-mutating) E2E tests — run against a fully ephemeral Supabase local
+# stack (Postgres + Storage) brought up by `supabase start`. This lets the
+# @write/@smoke suite freely create/update/delete and exercises file uploads
+# against a real Storage API without touching prod. Also keeps the
+# regression-issue automation on main push.
 name: E2E Write Tests (ephemeral)
 
 on:
@@ -39,32 +41,17 @@ permissions:
 jobs:
   write:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    services:
-      postgres:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_DB: axle_e2e
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
+    timeout-minutes: 30
     env:
       NODE_OPTIONS: '--max-old-space-size=4096'
-      # Ephemeral DB — safe to mutate
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/axle_e2e
-      DIRECT_URL: postgres://postgres:postgres@localhost:5432/axle_e2e
       # CI-only secret — only needs to sign JWT sessions for this run
       NEXTAUTH_SECRET: axle-write-e2e-ci-only-secret-do-not-use-in-prod
       AUTH_SECRET: axle-write-e2e-ci-only-secret-do-not-use-in-prod
       NEXTAUTH_URL: http://localhost:3000
       AUTH_URL: http://localhost:3000
       E2E_BASE_URL: http://localhost:3000
+      # DATABASE_URL / DIRECT_URL / SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY
+      # are exported into $GITHUB_ENV by the "Start Supabase local stack" step.
       # E2E account fixtures (seeded by seed-e2e.ts into the ephemeral DB)
       E2E_PLATFORM_EMAIL: platform@e2e.axleai.io
       E2E_PLATFORM_PASSWORD: test1234
@@ -89,12 +76,28 @@ jobs:
 
       - run: npm ci
 
-      - name: Enable pgvector extension
-        env:
-          PGPASSWORD: postgres
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase local stack
+        # Brings up Postgres (with pgvector) + Storage API behind the local
+        # Supabase API gateway. Excludes services we don't use to keep startup
+        # under ~60s. supabase start exposes credentials via `status -o env`.
         run: |
-          sudo apt-get update && sudo apt-get install -y postgresql-client
-          psql -h localhost -U postgres -d axle_e2e -c "CREATE EXTENSION IF NOT EXISTS vector;"
+          supabase start \
+            --exclude realtime,studio,inbucket,functions,imgproxy,vector,edge_runtime,analytics
+          # Persist URLs/keys for subsequent steps. `supabase status -o env`
+          # prints lines like API_URL="http://127.0.0.1:54321".
+          eval "$(supabase status -o env)"
+          {
+            echo "DATABASE_URL=$DB_URL"
+            echo "DIRECT_URL=$DB_URL"
+            echo "SUPABASE_URL=$API_URL"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+          } >> "$GITHUB_ENV"
+          echo "Supabase local stack ready: API=$API_URL DB=$DB_URL"
 
       - name: Prisma generate
         working-directory: packages/db
@@ -125,20 +128,6 @@ jobs:
           npm -w apps/web run start > /tmp/web-server.log 2>&1 &
           npx wait-on http://localhost:3000 --timeout 60000
 
-      - name: Dump web server log
-        if: always()
-        run: |
-          echo "::group::web server log (stdout+stderr)"
-          if [ -f /tmp/web-server.log ]; then
-            cat /tmp/web-server.log
-          else
-            echo "no web-server.log present"
-          fi
-          echo "::endgroup::"
-          echo "::group::5xx + Error grep"
-          grep -E "Error:|TypeError|RangeError|PrismaClient|Unhandled|500|UploadError|Storage" /tmp/web-server.log 2>/dev/null || echo "no diagnostic markers found"
-          echo "::endgroup::"
-
       - name: Run @write + @smoke tests
         # Use PLAYWRIGHT_JSON_OUTPUT_NAME so the JSON reporter writes directly to
         # the file, keeping stdout (globalSetup logs, progress) out of the JSON —
@@ -152,6 +141,23 @@ jobs:
           else
             npx playwright test --grep "@write|@smoke" --reporter=json || true
           fi
+
+      - name: Dump web server log
+        # Always run so the log is visible whether tests passed or failed.
+        # Must come AFTER the test step — otherwise only startup messages get
+        # captured (the previous placement was a bug from PR #150).
+        if: always()
+        run: |
+          echo "::group::web server log (stdout+stderr)"
+          if [ -f /tmp/web-server.log ]; then
+            cat /tmp/web-server.log
+          else
+            echo "no web-server.log present"
+          fi
+          echo "::endgroup::"
+          echo "::group::5xx + Error grep"
+          grep -E "Error:|TypeError|RangeError|PrismaClient|Unhandled|500|UploadError|Storage" /tmp/web-server.log 2>/dev/null || echo "no diagnostic markers found"
+          echo "::endgroup::"
 
       - name: Upload Playwright report
         if: always()

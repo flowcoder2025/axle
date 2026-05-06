@@ -1,0 +1,78 @@
+# Supabase local-stack config — used ONLY by `supabase start` in CI
+# (.github/workflows/e2e-write.yml) to spin up an ephemeral Postgres + Storage
+# stack so the @write/@smoke E2E suite can exercise document upload/download
+# without polluting the prod Supabase project.
+#
+# Production AXLE does NOT consume this file. The web app and Prisma read
+# DATABASE_URL/SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY from the runtime env.
+#
+# Reference: https://supabase.com/docs/guides/local-development/cli/config
+
+project_id = "axle-e2e"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.migrations]
+# We use Prisma; let `prisma db push` manage the schema.
+enabled = false
+
+[db.seed]
+# We use packages/db/seed-e2e.ts; not Supabase seed.
+enabled = false
+
+[realtime]
+# Not used — apps/web doesn't subscribe to realtime channels.
+enabled = false
+
+[studio]
+# CI does not need the Studio UI.
+enabled = false
+
+[inbucket]
+# Email testing — not used in E2E suite.
+enabled = false
+
+[storage]
+enabled = true
+file_size_limit = "500MiB"
+
+# Pre-create buckets that @axle/storage uses (packages/storage/src/client.ts).
+# `public = false` mirrors prod (signed URLs only). file_size_limit per bucket
+# matches packages/storage/src/upload.ts BUCKET_CONFIGS.
+[storage.buckets.documents]
+public = false
+file_size_limit = "50MiB"
+
+[storage.buckets.recordings]
+public = false
+file_size_limit = "500MiB"
+
+[storage.buckets.exports]
+public = false
+file_size_limit = "50MiB"
+
+[storage.s3_protocol]
+# S3 access not used by @axle/storage.
+enabled = false
+
+[storage.image_transformation]
+enabled = false
+
+[auth]
+# AXLE uses Auth.js for application auth; Supabase Auth is not consumed.
+# `service_role` key still works without the auth service running.
+enabled = false
+
+[edge_runtime]
+enabled = false
+
+[analytics]
+enabled = false
