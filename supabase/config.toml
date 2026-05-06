@@ -67,9 +67,12 @@ enabled = false
 enabled = false
 
 [auth]
-# AXLE uses Auth.js for application auth; Supabase Auth is not consumed.
-# `service_role` key still works without the auth service running.
-enabled = false
+# AXLE uses Auth.js for application auth; Supabase Auth is not consumed by
+# the app. We keep `enabled = true` so `supabase start` generates JWT_SECRET +
+# SERVICE_ROLE_KEY (storage signs/verifies tokens with these). The auth
+# service itself is excluded via `supabase start --exclude auth` to keep
+# resource use down.
+enabled = true
 
 [edge_runtime]
 enabled = false

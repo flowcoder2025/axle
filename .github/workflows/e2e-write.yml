@@ -88,7 +88,7 @@ jobs:
         # than `-o env`, which has changed key names in recent releases).
         run: |
           supabase start \
-            --exclude realtime,studio,inbucket,functions,imgproxy,vector,edge_runtime,analytics
+            --exclude realtime,studio,inbucket,functions,imgproxy,vector,edge_runtime,analytics,auth
 
           # Print env-form for debugging visibility (key names may vary by
           # CLI version) without exposing secrets in the run log.
