@@ -54,11 +54,28 @@ jobs:
 
       - name: Start web server
         run: |
-          npm -w apps/web run start &
+          # Redirect server stdout/stderr so console.error from RSC render is
+          # captured to a file (background process loses stdout otherwise).
+          npm -w apps/web run start > /tmp/web-server.log 2>&1 &
+          echo $! > /tmp/web-server.pid
           npx wait-on http://localhost:3000 --timeout 60000
 
       - name: Run @boundary tests
         run: npx playwright test --grep @boundary
+
+      - name: Dump web server log on failure
+        if: failure()
+        run: |
+          echo "::group::web server log (stdout+stderr)"
+          if [ -f /tmp/web-server.log ]; then
+            cat /tmp/web-server.log
+          else
+            echo "no web-server.log present"
+          fi
+          echo "::endgroup::"
+          echo "::group::project-detail-debug grep"
+          grep -E "project-detail-debug|Error:|Unhandled|TypeError|RangeError|PrismaClient" /tmp/web-server.log || echo "no diagnostic markers found"
+          echo "::endgroup::"
 
       - name: Upload diagnostics on failure
         if: failure()
@@ -68,5 +85,6 @@ jobs:
           path: |
             test-results/
             .playwright-auth/
+            /tmp/web-server.log
           retention-days: 7
           if-no-files-found: ignore

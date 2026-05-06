@@ -36,7 +36,32 @@ interface PageProps {
   params: Promise<{ projectId: string }>;
 }
 
-export default async function ProjectDetailPage({ params }: PageProps) {
+export default async function ProjectDetailPage(props: PageProps) {
+  try {
+    return await renderProjectDetail(props);
+  } catch (e) {
+    // Diagnostic: top-level capture so any unhandled throw in the server
+    // render tree surfaces in CI logs (web-server.log). Re-throw so Next
+    // shows its normal error boundary.
+    if (
+      e &&
+      typeof e === "object" &&
+      "digest" in e &&
+      typeof (e as { digest: unknown }).digest === "string" &&
+      ((e as { digest: string }).digest.startsWith("NEXT_NOT_FOUND") ||
+        (e as { digest: string }).digest.startsWith("NEXT_REDIRECT"))
+    ) {
+      throw e;
+    }
+    console.error("[project-detail-debug] top-level throw", {
+      error: e,
+      stack: e instanceof Error ? e.stack : undefined,
+    });
+    throw e;
+  }
+}
+
+async function renderProjectDetail({ params }: PageProps) {
   const user = await getCurrentUser();
   const { projectId } = await params;
 
