@@ -99,6 +99,14 @@ jobs:
           } >> "$GITHUB_ENV"
           echo "Supabase local stack ready: API=$API_URL DB=$DB_URL"
 
+      - name: Enable pgvector extension
+        # supabase/postgres ships the pgvector binary but doesn't auto-enable
+        # the extension per-database. Schema uses `vector(1536)` (Document.embedding)
+        # which fails Prisma db push without this step.
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          psql "$DATABASE_URL" -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
       - name: Prisma generate
         working-directory: packages/db
         run: npx prisma generate
