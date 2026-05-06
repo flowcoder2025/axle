@@ -6,10 +6,10 @@ import { Button } from "@axle/ui";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { ProjectStatusBadge } from "../../../../src/components/projects/project-status-badge";
 import { ProjectDetailTabs } from "../../../../src/components/projects/project-detail-tabs";
-import {
-  BusinessPlanWizard,
-  SUPPORTED_PROJECT_TYPES,
-} from "../../../../src/components/projects/business-plan-wizard";
+import { BusinessPlanWizard } from "../../../../src/components/projects/business-plan-wizard";
+// Imported from a non-"use client" module so the Set's prototype methods
+// survive RSC server-side serialization. See business-plan-wizard.constants.ts.
+import { SUPPORTED_PROJECT_TYPES } from "../../../../src/components/projects/business-plan-wizard.constants";
 import { VentureTechAssessmentButton } from "../../../../src/components/projects/venture-tech-assessment-button";
 import { ResearchInstituteNotificationButton } from "../../../../src/components/projects/research-institute-notification-button";
 import {
@@ -36,32 +36,7 @@ interface PageProps {
   params: Promise<{ projectId: string }>;
 }
 
-export default async function ProjectDetailPage(props: PageProps) {
-  try {
-    return await renderProjectDetail(props);
-  } catch (e) {
-    // Diagnostic: top-level capture so any unhandled throw in the server
-    // render tree surfaces in CI logs (web-server.log). Re-throw so Next
-    // shows its normal error boundary.
-    if (
-      e &&
-      typeof e === "object" &&
-      "digest" in e &&
-      typeof (e as { digest: unknown }).digest === "string" &&
-      ((e as { digest: string }).digest.startsWith("NEXT_NOT_FOUND") ||
-        (e as { digest: string }).digest.startsWith("NEXT_REDIRECT"))
-    ) {
-      throw e;
-    }
-    console.error("[project-detail-debug] top-level throw", {
-      error: e,
-      stack: e instanceof Error ? e.stack : undefined,
-    });
-    throw e;
-  }
-}
-
-async function renderProjectDetail({ params }: PageProps) {
+export default async function ProjectDetailPage({ params }: PageProps) {
   const user = await getCurrentUser();
   const { projectId } = await params;
 
@@ -69,38 +44,25 @@ async function renderProjectDetail({ params }: PageProps) {
     notFound();
   }
 
-  let project;
-  try {
-    project = await prisma.project.findFirst({
-      where: { id: projectId, client: { orgId: user.orgId } },
-      include: {
-        assignedToUser: { select: { id: true, name: true, email: true } },
-        client: { select: { id: true, name: true } },
-        _count: { select: { checklist: true, documents: true, members: true } },
-        children: {
-          select: {
-            id: true,
-            title: true,
-            type: true,
-            status: true,
-            checklist: { select: { status: true } },
-            _count: { select: { documents: true } },
-          },
-          orderBy: { createdAt: "asc" },
+  const project = await prisma.project.findFirst({
+    where: { id: projectId, client: { orgId: user.orgId } },
+    include: {
+      assignedToUser: { select: { id: true, name: true, email: true } },
+      client: { select: { id: true, name: true } },
+      _count: { select: { checklist: true, documents: true, members: true } },
+      children: {
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          status: true,
+          checklist: { select: { status: true } },
+          _count: { select: { documents: true } },
         },
+        orderBy: { createdAt: "asc" },
       },
-    });
-  } catch (e) {
-    // Diagnostic: surface server-side throw to stdout so CI logs capture the
-    // stack. Boundary E2E has been failing for project detail page without
-    // visible cause; this lets us see the actual prisma error location.
-    console.error("[project-detail-debug] findFirst failed", {
-      projectId,
-      orgId: user.orgId,
-      error: e,
-    });
-    throw e;
-  }
+    },
+  });
 
   if (!project) {
     notFound();
@@ -109,34 +71,21 @@ async function renderProjectDetail({ params }: PageProps) {
   // Resolve program metadata + the org's program catalog for the wizard's
   // selector. Only one of these is surfaced: if the project is pre-linked to a
   // program, we skip the catalog fetch.
-  let linkedProgram;
-  let availablePrograms;
-  try {
-    linkedProgram = project.programId
-      ? await prisma.programInfo.findFirst({
-          where: { id: project.programId },
-          select: { id: true, name: true },
-        })
-      : null;
+  const linkedProgram = project.programId
+    ? await prisma.programInfo.findFirst({
+        where: { id: project.programId },
+        select: { id: true, name: true },
+      })
+    : null;
 
-    availablePrograms = linkedProgram
-      ? []
-      : await prisma.programInfo.findMany({
-          where: { OR: [{ orgId: user.orgId }, { orgId: null }] },
-          select: { id: true, name: true, agency: true },
-          orderBy: { applicationEnd: "asc" },
-          take: 50,
-        });
-  } catch (e) {
-    // Diagnostic: same pattern as the project query above.
-    console.error("[project-detail-debug] programInfo lookup failed", {
-      projectId,
-      orgId: user.orgId,
-      programId: project.programId,
-      error: e,
-    });
-    throw e;
-  }
+  const availablePrograms = linkedProgram
+    ? []
+    : await prisma.programInfo.findMany({
+        where: { OR: [{ orgId: user.orgId }, { orgId: null }] },
+        select: { id: true, name: true, agency: true },
+        orderBy: { applicationEnd: "asc" },
+        take: 50,
+      });
 
   // Serialize for client components
   const serialized = {
