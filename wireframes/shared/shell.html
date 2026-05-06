@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>AXLE Meta-Platform — Standard Shell</title>
+<link rel="stylesheet" href="./design-tokens.css">
+<style>
+.shell-demo { padding: var(--s-6); }
+.shell-demo h2 { margin-bottom: var(--s-4); }
+.legend { display: flex; gap: var(--s-4); flex-wrap: wrap; margin-bottom: var(--s-4); }
+.legend .item { display: flex; align-items: center; gap: var(--s-2); font-size: 12px; }
+.swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--border-default); }
+</style>
+</head>
+<body>
+<div class="wf-page">
+  <aside class="wf-sidebar">
+    <h1>AXLE</h1>
+    <nav>
+      <span class="section-label">Sample Nav</span>
+      <a href="#" class="active">Dashboard</a>
+      <a href="#">Item A</a>
+      <a href="#">Item B</a>
+      <a href="#">Item C</a>
+      <span class="section-label">Footer</span>
+      <a href="#">Settings</a>
+      <a href="#">User Menu</a>
+    </nav>
+  </aside>
+
+  <div class="wf-main">
+    <header class="wf-topbar">
+      <h2>Standard Shell — sidebar(1) + topbar(1) + main</h2>
+      <div class="actions">
+        <span class="tag">Search</span>
+        <span class="tag">Notifications</span>
+        <span class="tag tag-accent">User</span>
+      </div>
+    </header>
+
+    <main class="wf-content shell-demo">
+      <h2>메타플랫폼 표준 Shell</h2>
+      <p class="muted">All apps (web / flowteams / flowstudio / flowvue / flowretouch) inherit this shell via shared layout pattern.</p>
+
+      <div class="legend">
+        <div class="item"><span class="swatch" style="background: var(--bg-base)"></span>--bg-base</div>
+        <div class="item"><span class="swatch" style="background: var(--surface)"></span>--surface</div>
+        <div class="item"><span class="swatch" style="background: var(--surface-raised)"></span>--surface-raised</div>
+        <div class="item"><span class="swatch" style="background: var(--accent)"></span>--accent</div>
+        <div class="item"><span class="swatch" style="background: var(--sidebar-bg)"></span>--sidebar-bg</div>
+        <div class="item"><span class="swatch" style="background: var(--border-default)"></span>--border-default</div>
+      </div>
+
+      <div class="grid-2">
+        <div class="box">
+          <span class="label">Sidebar (1개만)</span>
+          <p>좌측 240px 고정. 브랜드 영역 + nav + footer(설정/유저). DESIGN.md sidebar 토큰 별도(브랜드 오버라이드 가능).</p>
+        </div>
+        <div class="box">
+          <span class="label">Topbar (1개만)</span>
+          <p>56px sticky. 페이지 제목 + 우측 액션(검색/알림/유저). 모바일에서는 sidebar trigger 버튼 추가.</p>
+        </div>
+      </div>
+
+      <div class="page-card">
+        <header>
+          <h3>State 4종 (Loading / Empty / Error / Success)</h3>
+          <span class="route">app-shell-ux.md §States</span>
+        </header>
+        <div class="body grid-4">
+          <div class="box">
+            <span class="label tag-warn">Loading</span>
+            <p class="placeholder">Skeleton / spinner</p>
+          </div>
+          <div class="box">
+            <span class="label">Empty</span>
+            <p class="placeholder">"아직 데이터가 없어요" + CTA</p>
+          </div>
+          <div class="box">
+            <span class="label" style="color: var(--destructive)">Error</span>
+            <p class="placeholder">에러 메시지 + 재시도 버튼</p>
+          </div>
+          <div class="box">
+            <span class="label tag-success">Success</span>
+            <p class="placeholder">실제 콘텐츠</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-card">
+        <header>
+          <h3>6 Page Patterns</h3>
+          <span class="route">app-shell-ux.md §Patterns</span>
+        </header>
+        <div class="body grid-3">
+          <div class="box"><span class="label">Dashboard</span><p>KPI 4-card + chart + recent activity</p></div>
+          <div class="box"><span class="label">List</span><p>Filter + table/kanban toggle + pagination</p></div>
+          <div class="box"><span class="label">Detail</span><p>Header + tabs + side panel</p></div>
+          <div class="box"><span class="label">Form</span><p>Section group + sticky save bar</p></div>
+          <div class="box"><span class="label">Settings</span><p>Sub-nav + content (2-column)</p></div>
+          <div class="box"><span class="label">Marketing</span><p>Hero + sections (block-builder consumed)</p></div>
+        </div>
+      </div>
+
+      <div class="doc-note">
+        <strong>Rule:</strong> 한 페이지에 sidebar 1개 + topbar 1개. 추가 nav 발명 금지. 신규 토큰 발명 금지(DESIGN.md 토큰만 사용).
+      </div>
+    </main>
+  </div>
+</div>
+</body>
+</html>

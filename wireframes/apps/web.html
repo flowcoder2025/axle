@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>apps/web — AXLE 컨설팅 자동화 (현존, 58 페이지)</title>
+<link rel="stylesheet" href="../shared/design-tokens.css">
+</head>
+<body>
+<div class="wf-page">
+  <aside class="wf-sidebar">
+    <h1>AXLE</h1>
+    <nav>
+      <span class="section-label">Main</span>
+      <a href="#dashboard" class="active">Dashboard</a>
+      <a href="#clients">고객관리</a>
+      <a href="#projects">프로젝트</a>
+      <a href="#documents">서류</a>
+      <a href="#programs">지원사업</a>
+      <a href="#matching">매칭 분석</a>
+      <a href="#calendar">일정</a>
+      <a href="#meetings">미팅</a>
+      <a href="#journals">연구일지</a>
+      <a href="#finance">재무</a>
+      <a href="#analytics">분석</a>
+      <a href="#estimates">견적/계약</a>
+      <span class="section-label">Account</span>
+      <a href="#notifications">알림</a>
+      <a href="#settings">설정</a>
+      <a href="#admin">관리자 콘솔 <span class="tag">조건부</span></a>
+    </nav>
+  </aside>
+
+  <div class="wf-main">
+    <header class="wf-topbar">
+      <h2>apps/web — 컨설팅 자동화 플랫폼 (현존)</h2>
+      <div class="actions">
+        <span class="tag">58 pages</span>
+        <span class="tag tag-accent">5 route groups</span>
+      </div>
+    </header>
+
+    <main class="wf-content">
+
+      <div class="doc-note">
+        <strong>Tech</strong>: Next.js 16 App Router · RSC · Auth.js v5 · Prisma 7 · ReBAC.
+        <strong>Route groups</strong>: (marketing) / (auth) / (app) / (admin) / (portal).
+        총 58 페이지(파일 기준), 12 sidebar nav 항목, 7 다이나믹 라우트 패턴.
+      </div>
+
+      <!-- ───────────────── Marketing ───────────────── -->
+      <h2 class="section-title">① Marketing — 인증 외부 (1)</h2>
+      <div class="page-card">
+        <header><h3>홈/랜딩</h3><span class="route">/  →  (marketing)/page.tsx</span></header>
+        <div class="body">
+          <div class="grid-3">
+            <div class="box"><span class="label">Hero</span><p>"AXLE — 컨설팅 자동화"</p></div>
+            <div class="box"><span class="label">Features (3-6)</span><p>제품 강점</p></div>
+            <div class="box"><span class="label">CTA</span><p>로그인 / 회원가입</p></div>
+          </div>
+          <p class="muted" style="margin-top: var(--s-3)">로그인된 사용자는 자동으로 /dashboard로 리다이렉트.</p>
+        </div>
+      </div>
+
+      <!-- ───────────────── Auth ───────────────── -->
+      <h2 class="section-title">② Auth — 인증 (4)</h2>
+      <div class="grid-2">
+        <div class="page-card"><header><h3>로그인</h3><span class="route">/login</span></header><div class="body"><div class="box"><span class="label">Form</span><p>email + password + "Remember me"<br>OAuth(Google) 옵션</p></div></div></div>
+        <div class="page-card"><header><h3>회원가입</h3><span class="route">/signup</span></header><div class="body"><div class="box"><span class="label">Form</span><p>email + password + 조직명<br>약관 동의</p></div></div></div>
+        <div class="page-card"><header><h3>비밀번호 찾기</h3><span class="route">/forgot-password</span></header><div class="body"><div class="box"><p>email 입력 → 재설정 링크 발송</p></div></div></div>
+        <div class="page-card"><header><h3>비밀번호 재설정</h3><span class="route">/reset-password</span></header><div class="body"><div class="box"><p>token 검증 → new password</p></div></div></div>
+      </div>
+      <p class="muted">Layout: 두 컬럼 (좌측 브랜딩 / 우측 폼).</p>
+
+      <!-- ───────────────── App: Dashboard ───────────────── -->
+      <h2 class="section-title" id="dashboard">③ App / Dashboard (1)</h2>
+      <div class="page-card">
+        <header><h3>Dashboard</h3><span class="route">/dashboard</span></header>
+        <div class="body col">
+          <div class="grid-4">
+            <div class="box"><span class="label">KPI</span><p>활성 프로젝트</p></div>
+            <div class="box"><span class="label">KPI</span><p>이번달 매출</p></div>
+            <div class="box"><span class="label">KPI</span><p>임박 마감</p></div>
+            <div class="box"><span class="label">KPI</span><p>AI 매칭 신규</p></div>
+          </div>
+          <div class="grid-2">
+            <div class="box"><span class="label">최근 활동</span><p>고객/프로젝트 변경 이력</p></div>
+            <div class="box"><span class="label">예정 일정</span><p>오늘/이번주 미팅</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ───────────────── Clients ───────────────── -->
+      <h2 class="section-title" id="clients">④ App / 고객관리 (4)</h2>
+      <div class="grid-2">
+        <div class="page-card"><header><h3>목록</h3><span class="route">/clients</span></header><div class="body"><div class="box"><span class="label">Filter</span><p>q + status</p></div><div class="box"><span class="label">Toggle</span><p>Table / Kanban (?view=)</p></div><div class="box"><span class="label">Table</span><p>이름/업종/등록일/담당자/상태</p></div></div></div>
+        <div class="page-card"><header><h3>추가</h3><span class="route">/clients/new</span></header><div class="body"><div class="box"><span class="label">Form</span><p>회사정보 + 담당자 + 메모</p></div></div></div>
+        <div class="page-card"><header><h3>상세</h3><span class="route">/clients/[clientId]</span></header><div class="body"><div class="box"><span class="label">Header</span><p>회사명 + 상태 배지</p></div><div class="box"><span class="label">Tabs</span><p>개요 / 프로젝트 / 견적 / 문서 / 재무 / 활동로그</p></div></div></div>
+        <div class="page-card"><header><h3>편집</h3><span class="route">/clients/[clientId]/edit</span></header><div class="body"><div class="box"><span class="label">Form</span><p>(추가와 동일 + ID hidden)</p></div></div></div>
+      </div>
+
+      <!-- ───────────────── Projects ───────────────── -->
+      <h2 class="section-title" id="projects">⑤ App / 프로젝트 (4)</h2>
+      <div class="grid-2">
+        <div class="page-card"><header><h3>목록</h3><span class="route">/projects</span></header><div class="body"><div class="box"><span class="label">Filter</span><p>고객/타입/상태</p></div><div class="box"><span class="label">Table/Kanban</span><p>9-section 진행도 표시</p></div></div></div>
+        <div class="page-card"><header><h3>상세 (가장 큰 페이지)</h3><span class="route">/projects/[projectId]</span></header><div class="body"><div class="box"><span class="label">Tabs</span><p>개요 · 9섹션 SSOT · 체크리스트 · 문서 · 미팅 · 일지 · 활동</p></div><div class="box"><span class="label">9섹션 SSOT</span><p>지원사업 신청서 9개 섹션 동시 작성/AI 보조</p></div></div></div>
+        <div class="page-card"><header><h3>추가</h3><span class="route">/projects/new</span></header><div class="body"><div class="box"><p>고객 선택 + 프로젝트 타입 + 일정</p></div></div></div>
+        <div class="page-card"><header><h3>편집</h3><span class="route">/projects/[projectId]/edit</span></header><div class="body"><div class="box"><p>(추가와 동일)</p></div></div></div>
+      </div>
+
+      <!-- ───────────────── Estimates / Contracts ───────────────── -->
+      <h2 class="section-title" id="estimates">⑥ App / 견적·계약 (6)</h2>
+      <div class="grid-3">
+        <div class="page-card"><header><h3>견적 목록</h3><span class="route">/estimates</span></header><div class="body"><div class="box"><p>금액/상태/유효기간</p></div></div></div>
+        <div class="page-card"><header><h3>견적 생성</h3><span class="route">/estimates/new</span></header><div class="body"><div class="box"><p>품목 line items + 자동 계산</p></div></div></div>
+        <div class="page-card"><header><h3>견적 상세</h3><span class="route">/estimates/[id]</span></header><div class="body"><div class="box"><p>견적서 PDF + 계약 전환 버튼</p></div></div></div>
+        <div class="page-card"><header><h3>견적 편집</h3><span class="route">/estimates/[id]/edit</span></header><div class="body"><div class="box"><p>(생성과 동일)</p></div></div></div>
+        <div class="page-card"><header><h3>계약 목록</h3><span class="route">/contracts</span></header><div class="body"><div class="box"><p>계약/만료/상태</p></div></div></div>
+        <div class="page-card"><header><h3>계약 상세</h3><span class="route">/contracts/[id]</span></header><div class="body"><div class="box"><p>계약서 + 첨부 + 결제 마일스톤</p></div></div></div>
+      </div>
+
+      <!-- ───────────────── Documents / Programs ───────────────── -->
+      <h2 class="section-title" id="documents">⑦ App / 서류·지원사업 (3)</h2>
+      <div class="grid-3">
+        <div class="page-card"><header><h3>서류 관리</h3><span class="route">/documents</span></header><div class="body"><div class="box"><p>업로드/생성/공유. 종류별 필터.</p></div></div></div>
+        <div class="page-card"><header><h3>지원사업 목록</h3><span class="route">/programs</span></header><div class="body"><div class="box"><p>기업마당 + K-Startup 크롤 + 매칭 점수</p></div></div></div>
+        <div class="page-card"><header><h3>지원사업 상세</h3><span class="route">/programs/[id]</span></header><div class="body"><div class="box"><p>공고 본문 + 신청서 양식 + 작성 시작</p></div></div></div>
+      </div>
+
+      <!-- ───────────────── Calendar / Meetings ───────────────── -->
+      <h2 class="section-title" id="calendar">⑧ App / 일정·미팅 (5)</h2>
+      <div class="grid-3">
+        <div class="page-card"><header><h3>일정</h3><span class="route">/calendar</span></header><div class="body"><div class="box"><p>월/주 뷰. 미팅+마감 통합.</p></div></div></div>
+        <div class="page-card"><header><h3>미팅 목록</h3><span class="route">/meetings</span></header><div class="body"><div class="box"><p>예정/진행/완료. 녹취 첨부.</p></div></div></div>
+        <div class="page-card"><header><h3>미팅 추가</h3><span class="route">/meetings/new</span></header><div class="body"><div class="box"><p>고객/일시/주제/참가자</p></div></div></div>
+        <div class="page-card"><header><h3>미팅 상세</h3><span class="route">/meetings/[id]</span></header><div class="body"><div class="box"><p>녹취 transcribe + 요약 + 액션아이템</p></div></div></div>
+        <div class="page-card"><header><h3>미팅 편집</h3><span class="route">/meetings/[id]/edit</span></header><div class="body"><div class="box"><p>(추가와 동일)</p></div></div></div>
+      </div>
+
+      <!-- ───────────────── Journals / Matching ───────────────── -->
+      <h2 class="section-title" id="journals">⑨ App / 연구일지·매칭·알림 (5)</h2>
+      <div class="grid-3">
+        <div class="page-card"><header><h3>연구일지 목록</h3><span class="route">/journals</span></header><div class="body"><div class="box"><p>프로젝트별 R&amp;D 일지</p></div></div></div>
+        <div class="page-card"><header><h3>일지 작성</h3><span class="route">/journals/new</span></header><div class="body"><div class="box"><p>마크다운 에디터 + AI 보조</p></div></div></div>
+        <div class="page-card"><header><h3>일지 상세</h3><span class="route">/journals/[id]</span></header><div class="body"><div class="box"><p>본문 + PDF 출력</p></div></div></div>
+        <div class="page-card"><header><h3>AI 매칭</h3><span class="route">/matching</span></header><div class="body"><div class="box"><p>고객 × 지원사업 자동 매칭 점수표</p></div></div></div>
+        <div class="page-card"><header><h3>알림</h3><span class="route">/notifications</span></header><div class="body"><div class="box"><p>이벤트 피드 + 읽음 상태</p></div></div></div>
+      </div>
+
+      <!-- ───────────────── Finance / Analytics ───────────────── -->
+      <h2 class="section-title" id="finance">⑩ App / 재무·분석 (3)</h2>
+      <div class="grid-3">
+        <div class="page-card"><header><h3>재무 (전체)</h3><span class="route">/finance</span></header><div class="body"><div class="box"><p>매출/입금/미수 요약</p></div></div></div>
+        <div class="page-card"><header><h3>재무 (고객별)</h3><span class="route">/finance/[clientId]</span></header><div class="body"><div class="box"><p>고객 단위 매출 시계열</p></div></div></div>
+        <div class="page-card"><header><h3>분석</h3><span class="route">/analytics</span></header><div class="body"><div class="box"><p>KPI 차트 5종, 컨설턴트별 성과</p></div></div></div>
+      </div>
+
+      <!-- ───────────────── Settings ───────────────── -->
+      <h2 class="section-title" id="settings">⑪ App / 설정 — 2컬럼 nested layout (6)</h2>
+      <div class="page-card">
+        <header><h3>설정 (sub-nav 5개)</h3><span class="route">/settings/* (nested layout)</span></header>
+        <div class="body grid-3">
+          <div class="box"><span class="label">/organization</span><p>조직 정보, 로고, 기본 통화</p></div>
+          <div class="box"><span class="label">/team</span><p>팀원 초대, 역할(ReBAC)</p></div>
+          <div class="box"><span class="label">/notifications</span><p>이메일/Slack 알림 토글</p></div>
+          <div class="box"><span class="label">/integrations</span><p>OAuth(Google), 외부 연동</p></div>
+          <div class="box"><span class="label">/ai</span><p>AI 모델 선택, API 키</p></div>
+          <div class="box"><span class="label">/settings</span><p class="muted">→ /settings/organization 리다이렉트</p></div>
+        </div>
+      </div>
+
+      <!-- ───────────────── Admin ───────────────── -->
+      <h2 class="section-title" id="admin">⑫ Admin — PLATFORM_ADMIN only (8)</h2>
+      <div class="grid-3">
+        <div class="page-card"><header><h3>관리자 대시보드</h3><span class="route">/platform-admin</span></header><div class="body"><div class="box"><p>전체 조직/사용자/이벤트 KPI</p></div></div></div>
+        <div class="page-card"><header><h3>조직 관리</h3><span class="route">/platform-admin/organizations</span></header><div class="body"><div class="box"><p>전체 조직 목록 + 정지/복구</p></div></div></div>
+        <div class="page-card"><header><h3>조직 상세</h3><span class="route">/platform-admin/organizations/[orgId]</span></header><div class="body"><div class="box"><p>구성원/사용량/결제</p></div></div></div>
+        <div class="page-card"><header><h3>사용자 관리</h3><span class="route">/platform-admin/users</span></header><div class="body"><div class="box"><p>전체 사용자 + 역할</p></div></div></div>
+        <div class="page-card"><header><h3>사용자 상세</h3><span class="route">/platform-admin/users/[userId]</span></header><div class="body"><div class="box"><p>활동 로그/권한</p></div></div></div>
+        <div class="page-card"><header><h3>AI 패턴</h3><span class="route">/platform-admin/ai-patterns</span></header><div class="body"><div class="box"><p>학습된 AI 응답 패턴 관리</p></div></div></div>
+        <div class="page-card"><header><h3>체크리스트 템플릿</h3><span class="route">/platform-admin/checklist-templates</span></header><div class="body"><div class="box"><p>지원사업별 표준 체크리스트</p></div></div></div>
+        <div class="page-card"><header><h3>HWPX 템플릿</h3><span class="route">/platform-admin/hwpx-templates</span></header><div class="body"><div class="box"><p>한글 문서 양식 관리</p></div></div></div>
+      </div>
+
+      <!-- ───────────────── Portal ───────────────── -->
+      <h2 class="section-title">⑬ Portal — 외부 클라이언트 토큰 기반 (5)</h2>
+      <div class="grid-3">
+        <div class="page-card"><header><h3>포털 메인</h3><span class="route">/portal/[token]</span></header><div class="body"><div class="box"><p>scope: FULL/UPLOAD/JOURNAL.<br>최소 헤더 + 메뉴.</p></div></div></div>
+        <div class="page-card"><header><h3>문서 업로드</h3><span class="route">/portal/[token]/upload</span></header><div class="body"><div class="box"><p>드래그 업로드 + 분류</p></div></div></div>
+        <div class="page-card"><header><h3>체크리스트</h3><span class="route">/portal/[token]/checklist</span></header><div class="body"><div class="box"><p>제출 항목 진행률</p></div></div></div>
+        <div class="page-card"><header><h3>일지 조회</h3><span class="route">/portal/[token]/journal</span></header><div class="body"><div class="box"><p>읽기 전용 일지 목록</p></div></div></div>
+        <div class="page-card"><header><h3>일지 작성</h3><span class="route">/portal/[token]/journal/new</span></header><div class="body"><div class="box"><p>고객 직접 작성</p></div></div></div>
+      </div>
+
+      <!-- ───────────────── Misc ───────────────── -->
+      <h2 class="section-title">⑭ 특수 페이지</h2>
+      <div class="grid-2">
+        <div class="page-card"><header><h3>계정 정지</h3><span class="route">/suspended</span></header><div class="body"><div class="box"><p>조직 정지 상태에서 자동 리다이렉트.</p></div></div></div>
+        <div class="page-card"><header><h3>(marketing)/showcase ★</h3><span class="route">/showcase  ←  WI-614 신규</span></header><div class="body"><div class="box"><span class="label tag-accent">WI-614</span><p>pbc-block-builder 사용 데모. renderComposition으로 4-6개 블록 렌더.</p></div></div></div>
+      </div>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>

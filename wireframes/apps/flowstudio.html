@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>apps/flowstudio — 콘텐츠 생성 (미래, 1년 내)</title>
+<link rel="stylesheet" href="../shared/design-tokens.css">
+</head>
+<body>
+<div class="wf-page">
+  <aside class="wf-sidebar">
+    <h1>FlowStudio</h1>
+    <nav>
+      <span class="section-label">Generate</span>
+      <a href="#create" class="active">이미지 생성</a>
+      <a href="#edit">이미지 편집</a>
+      <a href="#poster">포스터</a>
+      <a href="#detail">상세페이지 빌더</a>
+      <a href="#retouch">리터치</a>
+      <span class="section-label">Library</span>
+      <a href="#gallery">갤러리</a>
+      <a href="#presets">프리셋</a>
+      <a href="#workflows">ComfyUI 워크플로우</a>
+      <span class="section-label">Account</span>
+      <a href="#billing">결제/크레딧</a>
+      <a href="#settings">설정</a>
+    </nav>
+  </aside>
+
+  <div class="wf-main">
+    <header class="wf-topbar">
+      <h2>apps/flowstudio — 미래 도메인 앱 (이미지 + 콘텐츠)</h2>
+      <div class="actions">
+        <span class="tag tag-warn">미존재</span>
+        <span class="tag tag-accent">@axle/pbc-image-engine + pbc-block-builder</span>
+        <span class="tag">Target: 2027-05</span>
+      </div>
+    </header>
+
+    <main class="wf-content">
+
+      <div class="doc-note">
+        <strong>역할</strong>: FlowStudio v1/v2/_re 통합 후속 앱. 이미지 7개 모드 + 23블록 콘텐츠 빌더.
+        <strong>의존</strong>: pbc-image-engine(생성) + pbc-block-builder(상세페이지) + pbc-billing(크레딧) + pbc-file-manager(저장).
+        <strong>Shell</strong>: 메타플랫폼 표준 sidebar+topbar 적용.
+      </div>
+
+      <!-- ───────────────── Generation modes (7) ───────────────── -->
+      <h2 class="section-title" id="create">① 이미지 생성 (7개 GenerationMode)</h2>
+      <div class="grid-3">
+        <div class="page-card"><header><h3>CREATE</h3><span class="route">/create</span></header><div class="body"><div class="box"><span class="label">Input</span><p>prompt + aspect + style preset</p></div><div class="box"><span class="label">PBC</span><p>generate({mode:"CREATE"})</p></div></div></div>
+        <div class="page-card" id="edit"><header><h3>EDIT (in-painting)</h3><span class="route">/edit</span></header><div class="body"><div class="box"><span class="label">Input</span><p>image + mask + prompt</p></div><div class="box"><span class="label">PBC</span><p>generate({mode:"EDIT", reference:image})</p></div></div></div>
+        <div class="page-card" id="poster"><header><h3>POSTER</h3><span class="route">/poster</span></header><div class="body"><div class="box"><span class="label">Input</span><p>제품 정보 + 카피 + 레이아웃</p></div><div class="box"><span class="label">Output</span><p>광고 포스터</p></div></div></div>
+        <div class="page-card"><header><h3>DETAIL_EDIT</h3><span class="route">/detail-edit</span></header><div class="body"><div class="box"><p>상세페이지 내 이미지 편집</p></div></div></div>
+        <div class="page-card" id="retouch"><header><h3>RETOUCH (Pro/Free)</h3><span class="route">/retouch</span></header><div class="body"><div class="box"><span class="label">Pro Mode</span><p>PRO_MODE_SYSTEM_PROMPT 사용</p></div><div class="box"><span class="label">Free Mode</span><p>FREE_MODE_SYSTEM_PROMPT</p></div></div></div>
+        <div class="page-card"><header><h3>SCENE</h3><span class="route">/scene</span></header><div class="body"><div class="box"><p>장면 합성 (AX Studio Cloud)</p></div></div></div>
+        <div class="page-card"><header><h3>STYLE_TRANSFER</h3><span class="route">/style</span></header><div class="body"><div class="box"><p>스타일 전이 (참조 이미지)</p></div></div></div>
+      </div>
+
+      <h2 class="section-title">② 공통 생성 화면 레이아웃</h2>
+      <div class="page-card">
+        <header><h3>Generation Studio</h3><span class="route">표준 패턴</span></header>
+        <div class="body" style="display: grid; grid-template-columns: 280px 1fr 320px; gap: var(--s-4);">
+          <div class="box"><span class="label">좌: Input Panel</span><p>Prompt / Reference / Aspect / Provider 선택<br>(generate() 호출 직전)</p></div>
+          <div class="box" style="min-height: 240px;"><span class="label">중: Preview</span><p class="placeholder">이미지 결과 grid (1-4장)<br>+ getEstimatedCost() 표시</p></div>
+          <div class="box"><span class="label">우: History / Provider</span><p>최근 생성 + Google GenAI / Vertex / OpenRouter / ComfyUI Local / ComfyUI Cloud 토글</p></div>
+        </div>
+      </div>
+
+      <!-- ───────────────── Detail-page Builder ───────────────── -->
+      <h2 class="section-title" id="detail">③ 상세페이지 빌더 (pbc-block-builder)</h2>
+      <div class="page-card">
+        <header><h3>Builder</h3><span class="route">/builder/[docId]</span></header>
+        <div class="body" style="display: grid; grid-template-columns: 240px 1fr 280px; gap: var(--s-4);">
+          <div class="box"><span class="label">Block Palette</span><p>23블록 (A1~F3)<br>도입/핵심/신뢰/상세/전환/감성</p></div>
+          <div class="box" style="min-height: 320px;"><span class="label">Canvas</span><p class="placeholder">블록 드래그 배치 + 인라인 편집</p></div>
+          <div class="box"><span class="label">Inspector</span><p>선택된 블록 설정<br>+ AI Copy 보조</p></div>
+        </div>
+        <div class="body grid-3" style="border-top: 1px solid var(--border-default);">
+          <div class="box"><span class="label">PRESETS 4종</span><p>landing-saas / detail-ecommerce / sns-card / business-doc</p></div>
+          <div class="box"><span class="label">Output 4 포맷</span><p>HTML / Markdown / React / DOCX-element</p></div>
+          <div class="box"><span class="label">PBC 연동</span><p>renderComposition + RenderContext.imageEngine 주입</p></div>
+        </div>
+      </div>
+
+      <!-- ───────────────── Library ───────────────── -->
+      <h2 class="section-title" id="gallery">④ Library</h2>
+      <div class="grid-3">
+        <div class="page-card"><header><h3>갤러리</h3><span class="route">/gallery</span></header><div class="body"><div class="box"><p>생성 이미지 grid + 필터(모드/날짜/프로바이더)</p></div></div></div>
+        <div class="page-card" id="presets"><header><h3>프리셋</h3><span class="route">/presets</span></header><div class="body"><div class="box"><p>retouch-pro / retouch-free / ecommerce / 사용자 정의</p></div></div></div>
+        <div class="page-card" id="workflows"><header><h3>ComfyUI 워크플로우</h3><span class="route">/workflows</span></header><div class="body"><div class="box"><p>Z-IMAGE_WORKFLOW + 사용자 등록 워크플로우<br>(registerWorkflow 사용)</p></div></div></div>
+      </div>
+
+      <!-- ───────────────── Account ───────────────── -->
+      <h2 class="section-title" id="billing">⑤ Account</h2>
+      <div class="grid-2">
+        <div class="page-card"><header><h3>결제/크레딧</h3><span class="route">/billing</span></header><div class="body"><div class="box"><span class="label">PBC</span><p>pbc-billing (Polar 래퍼) — 1년 후 도입</p></div><div class="box"><p>크레딧 잔액 + 충전 + 사용 내역</p></div></div></div>
+        <div class="page-card" id="settings"><header><h3>설정</h3><span class="route">/settings</span></header><div class="body"><div class="box"><p>API 키 / 기본 Provider / 워터마크 / 작업 동시성</p></div></div></div>
+      </div>
+
+      <h2 class="section-title">★ PBC 의존성 매트릭스</h2>
+      <div class="page-card">
+        <header><h3>FlowStudio가 사용하는 PBC</h3></header>
+        <div class="body">
+          <table>
+            <thead><tr><th>PBC</th><th>용도</th><th>상태</th></tr></thead>
+            <tbody>
+              <tr><td><code>@axle/pbc-image-engine</code></td><td>7 모드 generate() / getEstimatedCost()</td><td><span class="tag tag-accent">WI-611 보강</span></td></tr>
+              <tr><td><code>@axle/pbc-block-builder</code></td><td>상세페이지 빌더 (23블록)</td><td><span class="tag tag-success">대부분 완료</span></td></tr>
+              <tr><td><code>@axle/core-design-md</code></td><td>FlowStudio 전용 theme 갈아끼움</td><td><span class="tag tag-accent">WI-613 신규</span></td></tr>
+              <tr><td><code>@axle/pbc-billing</code> (1년 후)</td><td>크레딧/결제</td><td><span class="tag">미시작</span></td></tr>
+              <tr><td><code>@axle/pbc-file-manager</code> (1년 후)</td><td>이미지 저장/다운로드</td><td><span class="tag">미시작</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>

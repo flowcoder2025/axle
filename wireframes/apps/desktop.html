@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>apps/desktop — Electron 클라이언트 (현존)</title>
+<link rel="stylesheet" href="../shared/design-tokens.css">
+<style>
+.tray-icon { width: 24px; height: 24px; background: var(--accent); border-radius: 4px; display: inline-block; vertical-align: middle; margin-right: var(--s-2); }
+.ipc-channel { font-family: var(--font-mono); font-size: 12px; padding: 2px 6px; background: var(--surface-muted); border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wf-page">
+  <aside class="wf-sidebar">
+    <h1>Desktop</h1>
+    <nav>
+      <span class="section-label">Main</span>
+      <a href="#window" class="active">Main Window</a>
+      <a href="#tray">System Tray</a>
+      <span class="section-label">IPC Channels</span>
+      <a href="#ipc-recorder">recorder</a>
+      <a href="#ipc-cert">cert</a>
+      <a href="#ipc-portal">portal</a>
+      <a href="#ipc-agent">agent</a>
+      <span class="section-label">Portal Page Objects</span>
+      <a href="#portal-targets">Hometax/Minwon24/...</a>
+    </nav>
+  </aside>
+
+  <div class="wf-main">
+    <header class="wf-topbar">
+      <h2>apps/desktop — Electron main + preload</h2>
+      <div class="actions">
+        <span class="tag">macOS / Windows</span>
+        <span class="tag tag-accent">Renderer = web (localhost:3000)</span>
+      </div>
+    </header>
+
+    <main class="wf-content">
+
+      <div class="doc-note">
+        <strong>역할</strong>: Electron 데스크탑 클라이언트. Main process가 IPC + Tray + System integration 제공.
+        Renderer는 별도 페이지가 아니라 <code>WEB_APP_URL</code> (기본 localhost:3000)에서 apps/web을 로드.
+        <strong>UI는 web과 동일</strong> — desktop-specific 화면 없음.
+      </div>
+
+      <h2 class="section-title" id="window">① Main Window</h2>
+      <div class="page-card">
+        <header><h3>BrowserWindow</h3><span class="route">src/main/index.ts</span></header>
+        <div class="body grid-2">
+          <div class="box"><span class="label">Spec</span><p>1280×800 default, min 900×600<br>contextIsolation: true</p></div>
+          <div class="box"><span class="label">URL</span><p>process.env.WEB_APP_URL ?? "http://localhost:3000"<br>(즉, apps/web 콘텐츠 로드)</p></div>
+        </div>
+      </div>
+
+      <h2 class="section-title" id="tray">② System Tray</h2>
+      <div class="page-card">
+        <header><h3>Tray Menu</h3><span class="route">macOS menubar / Windows tray</span></header>
+        <div class="body">
+          <div class="box">
+            <span class="tray-icon"></span>
+            <span>AXLE Desktop</span>
+            <ul class="muted" style="margin-top: var(--s-3); padding-left: var(--s-6);">
+              <li>Show Window</li>
+              <li>Recording: Start / Stop</li>
+              <li>Quit</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="section-title" id="ipc-recorder">③ IPC: recorder (음성 녹음)</h2>
+      <div class="page-card">
+        <header><h3>window.axle.recorder.*</h3><span class="route">src/main/ipc/recorder.ts</span></header>
+        <div class="body">
+          <table>
+            <thead><tr><th>Channel</th><th>Returns</th><th>Note</th></tr></thead>
+            <tbody>
+              <tr><td><span class="ipc-channel">recorder.start()</span></td><td>void</td><td>ffmpeg/sox spawn</td></tr>
+              <tr><td><span class="ipc-channel">recorder.stop()</span></td><td>RecordingInfo</td><td>WAV path 반환</td></tr>
+              <tr><td><span class="ipc-channel">recorder.pause()</span></td><td>void</td><td></td></tr>
+              <tr><td><span class="ipc-channel">recorder.resume()</span></td><td>void</td><td></td></tr>
+              <tr><td><span class="ipc-channel">recorder.getState()</span></td><td>RecorderState</td><td>idle/recording/paused</td></tr>
+            </tbody>
+          </table>
+          <p class="muted" style="margin-top: var(--s-3)">출력: 44.1kHz / 2ch WAV → /tmp/axle-recording-*.wav. 미팅 페이지에서 transcribe와 연동.</p>
+        </div>
+      </div>
+
+      <h2 class="section-title" id="ipc-cert">④ IPC: cert (공인인증서)</h2>
+      <div class="page-card">
+        <header><h3>window.axle.cert.*</h3><span class="route">src/main/ipc/cert.ts</span></header>
+        <div class="body grid-2">
+          <div class="box"><span class="label">load(filePath, password)</span><p>PKCS#12 (.p12/.pfx) 파싱<br>지문(SHA-256) 계산</p></div>
+          <div class="box"><span class="label">list / verify / remove</span><p>메모리 저장<br>(향후 keychain 통합)</p></div>
+        </div>
+      </div>
+
+      <h2 class="section-title" id="ipc-portal">⑤ IPC: portal (정부 포털 자동화) — 스텁</h2>
+      <div class="page-card">
+        <header><h3>window.axle.portal.*</h3><span class="route">src/main/ipc/portal.ts</span></header>
+        <div class="body col">
+          <div class="grid-2">
+            <div class="box"><span class="label">login(portal, creds)</span><p>→ PortalSession (sessionId)</p></div>
+            <div class="box"><span class="label">scrape(sessionId, action, params)</span><p>→ ScrapeResult</p></div>
+            <div class="box"><span class="label">status(sessionId)</span><p>→ PortalSession | null</p></div>
+            <div class="box"><span class="label">logout(sessionId)</span><p>→ void</p></div>
+          </div>
+          <div id="portal-targets" class="box" style="border-color: var(--warning);">
+            <span class="label tag-warn">현재 모두 스텁</span>
+            <p>Hometax (홈택스 — 세무) · Minwon24 (민원24 — 공공서류) · Insurance (4대보험)<br>실 자동화는 Playwright 통합 후 진행 예정.</p>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="section-title" id="ipc-agent">⑥ IPC: agent (agent-bridge 헬스)</h2>
+      <div class="page-card">
+        <header><h3>window.axle.agent.*</h3><span class="route">apps/agent-bridge HTTP 호출</span></header>
+        <div class="body grid-3">
+          <div class="box"><span class="label">health()</span><p>→ AgentHealth (MLX/MQ status)</p></div>
+          <div class="box"><span class="label">submit(payload)</span><p>→ {jobId} (Claude MQ enqueue)</p></div>
+          <div class="box"><span class="label">transcribe(path)</span><p>→ TranscribeResult (Whisper)</p></div>
+        </div>
+      </div>
+
+      <h2 class="section-title">⑦ 미완성 / 향후 작업</h2>
+      <div class="grid-3">
+        <div class="page-card"><header><h3>Portal 자동화</h3><span class="route">스텁 → Playwright</span></header><div class="body"><div class="box"><p>Hometax/Minwon24/Insurance 실구현<br>(Anti-bot 대응 필요)</p></div></div></div>
+        <div class="page-card"><header><h3>Offline cache</h3><span class="route">src/main/offline/</span></header><div class="body"><div class="box"><p>오프라인 작업 캐시 (스텁)</p></div></div></div>
+        <div class="page-card"><header><h3>Self-repair</h3><span class="route">portal/self-repair.ts</span></header><div class="body"><div class="box"><p>셀렉터 자동 복구 (스텁)</p></div></div></div>
+      </div>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>apps/agent-bridge — 백그라운드 AI 서비스 (UI 없음)</title>
+<link rel="stylesheet" href="../shared/design-tokens.css">
+<style>
+.endpoint { font-family: var(--font-mono); font-size: 12px; }
+.endpoint .method { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 11px; font-weight: 600; margin-right: var(--s-2); }
+.endpoint .method.GET { background: rgba(22, 163, 74, 0.12); color: var(--success); }
+.endpoint .method.POST { background: rgba(37, 99, 235, 0.12); color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wf-page">
+  <aside class="wf-sidebar">
+    <h1>Agent Bridge</h1>
+    <nav>
+      <span class="section-label">HTTP API</span>
+      <a href="#health" class="active">/health</a>
+      <a href="#ai">/api/ai/*</a>
+      <a href="#transcribe">/api/transcribe</a>
+      <a href="#mlx">/v1/* (MLX proxy)</a>
+      <span class="section-label">Background</span>
+      <a href="#mlx-server">MLX Server</a>
+      <a href="#mq">Claude MQ</a>
+    </nav>
+  </aside>
+
+  <div class="wf-main">
+    <header class="wf-topbar">
+      <h2>apps/agent-bridge — Express + MLX + Claude MQ</h2>
+      <div class="actions">
+        <span class="tag">PORT 3100</span>
+        <span class="tag tag-accent">UI 없음 (Service)</span>
+      </div>
+    </header>
+
+    <main class="wf-content">
+
+      <div class="doc-note">
+        <strong>역할</strong>: 로컬 AI 게이트웨이. macOS 최적화 MLX 서버 + Whisper 음성인식 + Claude CLI 파일기반 큐 통합.
+        <strong>UI는 없음</strong> — apps/desktop이 IPC를 통해 호출, apps/web도 server action으로 호출 가능.
+      </div>
+
+      <h2 class="section-title" id="health">① /health</h2>
+      <div class="page-card">
+        <header><h3 class="endpoint"><span class="method GET">GET</span>/health</h3><span class="route">routes/health.ts</span></header>
+        <div class="body">
+          <div class="box"><span class="label">Response</span><p>{ mlx: {status, port}, mq: {inboxCount, outboxCount}, uptime: number }</p></div>
+        </div>
+      </div>
+
+      <h2 class="section-title" id="ai">② /api/ai/* — Claude MQ</h2>
+      <div class="page-card">
+        <header><h3>AI Job Queue</h3><span class="route">routes/ai.ts</span></header>
+        <div class="body col">
+          <div class="grid-2">
+            <div class="box"><span class="label endpoint"><span class="method POST">POST</span>/api/ai/run</span><p>body: {prompt, metadata?}<br>→ {jobId, status:"queued", filePath, submittedAt}</p></div>
+            <div class="box"><span class="label endpoint"><span class="method GET">GET</span>/api/ai/status/:jobId</span><p>→ {jobId, status, result?, completedAt?}</p></div>
+          </div>
+          <div class="box"><span class="label">Flow</span>
+            <p>1. POST /api/ai/run → submitTask() → <code>.claude-mq/inbox/&lt;jobId&gt;.md</code><br>
+            2. mqWatcher → 파일 감지 → status.json: processing<br>
+            3. 외부 Claude CLI → inbox 읽기 → outbox 쓰기<br>
+            4. GET status → outbox 결과 반환</p>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="section-title" id="transcribe">③ /api/transcribe — Whisper</h2>
+      <div class="page-card">
+        <header><h3 class="endpoint"><span class="method POST">POST</span>/api/transcribe</h3><span class="route">routes/transcribe.ts</span></header>
+        <div class="body grid-2">
+          <div class="box"><span class="label">Input (multipart)</span><p>audio: File (≤100MB)<br>model: "large-v3"<br>language: "ko"</p></div>
+          <div class="box"><span class="label">Output</span><p>{ text, language, model, originalName }</p></div>
+        </div>
+      </div>
+
+      <h2 class="section-title" id="mlx">④ /v1/* — OpenAI Proxy (MLX)</h2>
+      <div class="page-card">
+        <header><h3>MLX OpenAI-Compatible Proxy</h3><span class="route">mlx/proxy.ts</span></header>
+        <div class="body">
+          <div class="box">
+            <span class="label endpoint"><span class="method POST">POST</span>/v1/chat/completions</span>
+            <p>OpenAI API 호환 → 로컬 mlx_lm 서버(:8080)로 프록시. SSE 스트리밍 지원.<br>
+            <span class="muted">ex: Claude Code의 model selector에서 "local-mlx" 선택 가능</span></p>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="section-title" id="mlx-server">⑤ MLX Server Manager (background)</h2>
+      <div class="page-card">
+        <header><h3>MlxServerManager</h3><span class="route">mlx/server.ts</span></header>
+        <div class="body grid-3">
+          <div class="box"><span class="label">start()</span><p>mlx_lm.server spawn<br>health check 핑</p></div>
+          <div class="box"><span class="label">healthCheck()</span><p>30s 주기 GET /v1/models</p></div>
+          <div class="box"><span class="label">자동 재시작</span><p>5초 딜레이 후 재시도</p></div>
+        </div>
+      </div>
+
+      <h2 class="section-title" id="mq">⑥ Claude MQ — 파일 기반 큐</h2>
+      <div class="page-card">
+        <header><h3>.claude-mq/ 디렉토리</h3><span class="route">mq/* + 외부 Claude CLI</span></header>
+        <div class="body col">
+          <div class="grid-3">
+            <div class="box"><span class="label">inbox/</span><p>&lt;jobId&gt;.md (작업 입력)</p></div>
+            <div class="box"><span class="label">outbox/</span><p>&lt;jobId&gt;.md (실행 결과)</p></div>
+            <div class="box"><span class="label">status.json</span><p>jobId × {status, ts}</p></div>
+          </div>
+          <div class="box"><span class="label">External</span>
+            <p>Claude CLI는 별도 프로세스로 실행되며 inbox 폴더를 polling. agent-bridge는 inbox에 작업을 적재만 한다 (CLI 자체는 관리하지 않음).</p>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="section-title">⑦ 환경 설정 요약</h2>
+      <div class="page-card">
+        <header><h3>config.ts (Zod 검증)</h3><span class="route">기본값</span></header>
+        <div class="body">
+          <table>
+            <tbody>
+              <tr><td>PORT</td><td>3100</td></tr>
+              <tr><td>MLX_PORT</td><td>8080</td></tr>
+              <tr><td>MLX_MODEL_PATH</td><td>~/.cache/huggingface/...</td></tr>
+              <tr><td>CLAUDE_MQ_INBOX/OUTBOX</td><td>.claude-mq/inbox · outbox</td></tr>
+              <tr><td>WHISPER_MODEL / LANGUAGE</td><td>large-v3 / ko</td></tr>
+              <tr><td>UPLOAD_DIR / MAX_UPLOAD_SIZE_MB</td><td>/tmp/axle-uploads · 100</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>

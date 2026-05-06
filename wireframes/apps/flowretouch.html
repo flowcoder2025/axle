@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>apps/flowretouch — 리터치 전용 (미래)</title>
+<link rel="stylesheet" href="../shared/design-tokens.css">
+</head>
+<body>
+<div class="wf-page">
+  <aside class="wf-sidebar">
+    <h1>FlowRetouch</h1>
+    <nav>
+      <span class="section-label">Workspace</span>
+      <a href="#editor" class="active">에디터</a>
+      <a href="#batch">배치 처리</a>
+      <a href="#presets">프리셋</a>
+      <span class="section-label">Library</span>
+      <a href="#projects">프로젝트</a>
+      <a href="#history">히스토리</a>
+      <span class="section-label">Account</span>
+      <a href="#billing">크레딧</a>
+      <a href="#settings">설정</a>
+    </nav>
+  </aside>
+
+  <div class="wf-main">
+    <header class="wf-topbar">
+      <h2>apps/flowretouch — 미래 도메인 앱 (리터치 전용)</h2>
+      <div class="actions">
+        <span class="tag tag-warn">미존재</span>
+        <span class="tag tag-accent">@axle/pbc-image-engine RETOUCH</span>
+        <span class="tag">Target: 2027-05</span>
+      </div>
+    </header>
+
+    <main class="wf-content">
+
+      <div class="doc-note">
+        <strong>역할</strong>: 인물/제품 사진 리터치 전용 앱. PRO_MODE_SYSTEM_PROMPT 활용. FlowStudio보다 좁은 도메인이지만 깊게 파고드는 형태.
+        <strong>차별점</strong>: 빠른 진입 → 한 가지 모드(RETOUCH)에 집중 → 단가 높은 결과물.
+        <strong>의존</strong>: pbc-image-engine RETOUCH 모드 + retouch-pro/retouch-free preset.
+      </div>
+
+      <h2 class="section-title" id="editor">① 에디터 (메인 화면)</h2>
+      <div class="page-card">
+        <header><h3>Retouch Editor</h3><span class="route">/editor/[imageId]</span></header>
+        <div class="body" style="display: grid; grid-template-columns: 240px 1fr 280px; gap: var(--s-4);">
+          <div class="box"><span class="label">좌: Tools</span>
+            <p>· 인물 보정<br>· 피부 정리<br>· 배경 정리<br>· 색감 보정<br>· 크롭 / 회전</p>
+          </div>
+          <div class="box" style="min-height: 360px;"><span class="label">중: Canvas</span><p class="placeholder">원본 ↔ 결과 split-view<br>+ undo/redo 히스토리</p></div>
+          <div class="box"><span class="label">우: Inspector</span>
+            <p><span class="tag tag-accent">Pro Mode</span> ON<br>PRO_MODE_SYSTEM_PROMPT 활성<br>+ 자유 프롬프트 입력<br>+ generate({mode:"RETOUCH"}) 호출</p>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="section-title" id="batch">② 배치 처리</h2>
+      <div class="page-card">
+        <header><h3>Batch</h3><span class="route">/batch</span></header>
+        <div class="body grid-2">
+          <div class="box"><span class="label">Upload</span><p>여러 이미지 동시 업로드 (드래그)<br>+ 동일 프리셋 일괄 적용</p></div>
+          <div class="box"><span class="label">Queue</span><p>처리 대기 / 진행 / 완료<br>+ getEstimatedCost()로 총 크레딧 미리 표시</p></div>
+        </div>
+      </div>
+
+      <h2 class="section-title" id="presets">③ 프리셋 (PBC RETOUCH preset 노출)</h2>
+      <div class="grid-3">
+        <div class="page-card"><header><h3>Pro</h3><span class="route">PBC: retouch-pro</span></header><div class="body"><div class="box"><span class="label">PRO_MODE_SYSTEM_PROMPT</span><p>고품질 보정 + 자연스러운 피부/조명</p></div></div></div>
+        <div class="page-card"><header><h3>Free</h3><span class="route">PBC: retouch-free</span></header><div class="body"><div class="box"><span class="label">FREE_MODE_SYSTEM_PROMPT</span><p>빠른 보정 + 기본 옵션</p></div></div></div>
+        <div class="page-card"><header><h3>Custom</h3><span class="route">/presets/new</span></header><div class="body"><div class="box"><p>사용자 프리셋 등록 (registerPreset 사용)</p></div></div></div>
+      </div>
+
+      <h2 class="section-title" id="projects">④ 프로젝트 / 히스토리</h2>
+      <div class="grid-2">
+        <div class="page-card"><header><h3>프로젝트 목록</h3><span class="route">/projects</span></header><div class="body"><div class="box"><p>고객별/날짜별 그룹</p></div></div></div>
+        <div class="page-card" id="history"><header><h3>히스토리</h3><span class="route">/history</span></header><div class="body"><div class="box"><p>최근 작업 + before/after 썸네일</p></div></div></div>
+      </div>
+
+      <h2 class="section-title" id="billing">⑤ Account</h2>
+      <div class="grid-2">
+        <div class="page-card"><header><h3>크레딧</h3><span class="route">/billing</span></header><div class="body"><div class="box"><p>RETOUCH 모드 사용량 + 충전</p></div></div></div>
+        <div class="page-card" id="settings"><header><h3>설정</h3><span class="route">/settings</span></header><div class="body"><div class="box"><p>기본 Provider / 워터마크 / 출력 해상도</p></div></div></div>
+      </div>
+
+      <h2 class="section-title">★ PBC 의존성</h2>
+      <div class="page-card">
+        <header><h3>FlowRetouch는 단일 PBC 깊이 활용</h3></header>
+        <div class="body">
+          <table>
+            <thead><tr><th>PBC</th><th>용도</th><th>상태</th></tr></thead>
+            <tbody>
+              <tr><td><code>@axle/pbc-image-engine</code> (RETOUCH 모드 + retouch-pro/free preset)</td><td>핵심 — 모든 보정 작업</td><td><span class="tag tag-accent">WI-611 보강 후 사용 가능</span></td></tr>
+              <tr><td><code>@axle/core-design-md</code></td><td>전용 theme (어두운 배경 + 더 큰 캔버스)</td><td><span class="tag tag-accent">WI-613</span></td></tr>
+              <tr><td><code>@axle/pbc-billing</code></td><td>크레딧 차감</td><td><span class="tag">1년 후</span></td></tr>
+              <tr><td><code>@axle/pbc-file-manager</code></td><td>이미지 저장</td><td><span class="tag">1년 후</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>
