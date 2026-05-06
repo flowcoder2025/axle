@@ -118,8 +118,26 @@ jobs:
 
       - name: Start web server
         run: |
-          npm -w apps/web run start &
+          # Redirect server stdout/stderr to a file so server-side errors
+          # (e.g. 500 responses from API routes) are visible after the run.
+          # Background processes lose stdout otherwise. See e2e-boundary.yml
+          # for the same pattern.
+          npm -w apps/web run start > /tmp/web-server.log 2>&1 &
           npx wait-on http://localhost:3000 --timeout 60000
+
+      - name: Dump web server log
+        if: always()
+        run: |
+          echo "::group::web server log (stdout+stderr)"
+          if [ -f /tmp/web-server.log ]; then
+            cat /tmp/web-server.log
+          else
+            echo "no web-server.log present"
+          fi
+          echo "::endgroup::"
+          echo "::group::5xx + Error grep"
+          grep -E "Error:|TypeError|RangeError|PrismaClient|Unhandled|500|UploadError|Storage" /tmp/web-server.log 2>/dev/null || echo "no diagnostic markers found"
+          echo "::endgroup::"
 
       - name: Run @write + @smoke tests
         # Use PLAYWRIGHT_JSON_OUTPUT_NAME so the JSON reporter writes directly to
@@ -144,6 +162,7 @@ jobs:
             playwright-report/
             test-results/
             e2e-results.json
+            /tmp/web-server.log
           retention-days: 14
           if-no-files-found: ignore
 
