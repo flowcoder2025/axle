@@ -38,6 +38,16 @@ vi.mock("@axle/ai", () => ({
     return "API_HAIKU";
   }),
   extractAndStorePattern: vi.fn().mockResolvedValue(undefined),
+  // ai-dispatcher.ensureInitialized() calls registerBuiltinHandlers and the
+  // RESEARCH handler imports completeWithFallback at module load. Both must
+  // be present in the mock or vitest throws an unhandled
+  // "No '<export>' export is defined" error during runJob teardown.
+  // Mirrors the pattern in __tests__/api/cron/cron-routes.test.ts.
+  registerBuiltinHandlers: vi.fn(),
+  dispatch: vi.fn().mockResolvedValue({ ok: true }),
+  UnknownJobTypeError: class UnknownJobTypeError extends Error {},
+  InvalidJobInputError: class InvalidJobInputError extends Error {},
+  completeWithFallback: vi.fn(),
 }));
 
 import { getCurrentUser } from "@axle/auth";
