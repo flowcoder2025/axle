@@ -1,80 +1,108 @@
-# AXLE 메타플랫폼 — 와이어프레임 (v2: 단일 플랫폼 + 모듈)
+# AXLE 메타플랫폼 — 와이어프레임 (v3: 6 Pack + Multi-org Tenancy)
 
 > **작성일**: 2026-05-11
-> **버전 노트**: v1은 "6개 별도 앱" 모델이었으나 **v2부터 단일 플랫폼 + 모듈 install/uninstall** 모델로 정정.
-> **모델**: Odoo-style — 조직 관리자가 사용 모듈을 선택, 사용자는 권한 내에서 자유 사용.
+> **버전 노트**:
+> - v1: "6개 별도 앱" (잘못)
+> - v2: "1개 플랫폼 + 5개 도메인 모듈" (정정 1차)
+> - **v3 (현재)**: "1개 플랫폼 + 6 Pack (35 모듈) + Multi-org tenancy 차원"
 
 ---
 
-## 핵심 한 줄
+## 핵심 두 줄
 
-> **AXLE은 1개 플랫폼이고, 사용자는 필요한 기능만 모듈로 install해서 쓴다.**
-> 컨설팅 / HR / 콘텐츠 / ERP / 리터치 = 별도 앱이 아니라 같은 플랫폼의 모듈.
+> **AXLE은 단일 플랫폼이고, 사용자는 원하는 기능만 모듈/Pack으로 install해서 쓴다.**
+> 추가로 **Multi-org tenancy**가 별도 요금제 — 본인 조직 1개만 쓰거나, N개 관리 조직을 위탁 관리할 수 있음.
 
 ---
 
 ## 보는 순서
 
-1. **[module-catalog.md](./module-catalog.md)** — 모듈 정의 + Odoo-style install 흐름
-2. **[architecture.md](./architecture.md)** — 4-Layer + 모듈 ⊃ PBC 매트릭스
-3. **[sitemap.md](./sitemap.md)** — 단일 플랫폼 라우트 트리
+1. **[module-catalog.md](./module-catalog.md)** — 35 모듈 + 6 Pack + Multi-org tier 정의
+2. **[architecture.md](./architecture.md)** — 4-Layer + Pack ⊃ Module ⊃ PBC 매트릭스
+3. **[sitemap.md](./sitemap.md)** — 단일 플랫폼 라우트 + 조직 스위처
 4. **[pbc-usage.md](./pbc-usage.md)** — PBC × 모듈 매핑
 5. **HTML 와이어프레임** (브라우저로 열기):
-   - [shared/shell.html](./shared/shell.html) — 모듈-aware 사이드바
+   - [shared/shell.html](./shared/shell.html) — Pack-aware 사이드바 + 조직 스위처
    - [platform/dashboard.html](./platform/dashboard.html) — 통합 대시보드
-   - [platform/module-catalog.html](./platform/module-catalog.html) — install/uninstall UI
-   - 모듈별:
-     - [modules/consulting.html](./modules/consulting.html) — M1 컨설팅
-     - [modules/hr.html](./modules/hr.html) — M2 HR (★ WI-612 + flowteams 흡수)
-     - [modules/content.html](./modules/content.html) — M3 콘텐츠 (★ WI-611)
-     - [modules/erp.html](./modules/erp.html) — M4 ERP (1년 후)
-     - [modules/retouch.html](./modules/retouch.html) — M5 리터치 (1년 후)
+   - [platform/pack-catalog.html](./platform/pack-catalog.html) — Pack/모듈 install/uninstall
+   - [platform/org-switcher.html](./platform/org-switcher.html) — Multi-org 동작
+   - Pack 상세:
+     - [packs/A-business.html](./packs/A-business.html) — 비즈니스 운영 (10 modules, default)
+     - [packs/B-rd-support.html](./packs/B-rd-support.html) — 정부 지원사업 + R&D (6, ★ 연구일지 포함)
+     - [packs/D-hr.html](./packs/D-hr.html) — HR (5, ★ WI-612 + flowteams 흡수)
+     - [packs/E-content.html](./packs/E-content.html) — 콘텐츠 (4, ★ WI-611)
+     - [packs/F-erp.html](./packs/F-erp.html) — ERP (7, 1년 후)
+     - [packs/G-desktop.html](./packs/G-desktop.html) — Desktop Add-on (3)
    - 동반 앱 (별도 배포):
      - [companion/desktop.html](./companion/desktop.html) — Electron 클라이언트
      - [companion/agent-bridge.html](./companion/agent-bridge.html) — AI 백그라운드 서비스
 
-브라우저로 열기:
 ```bash
 open wireframes/README.md
 open wireframes/shared/shell.html
 open wireframes/platform/dashboard.html
-open wireframes/platform/module-catalog.html
+open wireframes/platform/pack-catalog.html
+open wireframes/platform/org-switcher.html
 ```
 
 ---
 
-## v1 → v2 핵심 변경
+## v2 → v3 변경 요약
 
-| 항목 | v1 (잘못된 이해) | v2 (정정) |
+| 항목 | v2 | v3 |
 |---|---|---|
-| 진입점 | 6개 별도 도메인 | 1개 axle.io |
-| 로그인 | 각 앱마다 | 1회 |
-| 사이드바 | 앱마다 다름 | 활성 모듈에 따라 동적 |
-| FlowStudio/FlowVue/FlowRetouch | apps/* 신규 생성 | 모듈로 흡수 (apps 생성 안 함) |
-| FlowTeams | apps/flowteams 별도 | src/modules/hr/로 흡수 |
-| PBC | 앱 간 공유 라이브러리 | 모듈의 구현체 |
-| 결제 | 앱 단위 | 모듈 단위 (subscription) |
-| 권한 | 앱별 ReBAC | 모듈 × scope ReBAC |
-| 배포 | 6개 도메인 분리 | 1개 도메인 (apps/web) |
+| 모듈 분류 | 5개 도메인 모듈 | **6 Pack × 35 모듈** |
+| 컨설팅 Pack | 13 모듈 묶음 | **해체** — Pack A로 흡수 (자유도 개방) |
+| 고객/견적/계약/포털 | 컨설팅 전용 | **누구나** (clientId/projectId nullable) |
+| 연구일지 | Pack A 공통 | **Pack B로 이동** (정부 R&D 일지 핵심) |
+| 리터치 모듈 | M5 별도 | **제거** — Pack E의 RETOUCH 모드로 흡수 |
+| Multi-org | 미정 | **별도 tier** — 재무/분석/B 전체/D 전체 적용 |
 
 ---
 
-## WI-611~615의 의미 (v2 기준)
+## Pack 구성 (한눈에)
 
-| WI | v2에서 의미 | 상태 |
+| Pack | 모듈 수 | 가격 | 다중 조직(★) |
+|---|---|---|---|
+| **A. 비즈니스 운영** (default) | 10 | ₩59,000 | 재무·분석 |
+| **B. 정부 지원사업** | 6 | ₩39,000 | AI 매칭·연구일지 |
+| **D. HR** | 5 | ₩49,000 + 직원 수 | 전체 |
+| **E. 콘텐츠** | 4 | ₩59,000 + 크레딧 | (불가) |
+| **F. ERP** | 7 | ₩89,000 | (불가) |
+| **G. Desktop Add-on** | 3 | ₩29,000 | (불가) |
+| **Multi-org Tier** | — | TBD | (적용 모듈 위 ★) |
+
+**총 35 modules** (리터치 제거 후).
+
+---
+
+## WI 영향
+
+| WI | v3에서 의미 | 상태 |
 |---|---|---|
-| WI-611 | image-engine `generate()`/`getEstimatedCost()` — 콘텐츠 모듈의 핵심 의존 | 유지 (PBC 자체 기능, 모델 변경 무관) |
-| WI-612 | hr-payroll `createPayrollService` 팩토리 — HR 모듈의 핵심 의존 | 유지 |
-| WI-613 | core-design-md — 모듈별 theme 갈아끼움 가능하게 | 유지 |
-| WI-614 (이전: showcase 데모) | **재정의 필요** — 데모가 아니라 모듈 시스템 자체 구축 | 재정의 |
-| WI-615 (이전: flowteams shell) | **재정의 필요** — flowteams 흡수 + 모듈 디렉토리 분리 | 재정의 |
+| WI-611 | Pack E (이미지 생성) 핵심 의존 PBC 보강 | ✅ 유지 |
+| WI-612 | Pack D HR (PayrollService 팩토리) | ✅ 유지 |
+| WI-613 | core-design-md — Pack별 theme 갈아끼움 | ✅ 유지 |
+| WI-614 | (이전 showcase 데모) | 🔄 **재정의** → Pack E 모듈 데모 |
+| WI-615 | (이전 flowteams shell) | 🔄 **재정의** → flowteams 흡수 (WI-621) |
 
-추가 신규 WI 후보:
-- **WI-616-feat 모듈 레지스트리** (module.config.ts schema + module-registry.ts)
-- **WI-617-feat 모듈 카탈로그 UI** (/settings/modules)
-- **WI-618-feat 동적 사이드바** (활성 모듈 기반 nav 빌더)
-- **WI-619-feat 모듈 권한 (ReBAC scope)** (consulting:* / hr:* / content:* 등)
-- **WI-620-refactor apps/flowteams → src/modules/hr 마이그레이션** (이전 WI-615 대체)
+### 신규 WI 후보 (모듈 + Multi-org 시스템)
+
+| WI | 내용 |
+|---|---|
+| WI-616 | `core-module-system` 패키지 (ModuleConfig + registry + dependency resolver) |
+| WI-617 | `/settings/modules` Pack 카탈로그 UI |
+| WI-618 | 동적 사이드바 빌더 (buildSidebar) |
+| WI-619 | 모듈 ReBAC (scope: customers:*/payroll:*/...) |
+| WI-620 | **Multi-org tenancy 모델** (tenantOrgId, ManagedOrg, 조직 스위처) |
+| WI-621 | apps/flowteams → src/modules/hr 마이그레이션 |
+| WI-622 | Pack A 모듈 메타데이터 (10개 module.config.ts) |
+| WI-623 | Pack B 모듈 메타데이터 (6개) |
+| WI-624 | Pack D 모듈 메타데이터 (5개) |
+| WI-625 | Pack E 모듈 메타데이터 (4개) |
+| WI-626 | Pack G 모듈 메타데이터 (3개) |
+
+총 11 신규 WI. Pack F (ERP)는 PBC 추출 자체가 1년 후라 후속.
 
 ---
 
@@ -83,22 +111,24 @@ open wireframes/platform/module-catalog.html
 ```
 wireframes/
 ├── README.md                ← 이 파일
-├── module-catalog.md        모듈 정의 + install 흐름
-├── architecture.md          4-Layer + 모듈 ⊃ PBC 매트릭스
-├── sitemap.md               단일 플랫폼 라우트 (재작성)
-├── pbc-usage.md             PBC × 모듈 매핑 (재작성)
+├── module-catalog.md        Pack/모듈 정의 + install 흐름 + Multi-org tier
+├── architecture.md          4-Layer + Pack × Module × PBC 매트릭스
+├── sitemap.md               단일 플랫폼 라우트 + 조직 스위처
+├── pbc-usage.md             PBC × 모듈 매핑
 ├── shared/
 │   ├── design-tokens.css    FlowCoder default theme
-│   └── shell.html           모듈-aware 사이드바 (★ 재작성)
+│   └── shell.html           Pack-aware + 조직 스위처 (★ v3)
 ├── platform/
-│   ├── dashboard.html       통합 대시보드
-│   └── module-catalog.html  install/uninstall UI
-├── modules/
-│   ├── consulting.html      M1
-│   ├── hr.html              M2 (★ WI-612 + 흡수)
-│   ├── content.html         M3 (★ WI-611)
-│   ├── erp.html             M4 (1년 후)
-│   └── retouch.html         M5 (1년 후)
+│   ├── dashboard.html       통합 대시보드 + Multi-org KPI
+│   ├── pack-catalog.html    Pack/모듈 install/uninstall
+│   └── org-switcher.html    Multi-org tenancy 동작
+├── packs/
+│   ├── A-business.html      10 modules
+│   ├── B-rd-support.html    6 modules (연구일지 포함)
+│   ├── D-hr.html            5 modules (★ WI-612 + flowteams 흡수)
+│   ├── E-content.html       4 modules (★ WI-611)
+│   ├── F-erp.html           7 modules (1년 후)
+│   └── G-desktop.html       3 modules (Add-on)
 └── companion/
     ├── desktop.html         Electron 클라이언트 (별도 앱)
     └── agent-bridge.html    HTTP 서비스 (별도 앱)
@@ -108,7 +138,12 @@ wireframes/
 
 ## 다음 단계
 
-1. **PRD 수정**: `docs/specs/meta-platform/PRD.md`를 모듈 모델로 재작성
-2. **WI 재정의**: WI-614/615 취소 또는 재정의, WI-616~620 추가
-3. **Sprint contract**: 새 WI들의 계약 작성
-4. **`flowset.sh` 가동**: 별도 터미널
+1. **PRD 수정**: `docs/specs/meta-platform/PRD.md`를 v3 모듈/Pack/Multi-org 모델로 재작성
+2. **WI 재정의**: WI-614/615 취소, WI-616~626 sprint contract 작성
+3. **`flowset.sh` 자율 루프 가동**: 별도 터미널
+
+---
+
+## 가격 정책 (TBD)
+
+본 와이어프레임에 표시된 가격은 추정치. 실 가격 + Multi-org tier 가격 + 관리 조직 단가는 추후 별도 라운드.

@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>조직 스위처 — Multi-org Tenancy</title>
+<link rel="stylesheet" href="../shared/design-tokens.css">
+<style>
+.switcher-modal { background: var(--surface); border-radius: var(--r-s); box-shadow: var(--elevation-2), 0 0 0 1px var(--border-default); padding: var(--s-4); max-width: 400px; }
+.org-item { padding: var(--s-3); border-radius: var(--r-c); display: flex; align-items: center; gap: var(--s-3); cursor: pointer; }
+.org-item:hover { background: var(--surface-muted); }
+.org-item.active { background: var(--sidebar-active-bg); }
+.org-item .org-avatar { width: 32px; height: 32px; border-radius: var(--r-c); background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 600; font-size: 13px; flex-shrink: 0; }
+.org-item.managed .org-avatar { background: var(--warning); }
+.org-item .meta { font-size: 11px; color: var(--text-muted); }
+.tenant-badge { font-size: 10px; padding: 1px 5px; border-radius: 3px; background: var(--warning); color: #fff; }
+</style>
+</head>
+<body>
+<div class="wf-page">
+  <aside class="wf-sidebar">
+    <h1>AXLE</h1>
+    <nav>
+      <a href="#">⌂ Dashboard</a>
+      <a href="#" class="active">조직 관리</a>
+      <a href="#">Pack 카탈로그</a>
+      <a href="#">설정</a>
+    </nav>
+  </aside>
+
+  <div class="wf-main">
+    <header class="wf-topbar">
+      <h2>조직 스위처 — Multi-org 동작</h2>
+      <div class="actions">
+        <span class="tag tag-warn">Premium Tier</span>
+      </div>
+    </header>
+
+    <main class="wf-content">
+
+      <div class="doc-note">
+        <strong>Multi-org Tier 활성 시</strong>: Topbar에 조직 스위처 표시. 본인 조직 + N개 관리 조직 사이 전환.
+        <strong>전환 시</strong>: 모든 모듈이 active tenant scope로 동작 (tenantOrgId 변경).
+      </div>
+
+      <h2 class="section-title">① 스위처 드롭다운 (예시)</h2>
+      <div class="page-card">
+        <header><h3>Topbar 클릭 시 펼침</h3></header>
+        <div class="body">
+          <div class="switcher-modal">
+            <div style="font-size: 11px; color: var(--text-muted); padding: 0 var(--s-3); margin-bottom: var(--s-2);">본인 조직</div>
+            <div class="org-item">
+              <div class="org-avatar">F</div>
+              <div style="flex:1;">
+                <div style="font-weight: 600;">FlowCoder Inc.</div>
+                <div class="meta">자기 조직 · 8 members</div>
+              </div>
+            </div>
+
+            <div style="font-size: 11px; color: var(--text-muted); padding: var(--s-3) var(--s-3) var(--s-2);">관리 조직 (3)</div>
+            <div class="org-item managed active">
+              <div class="org-avatar">A</div>
+              <div style="flex:1;">
+                <div style="font-weight: 600;">ABC Manufacturing <span class="tenant-badge">managed</span></div>
+                <div class="meta">위탁 컨설팅 · 23 employees</div>
+              </div>
+              <span style="color: var(--accent);">✓</span>
+            </div>
+            <div class="org-item managed">
+              <div class="org-avatar">X</div>
+              <div style="flex:1;">
+                <div style="font-weight: 600;">XYZ Tech <span class="tenant-badge">managed</span></div>
+                <div class="meta">위탁 컨설팅 · 17 employees</div>
+              </div>
+            </div>
+            <div class="org-item managed">
+              <div class="org-avatar">D</div>
+              <div style="flex:1;">
+                <div style="font-weight: 600;">DEF Corp <span class="tenant-badge">managed</span></div>
+                <div class="meta">위탁 컨설팅 · 5 employees</div>
+              </div>
+            </div>
+
+            <hr style="margin: var(--s-3) 0; border: 0; border-top: 1px solid var(--border-default);">
+            <div class="org-item" style="color: var(--accent);">
+              <div style="font-size: 18px;">+</div>
+              <div>관리 조직 추가</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="section-title">② 전환 동작 (tenant 변경 시)</h2>
+      <div class="page-card">
+        <header><h3>tenant=FlowCoder → tenant=ABC 변경 효과</h3></header>
+        <div class="body">
+          <table>
+            <thead><tr><th>모듈</th><th>변경 전 (FlowCoder)</th><th>변경 후 (ABC)</th></tr></thead>
+            <tbody>
+              <tr><td>고객/거래처 (A)</td><td>FlowCoder의 거래처 50개</td><td>FlowCoder의 거래처 50개 (변동 X — 자기 데이터)</td></tr>
+              <tr><td>재무 (A) <span class="tag tag-accent">multi-org</span></td><td>FlowCoder 매출 ₩45M</td><td>ABC 매출 ₩23.5M</td></tr>
+              <tr><td>AI 매칭 (B) <span class="tag tag-accent">multi-org</span></td><td>FlowCoder × 공고 매칭</td><td>ABC × 공고 매칭</td></tr>
+              <tr><td>연구일지 (B) <span class="tag tag-accent">multi-org</span></td><td>FlowCoder R&D 일지</td><td>ABC R&D 일지</td></tr>
+              <tr><td>HR (D 전체) <span class="tag tag-accent">multi-org</span></td><td>FlowCoder 직원 8명</td><td>ABC 직원 23명 (위탁)</td></tr>
+              <tr><td>이미지 생성 (E)</td><td>FlowCoder 작업물</td><td>FlowCoder 작업물 (변동 X — Single-org만)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <h2 class="section-title">③ 데이터 모델</h2>
+      <div class="page-card">
+        <header><h3>tenantOrgId scope</h3></header>
+        <div class="body">
+          <pre style="background: var(--surface-muted); padding: var(--s-3); border-radius: var(--r-c); font-size: 12px; overflow-x: auto;">
+// 모든 multi-org 적용 모듈의 테이블에 추가
+model Payroll {
+  id           String   @id
+  tenantOrgId  String   // 본인 조직이면 self.id, 관리 조직이면 ManagedOrg.id
+  employeeId   String
+  amount       Decimal
+  // ...
+  @@index([tenantOrgId])
+}
+
+// 새 모델: 관리 조직
+model ManagedOrg {
+  id           String   @id
+  ownerOrgId   String   // 누가 관리하는지 (= 결제 주체)
+  name         String
+  createdAt    DateTime
+  status       ManagedOrgStatus  // ACTIVE / PAUSED / TERMINATED
+  // ...
+}
+
+// 권한: ownerOrg의 컨설턴트는 모든 ManagedOrg 접근 가능 (ReBAC scope: tenant:*)
+// 위탁 직원은 본인 ManagedOrg만 (ReBAC scope: tenant:<managedOrgId>)
+          </pre>
+        </div>
+      </div>
+
+      <h2 class="section-title">④ 관리 조직 라이프사이클</h2>
+      <div class="page-card">
+        <header><h3>/managed-orgs (관리자 페이지)</h3></header>
+        <div class="body grid-3">
+          <div class="box"><span class="label">추가</span><p>조직명 + 사업자번호 + 위탁 범위(Pack 선택) → 결제 가산</p></div>
+          <div class="box"><span class="label">위임 초대</span><p>고객사 직원에게 외부 포털 토큰 발급 → 자기 데이터 직접 입력</p></div>
+          <div class="box"><span class="label">해지</span><p>30일 보관 → 데이터 export 또는 hard delete</p></div>
+        </div>
+      </div>
+
+      <h2 class="section-title">⑤ ReBAC 권한 (tenant scope)</h2>
+      <div class="page-card">
+        <header><h3>역할별 접근</h3></header>
+        <div class="body">
+          <table>
+            <thead><tr><th>역할</th><th>tenant scope</th><th>모듈 권한</th></tr></thead>
+            <tbody>
+              <tr><td>본인 조직 owner</td><td>self + 모든 ManagedOrg</td><td>전체 :write</td></tr>
+              <tr><td>컨설턴트 (본인 조직)</td><td>self + 할당된 ManagedOrg</td><td>모듈별 :write</td></tr>
+              <tr><td>위탁 직원 (ManagedOrg 소속)</td><td>본인 ManagedOrg만</td><td>HR/일지 :read 또는 :write (역할별)</td></tr>
+              <tr><td>외부 포털 게스트</td><td>본인 ManagedOrg의 일부 데이터</td><td>토큰 scope만</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>

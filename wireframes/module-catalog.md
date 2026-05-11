@@ -1,189 +1,202 @@
-# AXLE 메타플랫폼 — 모듈 카탈로그 정의
+# 모듈 카탈로그 v3 (6 Pack × 35 Modules + Multi-org Tier)
 
-> **모델**: Odoo-style 조직 단위 모듈 install/uninstall
-> **단위**: 도메인별 모듈 팩 (한 팩 안에 여러 기능 + 권한 + 사이드바 nav 묶음)
-> **활성화 주체**: 조직 관리자 → 모든 멤버에게 노출
+> **모델**: 단일 플랫폼 + Odoo-style 모듈 install + Multi-org tenancy 차원
+> **단위**: 모듈 = 사이드바 nav 1개 + 라우트 묶음 + 권한 + PBC 의존
+> **Pack** = 관련 모듈 번들 (할인 가격)
 
 ---
 
-## 핵심 개념
+## 0. 두 축
 
 ```
-플랫폼 (axle.io)
-   │
-   ├─ 공통 (항상 활성, uninstall 불가)
-   │    └─ 로그인 / 조직 / 결제 / 알림 / 사용자 설정 / 관리자
-   │
-   └─ 모듈 (조직별 install 단위)
-        ├─ 컨설팅 모듈        ← 컨설팅 회사가 install
-        ├─ HR 모듈            ← 직원 관리하는 회사가 install
-        ├─ 콘텐츠 생성 모듈   ← 상세페이지/광고 만드는 회사
-        ├─ ERP 모듈           ← 재고/주문 다루는 회사
-        ├─ 리터치 모듈        ← 사진관/이커머스
-        └─ ...
-```
-
-**규칙**:
-- 모듈 = "사이드바 섹션 + 라우트 묶음 + PBC 의존성 + 권한 정의"
-- 한 조직은 N개 모듈을 install (중복 가능)
-- 사용자가 보는 사이드바 = 조직이 install한 모듈만 표시
-- 결제는 모듈 단위 (subscription per module)
-
----
-
-## 모듈 인벤토리 (1년 후 목표)
-
-### M1. 컨설팅 모듈 (Consulting Suite)
-**대상**: 컨설팅 회사 (정부 지원사업, 인증, 특허 등)
-**현재**: `apps/web`의 본체 (이미 구현됨)
-**사이드바 nav** (12개):
-- 고객관리 · 프로젝트 · 서류 · 지원사업 · 매칭 분석
-- 일정 · 미팅 · 연구일지 · 재무 · 분석 · 견적/계약
-**PBC 의존**: `pbc-consulting-crm` (1년 후 추출) + `pbc-block-builder` (서류 작성) + `pbc-scheduler`
-**가격대** (예시): ₩99,000 / 조직 / 월
-
-### M2. HR 모듈 (HR Suite)
-**대상**: 직원 5명 이상 회사
-**현재**: `apps/flowteams`에 4 페이지 (흡수 예정)
-**사이드바 nav** (4개):
-- 급여 · 근태 · 연차 · 노무 자문
-**PBC 의존**: `pbc-hr-payroll` (WI-612 보강) + `pbc-messaging` (1년 후)
-**가격대**: ₩49,000 / 조직 / 월 (직원 수 따라 변동)
-
-### M3. 콘텐츠 생성 모듈 (Content Studio)
-**대상**: 마케터, 이커머스, 1인 크리에이터
-**현재**: 미존재 (FlowStudio 기능을 PBC로 추출 후 모듈화)
-**사이드바 nav** (~7개):
-- 이미지 생성 (CREATE / EDIT / POSTER / DETAIL_EDIT / SCENE / STYLE)
-- 상세페이지 빌더 · 갤러리 · 프리셋 · ComfyUI 워크플로우
-**PBC 의존**: `pbc-image-engine` (WI-611 보강) + `pbc-block-builder`
-**가격대**: ₩59,000 + 사용량 (credits)
-
-### M4. ERP 모듈 (ERP Suite)
-**대상**: 도소매, 제조업
-**현재**: 미존재 (FlowVue 추출 후)
-**사이드바 nav** (~8개):
-- 재고 · 주문 · 배송 · 발주 · 거래처 · 상품 카탈로그 · 리포트
-**PBC 의존**: `pbc-erp-inventory` + `pbc-erp-orders` (1년 후 추출)
-**가격대**: ₩89,000 / 조직 / 월
-
-### M5. 리터치 모듈 (Retouch)
-**대상**: 사진관, 이커머스 상품 사진
-**현재**: 미존재 (FlowRetouch 흡수)
-**사이드바 nav** (~4개):
-- 에디터 · 배치 처리 · 프리셋 · 히스토리
-**PBC 의존**: `pbc-image-engine` RETOUCH 모드 단독 (PRO/FREE preset)
-**가격대**: ₩39,000 + credits
-
-### M6. (예약 1개) 신규 도메인
-vision-and-expansion §1.2의 "1년 후 6번째 앱" 슬롯 — 추후 확정.
-
----
-
-## 공통(Core) — install 불가, 항상 활성
-
-| 영역 | 라우트 | 설명 |
-|---|---|---|
-| 로그인/회원가입 | `/login` `/signup` | 1회 로그인 → 모든 모듈 접근 |
-| 조직 | `/settings/organization` | 조직 정보, 로고 |
-| 팀 | `/settings/team` | 팀원 초대, ReBAC 역할 |
-| 결제 | `/settings/billing` | 구독 중인 모듈 + 사용량 |
-| 모듈 카탈로그 | `/settings/modules` | install/uninstall 토글 |
-| 알림 | `/notifications` | 모든 모듈 통합 알림 |
-| 사용자 설정 | `/settings/profile` `/settings/ai` | 개인 설정 |
-| 플랫폼 관리자 | `/admin/*` | PLATFORM_ADMIN only |
-| 외부 클라이언트 포털 | `/portal/[token]` | 토큰 기반 게스트 액세스 |
-
----
-
-## 모듈 install 흐름 (Odoo 모델)
-
-```
-1. 조직 가입 → 공통 영역만 활성, 사이드바 거의 비어 있음
-2. 관리자가 /settings/modules 진입 → 카탈로그 6개 카드 표시
-3. "컨설팅 모듈 install" 클릭
-   ├─ 결제 정보 입력 (없으면)
-   ├─ 활성화
-   └─ 사이드바 즉시 갱신: "컨설팅" 섹션 + 12 nav 표시
-4. "HR 모듈 install" 추가
-   └─ 사이드바: "컨설팅" 섹션 + "HR" 섹션 동시 표시
-5. 모듈별 권한은 ReBAC role × module scope로 결정
-   예: user는 "consulting:read" + "hr:write" 가질 수 있음
+              [Module install]
+                     ×
+              [Tenancy Tier]
+       ───────────────────────────
+       Single-org           Multi-org
+       (default, 무료)      (premium, 별도 요금)
+       자기 조직 1개         자기 + N개 관리 조직
 ```
 
 ---
 
-## 모듈 × PBC × 데이터 흐름
+## 1. 모듈 인벤토리 (35개)
 
-| 모듈 | 사용 PBC | DB 모델 | 외부 API |
+### Pack A. 비즈니스 운영 (default 추천)
+₩59,000/월 — 10 modules
+
+| ID | 모듈 | 라우트 | 권한 | Multi-org | PBC |
+|---|---|---|---|---|---|
+| A.01 | 고객/거래처 | /customers | customers:* | — | consulting-crm |
+| A.02 | 프로젝트 (+9섹션 SSOT) | /projects | projects:* | — | consulting-crm |
+| A.03 | 견적 | /estimates | estimates:* | — | consulting-crm |
+| A.04 | 계약 | /contracts | contracts:* | — | consulting-crm |
+| A.05 | 서류 + OCR | /documents | documents:* | — | ocr, file-manager |
+| A.06 | 외부 포털 | /portal-admin | portal:* | — | — |
+| A.07 | 일정 | /calendar | calendar:* | — | scheduler |
+| A.08 | 미팅 | /meetings | meetings:* | — | — |
+| A.09 | 재무 | /finance | finance:* | ★ | — |
+| A.10 | 분석 리포트 | /analytics | analytics:* | ★ | — |
+
+**Hard deps**: 모두 독립 (FK 모두 nullable).
+**개별 가격**: 평균 ₩9,000/모듈 (개별 install 시 합산하면 ₩90,000 → Pack 가격 ₩59,000은 34% 할인).
+
+### Pack B. 정부 지원사업 + R&D
+₩39,000/월 — 6 modules
+
+| ID | 모듈 | 라우트 | 권한 | Multi-org | PBC |
+|---|---|---|---|---|---|
+| B.01 | 지원사업 | /programs | programs:* | — | crawler |
+| B.02 | AI 매칭 | /matching | matching:* | ★ | matching |
+| B.03 | 연구일지 | /journals | journals:* | ★ | ai |
+| B.A1 | HWPX 양식 (admin) | /admin/hwpx | platform:admin | — | docgen |
+| B.A2 | 체크리스트 (admin) | /admin/checklist | platform:admin | — | — |
+| B.A3 | AI 패턴 (admin) | /admin/ai-patterns | platform:admin | — | ai |
+
+**Hard deps**: B.02 → B.01 / B.A2 → B.01 / B.A3 → B.02.
+
+### Pack D. HR
+₩49,000/월 + 직원 수 — 5 modules
+
+| ID | 모듈 | 라우트 | 권한 | Multi-org | PBC |
+|---|---|---|---|---|---|
+| D.01 | 직원 관리 | /employees | hr:admin | ★ | hr-payroll |
+| D.02 | 급여 | /payroll | hr:write | ★ | hr-payroll |
+| D.03 | 근태 | /attendance | hr:read | ★ | hr-payroll |
+| D.04 | 연차 | /leave | hr:read | ★ | hr-payroll |
+| D.05 | 노무 자문 | /nomu | hr:read | ★ | hr-payroll, ai |
+
+**Hard deps**: D.02~D.04 → D.01.
+**모든 모듈 Multi-org** = HR 위탁 운영 가능 (노무법인 시나리오).
+
+### Pack E. 콘텐츠
+₩59,000/월 + 크레딧 — 4 modules
+
+| ID | 모듈 | 라우트 | 권한 | Multi-org | PBC |
+|---|---|---|---|---|---|
+| E.01 | 이미지 생성 (7 모드) | /create | content:write | — | image-engine |
+| E.02 | 빌더 (23 블록) | /builder | content:write | — | block-builder |
+| E.03 | 프리셋 | /presets | content:read | — | image-engine |
+| E.04 | ComfyUI 워크플로우 (admin) | /workflows | content:admin | — | image-engine |
+
+**Hard deps**: E.03/E.04 → E.01.
+**Multi-org 불가** — 콘텐츠 작업은 본인 작업물.
+
+### Pack F. ERP (1년 후)
+₩89,000/월 — 7 modules
+
+| ID | 모듈 | 라우트 | Hard dep | Multi-org |
+|---|---|---|---|---|
+| F.01 | 상품 | /products | — | — |
+| F.02 | 재고 | /inventory | F.01 | — |
+| F.03 | 거래처 (ERP) | /erp-customers | — | — |
+| F.04 | 주문 | /orders | F.01 + F.03 | — |
+| F.05 | 배송 | /shipping | F.04 | — |
+| F.06 | 발주 | /purchase | F.01 + F.03 | — |
+| F.07 | 리포트 | /reports/erp | — | — |
+
+### Add-on G. Desktop
+₩29,000/월 (Desktop 라이선스 포함) — 3 modules
+
+| ID | 모듈 | 라우트 | Hard dep | 비고 |
+|---|---|---|---|---|
+| G.01 | 포털 자동화 | /automation | — | requires Electron |
+| G.02 | 공동인증서 | /certs | — | requires Electron |
+| G.03 | 녹취 | /recording | — | requires Electron |
+
+---
+
+## 2. Multi-org Tier (별도 요금제)
+
+### Single-org (default, 무료)
+- 자기 조직 1개만 관리
+- 모든 모듈이 자기 조직 데이터로 동작
+- tenantOrgId = currentUserOrgId
+
+### Multi-org (Premium)
+- 자기 조직 + N개 관리 조직(ManagedOrg)
+- 적용 모듈 (위 ★ 표시):
+  - Pack A: 재무(A.09) · 분석(A.10)
+  - Pack B: AI 매칭(B.02) · 연구일지(B.03)
+  - Pack D: 전체 (D.01~D.05)
+- **Topbar 조직 스위처** 활성화 → active tenant 변경
+- 데이터는 tenantOrgId로 격리
+
+### 가격 (TBD)
+- Base: ₩? /월
+- 관리 조직 1개당: ₩? /월
+- 추후 결정
+
+---
+
+## 3. Cross-pack Integrations (자동 연결)
+
+| 조합 | 효과 |
+|---|---|
+| A 견적 + A 고객 | 견적이 고객 단위로 분류 |
+| A 견적 + A 재무 | 매출 자동 추적 |
+| A 계약 + A 프로젝트 | 계약 = 프로젝트 단위 |
+| A 미팅 + G 녹취 | 녹취 자동 첨부 + AI 요약 |
+| A 일정 + 모든 모듈 | 마감/이벤트 통합 표시 |
+| A 서류 + E 빌더 | 23블록 빌더로 서류 작성 |
+| A 서류 + B HWPX | 한글 양식 자동 채움 |
+| A 외부 포털 + B 연구일지 | 고객이 직접 일지 작성 |
+| B AI 매칭 + A 고객 | 고객 × 공고 매칭 (B2B 시나리오) |
+| B AI 매칭 + A 프로젝트 | 프로젝트 × 공고 매칭 |
+| B 연구일지 + A 프로젝트 | 일지가 프로젝트 단위 |
+| B 연구일지 + E 이미지 | 도해 자동 삽입 |
+| B 지원사업 + A 일정 | 마감일 캘린더 자동 등록 |
+| D 직원 + A 프로젝트 | 멤버 자동 연결 |
+| E 빌더 + F 상품 | 상품 상세페이지 |
+| E 이미지 + F 상품 | 상품 이미지 자동 생성 |
+| G 포털 자동화 + A 재무 | 세무 정보 자동 매출 매핑 |
+| G 포털 자동화 + A 서류 | 공공서류 자동 다운로드 |
+
+---
+
+## 4. install 흐름
+
+```
+1. 조직 가입 → 공통 영역만 활성 (사이드바 거의 비어 있음)
+2. 관리자가 /settings/modules 진입
+3. Pack 또는 개별 모듈 install 클릭
+   ├─ Pack: 13~3개 모듈 일괄 등록
+   └─ 개별: 1개 모듈만
+4. 결제 정보 입력 (없으면)
+5. module-registry에 기록
+6. 모듈 onInstall hook 실행 (seed 데이터)
+7. 사이드바 즉시 갱신
+8. Multi-org Tier 별도 install 시:
+   ├─ /managed-orgs 페이지에서 관리 조직 추가
+   └─ Topbar에 조직 스위처 활성
+```
+
+---
+
+## 5. uninstall 처리
+
+| 시점 | 처리 |
+|---|---|
+| 즉시 | 사이드바 제거, 라우트 403, 결제 중단 |
+| 30일 | 데이터 보관 |
+| 30일 후 | 사용자 명시적 삭제 요청 시 hard delete |
+| 재install (30일 내) | 데이터 복원 |
+| 의존 모듈 uninstall | 의존하는 모듈도 자동 uninstall 안내 (cascade 확인) |
+
+---
+
+## 6. Use Case Cheatsheet
+
+| 페르소나 | 추천 install | Multi-org? | 월 가격 (추정) |
 |---|---|---|---|
-| 컨설팅 | consulting-crm(미추출) · block-builder · scheduler | Client/Project/Estimate/Contract/Program/... | 기업마당 · K-Startup |
-| HR | hr-payroll · messaging | Employee/Payroll/Attendance/Leave/Nomu | (4대보험 — 미래) |
-| 콘텐츠 | image-engine · block-builder | Image/Composition | Google GenAI · Vertex · OpenRouter · ComfyUI |
-| ERP | erp-inventory · erp-orders · messaging | Product/SKU/Order/Shipment | 택배사 · 결제 |
-| 리터치 | image-engine (RETOUCH) | Image | OpenRouter · ComfyUI |
-
----
-
-## 사이드바 동적 렌더링 룰
-
-```typescript
-// 의사 코드
-function buildSidebar(org: Organization, user: User): SidebarSection[] {
-  const installedModules = await getInstalledModules(org.id);
-  const userPerms = await getUserPermissions(user.id);
-
-  return [
-    ...installedModules
-      .filter(m => userPerms.canAccess(m.id))
-      .map(m => ({ section: m.label, nav: m.navItems })),
-    { section: "공통", nav: ["알림", "설정"] },
-    ...(user.isPlatformAdmin ? [{ section: "관리자", nav: [...] }] : [])
-  ];
-}
-```
-
-- **install 안 된 모듈** → 사이드바에 안 보임, 직접 URL 접근 시 403
-- **install했지만 권한 없음** → 사이드바에 안 보임, 직접 URL 접근 시 403
-- **install + 권한 있음** → 사이드바 표시
-
----
-
-## 코드 구조 (모듈 시스템)
-
-```
-apps/web/                              ← 유일한 메인 앱
-├── src/
-│   ├── app/                          ← Next.js App Router (모든 라우트)
-│   │   ├── (platform)/               ← 공통 + 모듈 페이지 통합
-│   │   │   ├── dashboard/
-│   │   │   ├── clients/              ← M1 consulting 모듈
-│   │   │   ├── payroll/              ← M2 HR 모듈
-│   │   │   ├── create/               ← M3 콘텐츠 모듈
-│   │   │   └── ...
-│   │   ├── settings/modules/         ← 모듈 카탈로그
-│   │   └── ...
-│   ├── modules/                      ← 모듈 정의 (메타데이터)
-│   │   ├── consulting/
-│   │   │   ├── module.config.ts      ← id/label/nav/permissions
-│   │   │   ├── components/
-│   │   │   └── server-actions/
-│   │   ├── hr/                       ← apps/flowteams 흡수
-│   │   ├── content/
-│   │   └── ...
-│   └── lib/
-│       ├── module-registry.ts        ← 모듈 install 관리
-│       └── sidebar.ts                ← 동적 사이드바 빌더
-```
-
-**`apps/flowteams`** → 흡수 후 디렉토리 제거.
-**`apps/desktop`, `apps/agent-bridge`** → 그대로 유지 (별도 배포).
-
----
-
-## 향후 확장 (3-5년)
-
-- **마켓플레이스**: 외부 개발자 모듈 등록 (검증 게이트 통과 시)
-- **모듈 간 데이터 공유**: 예) HR 모듈의 직원 → 컨설팅 모듈의 프로젝트 멤버로 자동 연결
-- **모듈 의존성**: 한 모듈이 다른 모듈을 require (예: ERP는 결제 모듈 자동 install)
-- **테마 per 모듈**: 콘텐츠 모듈 활성 시 어두운 캔버스 theme 자동 전환 (옵션)
+| 일반 사무 회사 | Pack A | × | ₩59,000 |
+| 1인 사업자 + 지원사업 | A + B | × | ₩98,000 |
+| 스타트업 R&D | A + B | × | ₩98,000 |
+| HR 5명 회사 | A + D | × | ₩108,000 + 직원비 |
+| 1인 컨설턴트 | A + B | × | ₩98,000 |
+| 노무법인 (5개 고객사 HR 위탁) | A + D | ✓ | ₩108,000 + 직원비 + Multi-org |
+| 종합 컨설팅 (10개 고객사) | A + B + D + G | ✓ | ₩176,000 + Multi-org |
+| 마케팅 에이전시 | A + E | × | ₩118,000 |
+| 도소매 | A + F | × | ₩148,000 |
+| 제조 + R&D + 직원 30명 | A + B + D + F | × | ₩236,000 + 직원비 |
+| 최소 사용 (일정만) | 개별 install (1) | × | ₩6,000 |

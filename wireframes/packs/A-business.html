@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Pack A — 비즈니스 운영 (default 추천)</title>
+<link rel="stylesheet" href="../shared/design-tokens.css">
+</head>
+<body>
+<div class="wf-page">
+  <aside class="wf-sidebar">
+    <h1>AXLE</h1>
+    <nav>
+      <a href="#">⌂ Dashboard</a>
+      <span class="section-label">Pack A. 비즈니스 운영 (활성)</span>
+      <a href="#" class="active">고객/거래처</a>
+      <a href="#">프로젝트</a>
+      <a href="#">견적</a>
+      <a href="#">계약</a>
+      <a href="#">서류 + OCR</a>
+      <a href="#">외부 포털</a>
+      <a href="#">일정</a>
+      <a href="#">미팅</a>
+      <a href="#">재무</a>
+      <a href="#">분석 리포트</a>
+      <span class="section-label">공통</span>
+      <a href="#">알림</a><a href="#">설정</a>
+    </nav>
+  </aside>
+
+  <div class="wf-main">
+    <header class="wf-topbar">
+      <h2>Pack A — 비즈니스 운영</h2>
+      <div class="actions">
+        <span class="tag tag-success">설치됨</span>
+        <span class="tag">10 modules</span>
+        <span class="tag tag-accent">₩59,000/월</span>
+      </div>
+    </header>
+
+    <main class="wf-content">
+
+      <div class="doc-note">
+        <strong>대상</strong>: 모든 조직 (default 추천). 사내 운영부터 외부 거래까지.
+        <strong>자유도</strong>: clientId / projectId / counterpartyId 모두 nullable — 사내/외부 무관하게 사용.
+        <strong>Multi-org Add-on</strong>: 활성 시 재무/분석은 관리 조직별 scope.
+      </div>
+
+      <h2 class="section-title">① 모듈 메타데이터</h2>
+      <div class="page-card">
+        <header><h3>pack-a/module.config.ts (10 modules)</h3></header>
+        <div class="body">
+          <pre style="background: var(--surface-muted); padding: var(--s-3); border-radius: var(--r-c); font-size: 12px; overflow-x: auto;">
+const PACK_A_MODULES = [
+  { id: "customers",   label: "고객/거래처", route: "/customers",   perm: "customers:*",  pbc: ["consulting-crm"] },
+  { id: "projects",    label: "프로젝트",     route: "/projects",    perm: "projects:*",   pbc: ["consulting-crm"] },
+  { id: "estimates",   label: "견적",         route: "/estimates",   perm: "estimates:*",  pbc: ["consulting-crm"] },
+  { id: "contracts",   label: "계약",         route: "/contracts",   perm: "contracts:*",  pbc: ["consulting-crm"] },
+  { id: "documents",   label: "서류",         route: "/documents",   perm: "documents:*",  pbc: ["ocr","file-manager"] },
+  { id: "portal",      label: "외부 포털",    route: "/portal-admin",perm: "portal:*"      },
+  { id: "calendar",    label: "일정",         route: "/calendar",    perm: "calendar:*",   pbc: ["scheduler"] },
+  { id: "meetings",    label: "미팅",         route: "/meetings",    perm: "meetings:*"    },
+  { id: "finance",     label: "재무",         route: "/finance",     perm: "finance:*",    multiOrg: true },
+  { id: "analytics",   label: "분석",         route: "/analytics",   perm: "analytics:*",  multiOrg: true }
+];
+// 모든 FK nullable: clientId, projectId, counterpartyId
+// multiOrg: true 표시 = Multi-org tenancy add-on 활성 시 데이터가 tenantOrgId로 scope됨</pre>
+        </div>
+      </div>
+
+      <h2 class="section-title">② 모듈별 핵심 페이지</h2>
+
+      <div class="grid-2">
+        <div class="page-card"><header><h3>고객/거래처</h3><span class="route">/customers</span></header><div class="body"><div class="box"><span class="label">3 view</span><p>List/Kanban + 추가/[id] 상세/[id]/edit<br>"고객" 또는 "거래처" 무관 — 모든 외부 조직 record</p></div></div></div>
+        <div class="page-card"><header><h3>프로젝트 (+9섹션 SSOT)</h3><span class="route">/projects</span></header><div class="body"><div class="box"><span class="label">Tabs</span><p>개요 / 9-section SSOT / 체크리스트 / 문서 / 미팅 / 일지 / 활동<br>clientId nullable → 사내 프로젝트 OK</p></div></div></div>
+        <div class="page-card"><header><h3>견적</h3><span class="route">/estimates</span></header><div class="body"><div class="box"><p>CRUD + 자동 계산 + PDF 출력<br>고객 무관 (general invoice도)<br>견적 → 계약 1-click 전환</p></div></div></div>
+        <div class="page-card"><header><h3>계약</h3><span class="route">/contracts</span></header><div class="body"><div class="box"><p>견적/프로젝트/외부 source 무관<br>마일스톤 + 결제 일정</p></div></div></div>
+        <div class="page-card"><header><h3>서류 + OCR</h3><span class="route">/documents</span></header><div class="body"><div class="box"><p>업로드/생성/공유 + AI 자동 분류<br>★ 빌더(Pack E) install 시 23블록으로 작성 가능</p></div></div></div>
+        <div class="page-card"><header><h3>외부 포털</h3><span class="route">/portal/[token]</span></header><div class="body"><div class="box"><p>토큰 발급 → 외부 사용자 게스트 액세스<br>업로드 / 체크리스트 / 일지 조회 (각각 scope)</p></div></div></div>
+        <div class="page-card"><header><h3>일정</h3><span class="route">/calendar</span></header><div class="body"><div class="box"><p>월/주 뷰. 미팅/마감/지원사업 마감 통합</p></div></div></div>
+        <div class="page-card"><header><h3>미팅</h3><span class="route">/meetings</span></header><div class="body"><div class="box"><p>예정/진행/완료<br>★ 녹취(Pack G) install 시 자동 첨부 + transcribe</p></div></div></div>
+        <div class="page-card"><header><h3>재무 <span class="tag tag-accent">multi-org</span></h3><span class="route">/finance</span></header><div class="body"><div class="box"><p>조직 단위 매출/지출/미수<br>★ Multi-org 활성 시 관리 조직별 시계열</p></div></div></div>
+        <div class="page-card"><header><h3>분석 리포트 <span class="tag tag-accent">multi-org</span></h3><span class="route">/analytics</span></header><div class="body"><div class="box"><p>KPI 차트 5종<br>★ Multi-org 활성 시 관리 조직별 비교 + 합계</p></div></div></div>
+      </div>
+
+      <h2 class="section-title">③ 자유도 (Hard deps 없음)</h2>
+      <div class="page-card">
+        <header><h3>모든 모듈 독립 install 가능</h3></header>
+        <div class="body">
+          <table>
+            <thead><tr><th>케이스</th><th>install</th></tr></thead>
+            <tbody>
+              <tr><td>1인 freelancer</td><td>견적 + 일정만 (개별 install ₩18,000)</td></tr>
+              <tr><td>일반 사무 회사</td><td>Pack A 전체 (₩59,000)</td></tr>
+              <tr><td>스타트업</td><td>Pack A + Pack B (₩98,000)</td></tr>
+              <tr><td>중소기업</td><td>Pack A + B + D (₩147,000)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <h2 class="section-title">④ Cross-pack soft integrations</h2>
+      <div class="page-card">
+        <header><h3>다른 Pack과 자동 연결</h3></header>
+        <div class="body">
+          <table>
+            <thead><tr><th>조합</th><th>효과</th></tr></thead>
+            <tbody>
+              <tr><td>견적 + AI 매칭(B)</td><td>지원사업 매칭 결과를 견적으로 변환</td></tr>
+              <tr><td>계약 + 재무</td><td>계약 시 매출 자동 등록</td></tr>
+              <tr><td>서류 + 빌더(E)</td><td>서류 작성에 23블록 빌더 활성</td></tr>
+              <tr><td>서류 + HWPX(B)</td><td>한글 양식 자동 채움</td></tr>
+              <tr><td>미팅 + 녹취(G)</td><td>녹취 자동 첨부 + AI 요약</td></tr>
+              <tr><td>일정 + 미팅/지원사업/계약</td><td>마감/이벤트 통합 표시</td></tr>
+              <tr><td>프로젝트 + 직원(D)</td><td>직원이 프로젝트 멤버</td></tr>
+              <tr><td>외부 포털 + 연구일지(B)</td><td>고객이 직접 일지 작성</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>

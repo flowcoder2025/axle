@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Pack D — HR (직원 관리)</title>
+<link rel="stylesheet" href="../shared/design-tokens.css">
+</head>
+<body>
+<div class="wf-page">
+  <aside class="wf-sidebar">
+    <h1>AXLE</h1>
+    <nav>
+      <a href="#">⌂ Dashboard</a>
+      <span class="section-label muted">Pack A. 비즈니스 운영</span>
+      <a href="#" class="muted">...</a>
+      <span class="section-label">Pack D. HR (활성)</span>
+      <a href="#" class="active">직원 관리</a>
+      <a href="#">급여</a>
+      <a href="#">근태</a>
+      <a href="#">연차</a>
+      <a href="#">노무 자문</a>
+      <span class="section-label">공통</span>
+      <a href="#">알림</a><a href="#">설정</a>
+    </nav>
+  </aside>
+
+  <div class="wf-main">
+    <header class="wf-topbar">
+      <h2>Pack D — HR</h2>
+      <div class="actions">
+        <span class="tag tag-success">설치됨</span>
+        <span class="tag">5 modules</span>
+        <span class="tag tag-accent">₩49,000/월 + 직원 수</span>
+      </div>
+    </header>
+
+    <main class="wf-content">
+
+      <div class="doc-note">
+        <strong>대상</strong>: 직원 5명 이상 회사 (Single-org), 또는 HR 위탁 운영하는 노무법인/컨설팅 회사 (Multi-org).
+        <strong>★ WI-612</strong>: createPayrollService 팩토리 + generateStatement.
+        <strong>흡수 대상</strong>: 현 apps/flowteams의 4 페이지 → src/modules/hr/로 이전 (★ WI-621).
+      </div>
+
+      <h2 class="section-title">① 모듈 메타데이터</h2>
+      <div class="page-card">
+        <header><h3>pack-d/module.config.ts</h3></header>
+        <div class="body">
+          <pre style="background: var(--surface-muted); padding: var(--s-3); border-radius: var(--r-c); font-size: 12px; overflow-x: auto;">
+const PACK_D_MODULES = [
+  { id: "employees",  label: "직원 관리", route: "/employees", perm: "hr:admin", multiOrg: true },
+  { id: "payroll",    label: "급여",      route: "/payroll",   perm: "hr:write", multiOrg: true,
+    deps: { hard: ["employees"] }, pbc: ["hr-payroll"] },
+  { id: "attendance", label: "근태",      route: "/attendance",perm: "hr:read",  multiOrg: true,
+    deps: { hard: ["employees"] }, pbc: ["hr-payroll"] },
+  { id: "leave",      label: "연차",      route: "/leave",     perm: "hr:read",  multiOrg: true,
+    deps: { hard: ["employees"] }, pbc: ["hr-payroll"] },
+  { id: "nomu",       label: "노무 자문", route: "/nomu",      perm: "hr:read",  multiOrg: true,
+    pbc: ["hr-payroll", "ai"] }
+];</pre>
+        </div>
+      </div>
+
+      <h2 class="section-title">② 모듈별 페이지</h2>
+      <div class="grid-3">
+        <div class="page-card"><header><h3>직원 관리</h3><span class="route">/employees</span></header><div class="body"><div class="box"><p>입사/퇴사/연봉 변경 이력<br>사번/이메일/부서</p></div></div></div>
+        <div class="page-card"><header><h3>급여</h3><span class="route">/payroll · /[id]/statement</span></header><div class="body"><div class="box"><span class="label tag-accent">WI-612</span><p>createPayrollService({prisma}).calculate(input)<br>generateStatement(period) → markdown/HTML 명세서</p></div></div></div>
+        <div class="page-card"><header><h3>근태</h3><span class="route">/attendance</span></header><div class="body"><div class="box"><p>QR / IP / GPS / MANUAL 4 method<br>일/주/월 요약</p></div></div></div>
+        <div class="page-card"><header><h3>연차</h3><span class="route">/leave</span></header><div class="body"><div class="box"><p>한국 노동법 (월1일 / 15일 / 가산)<br>승인 워크플로우</p></div></div></div>
+        <div class="page-card"><header><h3>노무 자문</h3><span class="route">/nomu</span></header><div class="body"><div class="box"><p>9 법령 인용 인식<br>AI 답변 + 인용 검증</p></div></div></div>
+      </div>
+
+      <h2 class="section-title">③ Multi-org (HR 위탁 운영)</h2>
+      <div class="page-card">
+        <header><h3>노무법인이 50개 고객사 HR 위탁 시</h3></header>
+        <div class="body grid-2">
+          <div class="box"><span class="label">데이터 scope</span><p>각 ManagedOrg마다 별도 직원 풀<br>tenantOrgId로 격리</p></div>
+          <div class="box"><span class="label">권한</span><p>위탁 직원은 본인 데이터만 (외부 포털)<br>법인 컨설턴트는 모든 ManagedOrg 접근</p></div>
+        </div>
+      </div>
+
+      <h2 class="section-title">④ apps/flowteams 흡수 계획 (★ WI-621)</h2>
+      <div class="page-card" style="border: 2px solid var(--accent);">
+        <header><h3>마이그레이션</h3></header>
+        <div class="body">
+          <table>
+            <thead><tr><th>현재</th><th>이전 후</th></tr></thead>
+            <tbody>
+              <tr><td>apps/flowteams/app/payroll/page.tsx</td><td>apps/web/src/app/(platform)/payroll/page.tsx</td></tr>
+              <tr><td>apps/flowteams/app/attendance/page.tsx</td><td>apps/web/src/app/(platform)/attendance/page.tsx</td></tr>
+              <tr><td>apps/flowteams/app/leave/page.tsx</td><td>apps/web/src/app/(platform)/leave/page.tsx</td></tr>
+              <tr><td>apps/flowteams/app/nomu/page.tsx</td><td>apps/web/src/app/(platform)/nomu/page.tsx</td></tr>
+              <tr><td>apps/flowteams/lib/services.ts</td><td>apps/web/src/modules/hr/services.ts</td></tr>
+              <tr><td>apps/flowteams/ (디렉토리)</td><td>제거</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>

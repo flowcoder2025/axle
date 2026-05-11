@@ -1,21 +1,25 @@
-# 사이트맵 — 단일 플랫폼 (v2)
+# 사이트맵 v3 (단일 플랫폼 + Pack 모듈 + Multi-org)
 
-> v1은 앱별 분리 사이트맵, v2는 **활성 모듈에 따른 동적 사이트맵**.
+> 활성 Pack/모듈 × 사용자 권한 × active tenant 교차로 동적 생성.
 
 ---
 
 ## 한눈에
 
 ```
-axle.io (1개 메인 앱 = apps/web)
+axle.io (1개 앱 = apps/web)
 ├── 공통 (항상 표시)
-├── 모듈 1 (install되면 표시)
-├── 모듈 2
-├── ...
+├── Pack A 모듈 (install 시)
+├── Pack B 모듈 (install 시)
+├── Pack D 모듈 (install 시)
+├── Pack E 모듈 (install 시)
+├── Pack F 모듈 (install 시)
+├── Pack G 모듈 (install 시, Desktop 필요)
 └── 관리자 (PLATFORM_ADMIN만)
 
-apps/desktop      Electron 클라이언트 — UI는 위 axle.io 임베드
-apps/agent-bridge HTTP 서비스 — UI 없음
+★ Multi-org Tier 활성:
+   Topbar 조직 스위처 → tenant 전환
+   모든 multi-org 모듈 데이터가 active tenant scope
 ```
 
 ---
@@ -23,15 +27,16 @@ apps/agent-bridge HTTP 서비스 — UI 없음
 ## 공통 (Core — 항상 활성)
 
 ```
-/                            로그인된 사용자 → /dashboard 리다이렉트
+/                            → /dashboard 리다이렉트 (로그인 시)
 /login /signup /forgot-password /reset-password
-/dashboard                   통합 대시보드 (활성 모듈 위젯 합)
-/notifications               통합 알림 (모든 모듈)
+/dashboard                   통합 대시보드 (활성 Pack 위젯 합)
+/notifications               통합 알림
 /settings/
 ├── /profile                 개인 프로필
 ├── /organization            조직 정보
-├── /team                    팀원 + ReBAC 역할
-├── /modules                 ★ 모듈 카탈로그 (install/uninstall)
+├── /team                    팀원 + ReBAC
+├── /modules                 ★ Pack 카탈로그
+├── /managed-orgs            ★ Multi-org 관리 (premium 활성 시)
 ├── /billing                 구독 + 사용량
 ├── /integrations            외부 연동
 └── /ai                      AI 모델 설정
@@ -39,152 +44,175 @@ apps/agent-bridge HTTP 서비스 — UI 없음
 ├── /                        플랫폼 대시보드
 ├── /organizations [목록][[orgId]]
 ├── /users [목록][[userId]]
-├── /modules-admin           모듈 관리 (전체 조직 × 모듈)
-├── /ai-patterns
-├── /checklist-templates
-└── /hwpx-templates
-/portal/[token]              외부 게스트 (토큰 기반)
-├── /                        포털 메인
-├── /upload                  문서 업로드
-├── /checklist               체크리스트
-└── /journal [목록][new]
+└── (이하 Pack B의 admin 모듈로 이동 — HWPX/체크리스트/AI패턴)
 /suspended                   계정 정지
 ```
 
 ---
 
-## M1 컨설팅 모듈 (consulting:*)
+## Pack A. 비즈니스 운영 (10 modules)
 
-install 시 추가되는 라우트 + 사이드바 nav:
-
-```
-/clients [목록][new][[id]][[id]/edit]
-/projects [목록][new][[id]][[id]/edit]
-/estimates [목록][new][[id]][[id]/edit]
-/contracts [목록][[id]]
-/documents
-/programs [목록][[id]]
-/calendar
-/meetings [목록][new][[id]][[id]/edit]
-/journals [목록][new][[id]]
-/matching
-/finance [전체][[clientId]]
-/analytics
-```
-
-**Sidebar 섹션 "컨설팅"**: 11 nav 항목
-**Prisma 모델**: Client, Project, Estimate, Contract, Program, Meeting, Journal, FinanceTransaction, ...
-
----
-
-## M2 HR 모듈 (hr:*)
+install 시 사이드바 + 라우트 추가:
 
 ```
-/payroll                     급여 (월별 계산)
-/payroll/[id]                급여 상세
-/payroll/[id]/statement      ★ generateStatement (WI-612)
-/attendance                  근태 (QR/IP/GPS/MANUAL)
-/leave                       연차 (요청/승인/잔여)
-/nomu                        노무 자문 (AI)
-/employees [목록][new][[id]]  직원 관리
-```
-
-**Sidebar 섹션 "HR"**: 5 nav 항목
-**Prisma 모델**: Employee, Payroll, Attendance, LeaveRequest, NomuConsultation
-
-★ flowteams 흡수: 기존 `apps/flowteams/app/*` → 위 경로로 이전 (WI-620).
-
----
-
-## M3 콘텐츠 모듈 (content:*)
-
-```
-/create                      이미지 CREATE
-/edit                        이미지 EDIT (in-painting)
-/poster                      POSTER
-/detail-edit                 DETAIL_EDIT
-/retouch                     RETOUCH (Pro/Free)
-/scene                       SCENE
-/style                       STYLE_TRANSFER
-/builder                     상세페이지 빌더 (23블록)
-/builder/[docId]
-/gallery                     생성 갤러리
-/presets                     프리셋
-/workflows                   ComfyUI 워크플로우 (admin)
-```
-
-**Sidebar 섹션 "콘텐츠"**: 8 nav 항목 (7 mode 페이지를 1개 nav로 묶을 수도 있음 — Generation Studio 하나에서 mode 토글)
-**Prisma 모델**: GeneratedImage, BlockComposition, ContentPreset, ContentWorkflow
-
----
-
-## M4 ERP 모듈 (erp:*) — 1년 후
-
-```
-/inventory [목록][[sku]][/receive][/ship]
-/orders [목록][new][[id]]
-/shipping
-/purchase
-/customers
-/products [목록][[id]]
-/reports/erp
-```
-
-**Sidebar 섹션 "ERP"**: 7 nav 항목
-
----
-
-## M5 리터치 모듈 (retouch:*) — 1년 후
-
-```
-/retouch/editor [목록][[imageId]]
-/retouch/batch
-/retouch/presets
-/retouch/projects
-/retouch/history
-```
-
-**Sidebar 섹션 "리터치"**: 5 nav 항목
-**참고**: 콘텐츠 모듈이 install돼 있으면 RETOUCH는 이미 사용 가능. 리터치 모듈은 RETOUCH만 필요한 사용자를 위한 슬림 옵션.
-
----
-
-## 동적 사이드바 렌더링 예시
-
-조직 A가 M1+M2 install, 사용자 X가 hr:read만 보유:
-
-```
-사용자 X가 보는 사이드바:
-├── ⌂ Dashboard
-├── (컨설팅 섹션 안 보임 — X에게 consulting:* 권한 없음)
-├── HR
-│   ├── 급여 (회색 — write 권한 없음, 직접 URL 시 403)
-│   ├── 근태 (정상)
-│   ├── 연차 (정상)
-│   └── 노무 자문 (정상)
-├── (ERP, 리터치, 콘텐츠 안 보임 — 조직이 install 안 함)
-├── 공통
-│   ├── 알림
-│   ├── 모듈 카탈로그 (org-admin만 install 가능)
-│   └── 설정
-└── (관리자 섹션 안 보임 — X는 platform-admin 아님)
+A.01 /customers [목록][new][[id]][[id]/edit]                      고객/거래처
+A.02 /projects [목록][new][[id]][[id]/edit]                       프로젝트 (+9섹션 SSOT)
+A.03 /estimates [목록][new][[id]][[id]/edit]                      견적
+A.04 /contracts [목록][[id]]                                      계약
+A.05 /documents [목록][/upload]                                   서류 + OCR
+A.06 /portal-admin [목록]                                         외부 포털 (토큰 관리)
+     /portal/[token]                                              외부 게스트 (토큰 기반)
+       ├── /                                                      포털 메인
+       ├── /upload                                                업로드
+       ├── /checklist                                             체크리스트
+       └── /journal [목록][new]                                   일지 작성
+A.07 /calendar                                                     일정
+A.08 /meetings [목록][new][[id]][[id]/edit]                       미팅
+A.09 /finance [전체][[clientId]]   ★ multi-org                    재무
+A.10 /analytics                    ★ multi-org                    분석
 ```
 
 ---
 
-## 동반 앱 (별도 배포, axle.io와 분리)
+## Pack B. 정부 지원사업 + R&D (6 modules)
 
-### apps/desktop (Electron 클라이언트)
-- UI: `axle.io` 임베드 (BrowserView)
-- 추가 기능 (모듈과 무관, 항상 활성):
-  - IPC: recorder / cert / portal / agent
-  - System Tray
-- 사이트맵 없음 (메인 앱 사이트맵 재사용)
+```
+B.01 /programs [목록][[id]]                                       지원사업 (크롤)
+B.02 /matching                     ★ multi-org                    AI 매칭
+B.03 /journals [목록][new][[id]]   ★ multi-org                    연구일지
+B.A1 /admin/hwpx                                                  HWPX 양식 (admin)
+B.A2 /admin/checklist                                             체크리스트 (admin)
+B.A3 /admin/ai-patterns                                           AI 패턴 (admin)
+```
+
+---
+
+## Pack D. HR (5 modules) — ★ apps/flowteams 흡수
+
+```
+D.01 /employees [목록][new][[id]]  ★ multi-org                    직원 관리
+D.02 /payroll                      ★ multi-org                    급여 (★ WI-612)
+     /payroll/[id]/statement       ★ WI-612                       명세서
+D.03 /attendance                   ★ multi-org                    근태 (QR/IP/GPS)
+D.04 /leave                        ★ multi-org                    연차
+D.05 /nomu                         ★ multi-org                    노무 자문
+```
+
+흡수: apps/flowteams/app/{payroll,attendance,leave,nomu}/page.tsx → apps/web/src/app/(platform)/{...}/page.tsx (WI-621).
+
+---
+
+## Pack E. 콘텐츠 (4 modules)
+
+```
+E.01 /create                                                       이미지 생성 (7 모드 통합)
+     ?mode=CREATE/EDIT/POSTER/DETAIL_EDIT/RETOUCH/SCENE/STYLE
+     /gallery (내장)                                                갤러리
+E.02 /builder [목록]/[docId]                                       빌더 (23 블록)
+E.03 /presets                                                      프리셋
+E.04 /workflows                                                    ComfyUI (admin)
+```
+
+---
+
+## Pack F. ERP (7 modules) — 1년 후
+
+```
+F.01 /products [목록][[id]]
+F.02 /inventory [목록][[sku]][/receive][/ship]
+F.03 /erp-customers [목록][[id]]
+F.04 /orders [목록][new][[id]]
+F.05 /shipping
+F.06 /purchase
+F.07 /reports/erp
+```
+
+---
+
+## Add-on G. Desktop (3 modules) — Electron 필요
+
+```
+G.01 /automation [목록]                                            포털 자동화
+     /automation/hometax /minwon24 /insurance /venturein /koita
+G.02 /certs [목록]                                                 공동인증서
+G.03 /recording                                                    녹취
+```
+
+---
+
+## ★ Multi-org Tier 활성 시 추가
+
+```
+Topbar:
+  [조직 스위처 ▾]
+    - FlowCoder Inc. (본인)
+    - ABC Manufacturing (managed)
+    - XYZ Tech (managed)
+    - + 관리 조직 추가
+
+Settings:
+  /settings/managed-orgs            관리 조직 CRUD
+  /settings/managed-orgs/[orgId]    관리 조직 상세 (위탁 Pack 설정)
+  /settings/managed-orgs/new        신규 등록
+```
+
+---
+
+## 동적 사이드바 예시
+
+조직 = FlowCoder Inc. (Pack A + B + D + E + G install, Multi-org 활성, 3 관리 조직 보유).
+사용자 = Jerome (모든 권한).
+Active tenant = ABC Manufacturing.
+
+```
+[ABC Manufacturing managed ▾]              ← Topbar 조직 스위처
+─────────────────────────────────
+⌂ Dashboard
+
+Pack A. 비즈니스 운영
+  고객/거래처 · 프로젝트 · 견적 · 계약 ·
+  서류 · 외부 포털 · 일정 · 미팅 ·
+  재무 ⊛ · 분석 ⊛
+
+Pack B. 정부 지원사업
+  지원사업 · AI 매칭 ⊛ · 연구일지 ⊛
+
+Pack D. HR
+  직원 ⊛ · 급여 ⊛ · 근태 ⊛ · 연차 ⊛ · 노무 ⊛
+
+Pack E. 콘텐츠
+  이미지 생성 · 빌더 · 프리셋
+
+Add-on G. Desktop
+  포털 자동화 · 인증서 · 녹취
+
+(미설치)
+  Pack F. ERP
+
+─────────────────────────────────
+공통
+  알림 · Pack 카탈로그 · 설정
+
+관리자 (조건부)
+  HWPX 양식 · 체크리스트 · AI 패턴 ·
+  ComfyUI 워크플로우 · 플랫폼 관리
+
+⊛ = Multi-org 적용 — 데이터는 ABC Manufacturing scope
+```
+
+---
+
+## 동반 앱 (별도 배포)
+
+### apps/desktop (Electron)
+- UI = axle.io 임베드
+- 추가: IPC + Tray (recorder/cert/portal/agent)
+- 사이트맵 없음 (메인 재사용)
 
 ### apps/agent-bridge (HTTP 서비스)
 - UI 없음
 - HTTP API:
   - GET /health
-  - POST /api/ai/run, GET /api/ai/status/:jobId (Claude MQ)
-  - POST /api/transcribe (Whisper)
-  - POST /v1/chat/completions (MLX proxy)
+  - POST /api/ai/run, GET /api/ai/status/:jobId
+  - POST /api/transcribe
+  - POST /v1/chat/completions

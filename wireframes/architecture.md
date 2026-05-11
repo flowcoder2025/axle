@@ -1,162 +1,234 @@
-# 아키텍처 (v2: 단일 플랫폼 + 모듈)
+# 아키텍처 (v3: 6 Pack + Multi-org Tenancy)
 
-> v1은 6개 앱 분리 / v2는 1개 앱 + 모듈. 코드 구조와 PBC 위치는 동일하나 **앱 분리 가정 제거**.
+> v3 = 단일 플랫폼 + Pack/모듈 + Multi-org tenancy 차원.
 
 ---
 
-## 1. 4-Layer (v2)
+## 1. 4-Layer
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │  Layer 4: Single Platform — apps/web                          │
-│   apps/web/                                                   │
-│     src/                                                      │
-│       app/                  ← Next.js App Router (전 라우트)  │
-│         (platform)/        ← 공통 + 모든 모듈 페이지         │
-│           dashboard/                                          │
-│           clients/  (consulting 모듈)                         │
-│           payroll/  (hr 모듈)                                 │
-│           create/   (content 모듈)                            │
-│           inventory/ (erp 모듈, install 시)                   │
-│           ...                                                 │
-│         settings/                                             │
-│           modules/         ← 모듈 카탈로그                   │
-│         admin/                                                │
-│       modules/             ← 모듈 메타데이터                 │
-│         consulting/module.config.ts                          │
-│         hr/module.config.ts                                  │
-│         content/module.config.ts                             │
-│         erp/module.config.ts                                 │
-│         retouch/module.config.ts                             │
-│       lib/                                                    │
-│         module-registry.ts ← install 상태 + 권한 체크        │
-│         sidebar.ts         ← 동적 사이드바 빌더              │
+│   src/                                                        │
+│     app/                  ← Next.js App Router               │
+│       (platform)/        ← 공통 + 모든 모듈 페이지           │
+│         dashboard/                                            │
+│         customers/  (A.01)                                    │
+│         projects/   (A.02)                                    │
+│         payroll/    (D.02, ★ multi-org)                       │
+│         create/     (E.01)                                    │
+│         programs/   (B.01)                                    │
+│         ...                                                   │
+│       settings/                                               │
+│         modules/         ← Pack 카탈로그                     │
+│         managed-orgs/    ← Multi-org 관리                    │
+│       admin/                                                  │
+│     modules/              ← Pack/Module 메타데이터           │
+│       pack-a-business/                                        │
+│       pack-b-rd-support/                                      │
+│       pack-d-hr/         (★ apps/flowteams 흡수)             │
+│       pack-e-content/                                         │
+│       pack-f-erp/        (1년 후)                            │
+│       pack-g-desktop/                                         │
+│     lib/                                                      │
+│       module-registry.ts                                      │
+│       sidebar.ts         ← buildSidebar(org, user, tenant)   │
+│       tenant-context.ts  ← active tenant 관리                │
 │                                                              │
-│   companion apps (별도 배포):                                 │
-│     apps/desktop          (Electron 클라이언트)              │
-│     apps/agent-bridge     (HTTP AI 서비스)                   │
+│   companion (별도 배포):                                      │
+│     apps/desktop                                              │
+│     apps/agent-bridge                                         │
 ├──────────────────────────────────────────────────────────────┤
-│  Layer 3: Packages — 횡단(11) + PBC(3+) + Core(2+)            │
-│  ┌─ 횡단 ─────────────────────────────────────────────────┐   │
-│  │ ai · auth · crawler · db · docgen · email · matching   │   │
-│  │ notification · ocr · storage · ui                      │   │
-│  └────────────────────────────────────────────────────────┘   │
-│  ┌─ PBC (Phase 19 추출 완료) ──────────────────────────────┐  │
-│  │ pbc-image-engine     (WI-611 보강)                      │  │
-│  │ pbc-block-builder                                       │  │
-│  │ pbc-hr-payroll       (WI-612 보강)                      │  │
-│  └─────────────────────────────────────────────────────────┘  │
-│  ┌─ Core ──────────────────────────────────────────────────┐  │
-│  │ core-design-md       (WI-613 신규)                      │  │
-│  │ core-rebac           (미시작, 향후 분리)                │  │
-│  │ core-module-system   (★ WI-616 신규 — 모듈 시스템 자체) │  │
-│  └─────────────────────────────────────────────────────────┘  │
+│  Layer 3: Packages                                            │
+│   횡단 11: ai/auth/crawler/db/docgen/email/matching/...       │
+│   PBC (Phase 19):                                             │
+│     pbc-image-engine    (★ WI-611)                            │
+│     pbc-block-builder                                         │
+│     pbc-hr-payroll      (★ WI-612)                            │
+│   Core:                                                       │
+│     core-design-md      (★ WI-613)                            │
+│     core-module-system  (★ WI-616, 신규)                      │
+│     core-rebac          (미시작, 향후 분리)                  │
 ├──────────────────────────────────────────────────────────────┤
 │  Layer 2: FDP Core (현행)                                     │
-│  Layer 1: Rust 마이크로서비스 (PoC, 3년 후)                    │
+│  Layer 1: Rust 마이크로서비스 (3년 후)                        │
 └──────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. 모듈 ⊃ PBC 매트릭스
+## 2. Pack × Module × PBC 매트릭스
 
-`●●` 핵심 의존, `●` 사용함, `—` 미사용. `★` WI-611~615 보강 대상.
+(★ = WI-611~613 보강 / ☆ = WI-616~626 신규)
 
-| 모듈 \ PBC | image-engine | block-builder | hr-payroll | core-design-md ★ | consulting-crm (미추출) | erp-inventory (1년 후) | erp-orders (1년 후) | billing (1년 후) | messaging (1년 후) | scheduler (1년 후) | file-manager (1년 후) |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| M1 컨설팅 | — | ● 서류 | — | ● theme | ●● | — | — | ● | ● | ●● | ● |
-| M2 HR | — | — | ●● ★ | ● theme | — | — | — | ● | ● | — | — |
-| M3 콘텐츠 | ●● ★ | ●● | — | ● theme | — | — | — | ● | — | — | ● |
-| M4 ERP | ● 이미지 보정 | ● 상품 상세 | — | ● theme | — | ●● | ●● | ● | ● | — | ● |
-| M5 리터치 | ●● (RETOUCH) | — | — | ● theme | — | — | — | ● | — | — | ● |
-
-**관찰**:
-- 모든 모듈이 core-design-md 사용 (theme 갈아끼움)
-- 모든 모듈이 1년 후 pbc-billing 의존 (구독 결제)
-- image-engine은 콘텐츠(M3) + 리터치(M5)의 핵심 — WI-611 보강 우선순위 높음
+| Pack \ PBC | image-engine | block-builder | hr-payroll | consulting-crm | crawler | ocr | docgen | scheduler | core-design-md | core-module-system ☆ |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| A. 비즈니스 (10) | — | ● (서류) | — | ●● | — | ● | — | ● | ● | ●● |
+| B. 지원사업 (6) | — | ● (양식) | — | — | ●● | — | ● (HWPX) | — | ● | ●● |
+| D. HR (5) | — | — | ●● ★ | — | — | — | — | — | ● | ●● |
+| E. 콘텐츠 (4) | ●● ★ | ●● | — | — | — | — | — | — | ● | ●● |
+| F. ERP (7) | ● | ● (상품 상세) | — | — | — | — | — | — | ● | ●● |
+| G. Desktop (3) | — | — | — | — | ● | — | — | — | — | ●● |
 
 ---
 
-## 3. 모듈 시스템 구성 요소 (신규)
+## 3. Multi-org Tenancy 모델
 
-```
-core-module-system (★ WI-616)
-├── ModuleConfig 타입 (id, label, icon, nav, widgets, pbc, prismaModels, permissions, onInstall)
-├── module-registry.ts
-│   ├── registerModule(config)        모듈 등록
-│   ├── getInstalledModules(orgId)    조직 install 목록 조회
-│   ├── installModule(orgId, moduleId)
-│   └── uninstallModule(orgId, moduleId)
-├── sidebar.ts
-│   └── buildSidebar(org, user) → SidebarSection[]
-├── catalog-page.tsx                  모듈 카탈로그 UI (WI-617)
-└── permission-resolver.ts            ReBAC scope × 모듈
-```
+### 데이터 모델
+```typescript
+// 새 모델
+model ManagedOrg {
+  id           String @id
+  ownerOrgId   String  // 결제/관리 주체
+  name         String
+  bizRegNumber String?
+  status       ManagedOrgStatus  // ACTIVE/PAUSED/TERMINATED
+  installedPacks Json    // 이 ManagedOrg에 위탁된 Pack 목록
+  createdAt    DateTime
+}
 
-**저장**:
-- `OrgModuleInstall` Prisma model: `{ orgId, moduleId, installedAt, settings }`
-- 권한은 기존 ReBAC `RelationTuple`에 scope 차원 추가: `(orgId, userId, "hr:write")` 등
-
----
-
-## 4. 핵심 데이터 흐름 (콘텐츠 모듈 install 후 이미지 생성)
-
-```
-사용자: /create 페이지 진입
-   ↓
-middleware → org module install 체크 → "content" 모듈 install 확인
-   ↓
-middleware → user permission 체크 → "content:write" 확인
-   ↓
-페이지 렌더 (page.tsx, RSC)
-   ↓ Server Action 호출
-@axle/pbc-image-engine.generate(req)    ← ★ WI-611
-   ├─ buildPrompt(req)
-   ├─ selectProvider(req)
-   ├─ provider.generate(...)
-   └─ getEstimatedCost(req)
-   ↓
-저장 (pbc-file-manager) + 크레딧 차감 (pbc-billing)
-   ↓
-응답 → 사용자 화면에 이미지 표시
+// Multi-org 적용 모든 테이블에 추가
+model Payroll {
+  id           String @id
+  tenantOrgId  String  // self 또는 ManagedOrg.id
+  // ...
+  @@index([tenantOrgId])
+}
 ```
 
-**install 안 됐을 때**: middleware가 403 + "/settings/modules?focus=content"로 리다이렉트
+### ReBAC scope
+```typescript
+// 본인 조직 owner
+{ userId, orgId: self, scope: "tenant:*" }
+
+// 컨설턴트 (위탁 컨설팅 담당)
+{ userId, orgId: self, scope: "tenant:<managedOrgId>" }
+
+// 위탁 직원
+{ userId, orgId: managedOrgId, scope: "tenant:self + hr:read" }
+```
+
+### 모듈 설계
+- Pack A 재무/분석: 모든 query에 `WHERE tenantOrgId = activeTenant`
+- Pack B AI 매칭/일지: 동일
+- Pack D 전체: 동일
 
 ---
 
-## 5. WI-611~615 → v2에서 의미
+## 4. core-module-system (★ WI-616 신규)
 
-| WI | v2 의미 | 유효성 |
-|---|---|---|
-| WI-611 | M3 콘텐츠 + M5 리터치 모듈의 핵심 의존 PBC 보강 | ✅ 유지 (모델 무관) |
-| WI-612 | M2 HR 모듈의 PayrollService 팩토리 | ✅ 유지 |
-| WI-613 | 모든 모듈의 theme 갈아끼움 가능하게 | ✅ 유지 |
-| WI-614 (이전: showcase 데모) | ❌ 무의미 — 데모가 아니라 모듈 시스템 자체 구축이 필요 | 🔄 재정의 |
-| WI-615 (이전: flowteams shell) | ❌ flowteams 자체가 흡수 대상이라 shell 적용은 무의미 | 🔄 재정의 |
+```typescript
+// packages/core-module-system/
+
+interface ModuleConfig {
+  id: string;                  // "customers", "payroll", ...
+  packId: string;              // "A", "B", "D", "E", "F", "G"
+  label: string;
+  icon?: string;
+  route: string;
+  permission: string;          // ReBAC scope
+  multiOrg: boolean;           // tenantOrgId 사용 여부
+  pbc: string[];               // 의존 PBC
+  deps: {
+    hard?: string[];           // 부모 모듈 (install 차단)
+    soft?: string[];           // 통합 효과 (자동 연결)
+  };
+  prismaModels: string[];
+  widgets?: WidgetDef[];
+  onInstall?: (deps: { prisma, orgId, ai? }) => Promise<void>;
+}
+
+interface PackConfig {
+  id: string;                  // "A"
+  label: string;               // "비즈니스 운영"
+  modules: string[];           // ["customers", "projects", ...]
+  pricing: { monthly: number };
+  recommended?: boolean;       // Pack A는 default 추천
+}
+
+// Public API
+registerModule(config: ModuleConfig): void
+registerPack(config: PackConfig): void
+getInstalledModules(orgId): Promise<string[]>
+installModule(orgId, moduleId): Promise<void>
+installPack(orgId, packId): Promise<void>
+uninstallModule(orgId, moduleId): Promise<void>
+checkDependencies(orgId, moduleId): Promise<{ ok: boolean; missing: string[] }>
+isMultiOrgActive(orgId): Promise<boolean>
+buildSidebar(orgId, userId, activeTenant): Promise<SidebarSection[]>
+```
 
 ---
 
-## 6. 신규 WI 후보 (v2 도입)
+## 5. 데이터 흐름 — Multi-org 시 (HR 위탁 시나리오)
 
-| WI | 내용 | 우선순위 |
-|---|---|---|
-| WI-616-feat | `core-module-system` 패키지 (ModuleConfig + registry) | P0 |
-| WI-617-feat | `/settings/modules` 카탈로그 UI | P0 |
-| WI-618-feat | 동적 사이드바 빌더 (buildSidebar) | P0 |
-| WI-619-feat | 모듈 권한 (ReBAC scope: consulting:*/hr:*/content:*/...) | P0 |
-| WI-620-refactor | apps/flowteams → src/modules/hr (라우트 이전 + 디렉토리 제거) | P1 |
-| WI-621-feat | 5개 모듈 메타데이터 (consulting/hr/content/erp/retouch module.config.ts) | P1 |
-| WI-622-feat | 모듈별 onInstall hook (seed 데이터, default role) | P2 |
-| WI-623-feat | 결제 모듈 단위 (Polar subscription per module) | P2 — 1년 후 |
+```
+사용자 (FlowCoder 컨설턴트) 로그인
+  ↓
+Topbar 스위처에서 "ABC Manufacturing" 선택
+  ↓
+session.activeTenant = "ABC"
+  ↓
+/payroll 페이지 진입
+  ↓
+middleware:
+  ├─ packInstalled("D")?         → ✓
+  ├─ moduleInstalled("payroll")? → ✓
+  ├─ userPerm("hr:write")?       → ✓
+  ├─ tenantScope("D.02", "ABC")? → ✓ (tenant:ABC 권한 보유)
+  └─ 통과
+  ↓
+RSC 페이지 렌더
+  ↓ Server Action
+createPayrollService({prisma}).calculate(input)   ← ★ WI-612
+  ↓ Prisma query
+SELECT * FROM Payroll WHERE tenantOrgId = "ABC"   ← multi-org scoping
+  ↓
+ABC Manufacturing 직원들의 급여 데이터만 반환
+```
 
 ---
 
-## 7. 1년 후 도달 조건 (v2 기준)
+## 6. 6 Pack vs Domain Apps (v1/v2와 비교)
+
+| 항목 | v1 (6 도메인 앱) | v2 (5 도메인 모듈) | v3 (6 Pack × 35 모듈) |
+|---|---|---|---|
+| 배포 | 6 앱 | 1 앱 | 1 앱 (apps/web) |
+| 사용자 진입 | 6 도메인 | 1 도메인 | 1 도메인 + tenant 스위처 |
+| 모듈 단위 | 앱 | 도메인(5) | **모듈(35) 또는 Pack(6)** |
+| 멀티 테넌시 | 앱별 | 미정 | **별도 tier (Multi-org)** |
+| FlowTeams | 별도 앱 | 별도 앱 | **흡수 (WI-621)** |
+| 컨설팅 Pack | 별도 묶음 | 13 모듈 묶음 | **해체** — Pack A에 흡수, 자유도 개방 |
+| 연구일지 | 컨설팅 | 컨설팅 | **Pack B (지원사업)** |
+| 리터치 | 별도 앱 | 별도 모듈 | **제거** — Pack E의 RETOUCH 모드 |
+
+---
+
+## 7. WI 의존성 그래프
+
+```
+WI-616 core-module-system (foundation)
+  ├── WI-617 Pack 카탈로그 UI
+  ├── WI-618 동적 사이드바
+  ├── WI-619 모듈 ReBAC
+  ├── WI-620 Multi-org tenancy 모델
+  └── WI-621 flowteams 흡수
+       └── WI-622~626 각 Pack 모듈 메타데이터 (병렬 가능)
+
+WI-611 image-engine orchestrator (독립)
+WI-612 hr-payroll factory (독립)
+WI-613 core-design-md (독립)
+```
+
+WI-616이 foundation. 나머지는 WI-616 머지 후 병렬 진행 가능.
+
+---
+
+## 8. 1년 후 도달 조건 (v3 기준)
 
 - 단일 axle.io 플랫폼 운영
-- 5-6개 모듈 운영 가능 (install/uninstall 동작)
-- 외부 1개 모듈 등록 시도 (개발자가 module.config.ts 제출 → 검증 → 카탈로그 노출)
-- DESIGN.md 3개 theme (FlowCoder default + 2개)
+- 6개 Pack 운영 (모두 install 가능)
+- Multi-org tier 운영 (10+ 조직 위탁 관리 검증)
+- 외부 1개 모듈 등록 시도 (외부 개발자 module.config.ts 제출 → 검증 → 카탈로그 노출)
+- DESIGN.md 3개 theme
 - PBC 10개 (Top 3 + billing/erp×2/file-manager/messaging/scheduler/consulting-crm)
