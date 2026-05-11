@@ -6,7 +6,7 @@ Pre-Built Component (PBC): the **single image-generation surface** shared by Flo
 
 ## Status
 
-**Phase 19 complete** (WI-401 ~ WI-410). All five providers, the seven generation modes, and the v1 / re compat shims are shipped. CHANGELOG: [`CHANGELOG.md`](./CHANGELOG.md).
+**Phase 19 complete** (WI-401 ~ WI-410, WI-611). All five providers, the seven generation modes, the v1 / re compat shims, and the `generate()` + `getEstimatedCost()` orchestrator are shipped. CHANGELOG: [`CHANGELOG.md`](./CHANGELOG.md).
 
 ## What this package owns
 
@@ -15,7 +15,7 @@ Pre-Built Component (PBC): the **single image-generation surface** shared by Flo
 | Providers | `google-genai`, `vertex-ai`, `openrouter`, `comfyui-local`, `comfyui-cloud` |
 | Modes | `CREATE`, `EDIT`, `COMPOSITE`, `POSTER`, `DETAIL_EDIT`, `DETAIL_PAGE`, `RETOUCH` |
 | Types | `GenerationRequest`, `GenerationResult`, `GeneratedImage`, `ImageGenerationError`, `GenerationCost` |
-| Helpers | `selectProvider()`, `applyPreset()`, `getWorkflow()` |
+| Helpers | `generate()`, `getEstimatedCost()`, `buildPrompt()`, `selectProvider()`, `applyPreset()`, `getWorkflow()` |
 | Presets | `RETOUCH_PRO`, `RETOUCH_FREE` (FlowRetouch system prompts, canonical) |
 | Compat | `compat/flowstudio-v1`, `compat/flowstudio-re` (1-line import migrations) |
 
@@ -39,38 +39,39 @@ Each provider reads its credentials from env vars; pass options to the construct
 
 ## Usage examples
 
-The five examples below cover the modes called out in the spec's acceptance criteria (`CREATE`, `EDIT`, `POSTER`, `DETAIL_EDIT`, `RETOUCH`). Adapt the `provider` pin to your runtime; omitting it lets `selectProvider()` choose using the per-mode default preference list.
+The five examples below cover the modes called out in the spec's acceptance criteria (`CREATE`, `EDIT`, `POSTER`, `DETAIL_EDIT`, `RETOUCH`). Examples 1, 2, and 5 use the recommended `generate()` orchestrator; examples 3 and 4 show direct provider instantiation when you need adapter-level control. Omit `provider` to let `selectProvider()` choose from the per-mode default preference list.
+
+> **Recommended path:** call `generate(req)` from `@axle/pbc-image-engine`. The orchestrator picks the provider, applies your registered preset, normalizes errors, and attaches a `cost` estimate.
+>
+> Instantiating a provider class directly (e.g. `new GoogleGenAIProvider()`) is still supported for apps that need to inject a custom `fetch`, base URL, or credentials — see the architecture notes below and the unit tests for the `options.providers` injection pattern.
 
 ### 1. CREATE — generate from a text prompt
 
 ```ts
-import { GoogleGenAIProvider, type GenerationRequest } from "@axle/pbc-image-engine";
-
-const provider = new GoogleGenAIProvider(); // reads GEMINI_API_KEY
+import { generate, type GenerationRequest } from "@axle/pbc-image-engine";
 
 const req: GenerationRequest = {
   prompt: "studio portrait of a calico cat, soft window light, shallow depth of field",
   mode: "CREATE",
-  provider: "google-genai",
   aspectRatio: "3:4",
   count: 1,
 };
 
-const result = await provider.generate(req);
+// No `provider` pin → selectProvider() picks the first available default (google-genai for CREATE).
+const result = await generate(req);
 console.log(result.images[0]?.mimeType); // "image/png"
+console.log(result.cost?.usd);           // estimated USD if the adapter didn't supply one
 console.log(result.duration);            // wall-clock ms
 ```
 
 ### 2. EDIT — modify an existing image
 
-`sourceImage` accepts a `data:image/png;base64,…` URI **or** raw base64 bytes. Vertex / Imagen handles inpaint quality best, but Gemini also accepts the input.
+`sourceImage` accepts a `data:image/png;base64,…` URI **or** raw base64 bytes. Pin `provider: "vertex-ai"` for Imagen's stronger inpaint, or omit it to let the orchestrator default to Vertex (EDIT's first preference).
 
 ```ts
-import { VertexAIProvider } from "@axle/pbc-image-engine";
+import { generate } from "@axle/pbc-image-engine";
 
-const provider = new VertexAIProvider();
-
-const result = await provider.generate({
+const result = await generate({
   prompt: "Replace the background sky with a sunset, keep the subject untouched",
   mode: "EDIT",
   provider: "vertex-ai",
@@ -127,35 +128,55 @@ const result = await provider.generate({
 
 ### 5. RETOUCH — apply the FlowRetouch PRO preset
 
-The `RETOUCH_PRO` / `RETOUCH_FREE` presets carry the canonical FlowRetouch system prompt. Use `applyPreset()` to merge the preset's defaults under your request, or spread the preset directly.
+The `RETOUCH_PRO` / `RETOUCH_FREE` presets carry the canonical FlowRetouch system prompt. Pass `style: "retouch-pro"` on the request and the orchestrator applies the preset automatically — no manual `applyPreset()` call needed.
 
 ```ts
-import {
-  GoogleGenAIProvider,
-  RETOUCH_PRO,
-  applyPreset,
-  type GenerationRequest,
-} from "@axle/pbc-image-engine";
+import { generate } from "@axle/pbc-image-engine";
 
-const provider = new GoogleGenAIProvider();
-
-// Option A: declare the preset id, let applyPreset() merge it.
-const req: GenerationRequest = applyPreset({
+const result = await generate({
   prompt: "Even out skin tone, soften under-eye shadows, keep natural texture",
   mode: "RETOUCH",
-  provider: "google-genai",
   sourceImage: portraitBase64,
-  style: "retouch-pro", // looked up in PRESETS
+  style: "retouch-pro", // PRO_MODE_SYSTEM_PROMPT is merged in automatically
 });
-
-// Option B: spread the preset for explicit control.
-// const req = { ...RETOUCH_PRO, prompt, sourceImage, mode: "RETOUCH", provider: "google-genai" };
-
-const result = await provider.generate(req);
 // PRO_MODE_SYSTEM_PROMPT enforces identity preservation + editorial-grade output
 ```
 
+You can still spread the preset or call `applyPreset()` manually when you want explicit control:
+
+```ts
+import { RETOUCH_PRO, applyPreset, generate } from "@axle/pbc-image-engine";
+
+const result = await generate(
+  applyPreset({
+    ...RETOUCH_PRO,
+    prompt: "Even out skin tone, soften under-eye shadows",
+    sourceImage: portraitBase64,
+    mode: "RETOUCH",
+  }),
+);
+```
+
 ---
+
+## Cost preview
+
+`getEstimatedCost()` returns a deterministic, conservative `{ credits, usd }` estimate for a request. Useful for rendering a pre-call cost preview or running a budget check before calling `generate()`. The function never throws and always returns positive numbers — unknown combinations fall back to safe defaults.
+
+```ts
+import { getEstimatedCost } from "@axle/pbc-image-engine";
+
+const { credits, usd } = getEstimatedCost({
+  prompt: "studio cat",
+  mode: "CREATE",
+  provider: "google-genai",
+  aspectRatio: "3:4",
+  count: 2,
+});
+console.log(`~${credits} credits / $${usd}`);
+```
+
+Credit deduction itself is owned by the consumer app's billing layer — this function only powers UI previews.
 
 ## Auto provider selection
 

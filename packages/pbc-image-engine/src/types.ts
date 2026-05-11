@@ -111,8 +111,9 @@ export class ImageGenerationError extends Error {
 
 /**
  * Public engine surface. Concrete `generate` / `selectProvider` /
- * `getEstimatedCost` arrive in WI-402..WI-406; this interface is exposed now so
- * dependent PBCs (e.g. pbc-block-builder's RenderContext) can declare their
+ * `getEstimatedCost` shipped in WI-611 (orchestrator) on top of the
+ * WI-402..WI-406 provider work; this interface stays exposed so dependent
+ * PBCs (e.g. pbc-block-builder's RenderContext) can declare their
  * dependency against the contract instead of the implementation.
  */
 export interface ImageEngine {

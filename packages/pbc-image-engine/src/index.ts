@@ -1,10 +1,11 @@
 /**
  * @axle/pbc-image-engine — public entry.
  *
- * WI-401 shipped the type contract. WI-402 adds the three Direct API
+ * WI-401 shipped the type contract. WI-402 added the three Direct API
  * adapters (google-genai / vertex-ai / openrouter) ported from FlowStudio
- * v2's `imageProvider/`. The orchestrator (`generate`, `selectProvider`,
- * `getEstimatedCost`) lands in WI-403; ComfyUI adapters in WI-404/405.
+ * v2's `imageProvider/`. WI-611 shipped the orchestrator (`generate`,
+ * `selectProvider`, `getEstimatedCost`). ComfyUI adapters live in
+ * `providers/comfyui*`.
  */
 
 export {
@@ -63,6 +64,13 @@ export type {
 
 export { getDefaultPreferences, selectProvider } from "./selectProvider.js";
 export type { SelectProviderOptions } from "./selectProvider.js";
+
+export { generate } from "./generate.js";
+export type { GenerateOptions } from "./generate.js";
+
+export { getEstimatedCost } from "./cost.js";
+
+export { buildPrompt } from "./promptBuilder.js";
 
 export {
   FREE_MODE_SYSTEM_PROMPT,
