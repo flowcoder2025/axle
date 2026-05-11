@@ -1,8 +1,11 @@
 # Sprint Contract — WI-614-feat apps/web에 pbc-block-builder 사용 데모 페이지
 
+> **CANCELLED** (2026-05-11): v3 모듈 시스템 도입으로 의미 변경. "데모 페이지"가 아니라 모듈 시스템 자체를 구축하면 자연스럽게 PBC 사용 evidence가 생김. WI-622 (Pack A 모듈 메타데이터)와 WI-625 (Pack E 모듈)가 대체.
+
 ## 계약 상태
 - [x] 리드 초안 작성
 - [x] 자율 루프 진입 승인 (사용자, 2026-05-07)
+- [x] **취소** (사용자, 2026-05-11) — v3 모듈 시스템으로 대체
 
 ## 배경
 `grep -r "@axle/pbc-block-builder" apps/web/` → 0건. PBC가 추출됐지만 AXLE web 어디에서도 사용되지 않아 "메타플랫폼 위에서 도메인 앱이 PBC를 사용한다"는 핵심 검증 지표가 비어 있다. 사양 §5 Acceptance도 "FlowStudio v2가 PBC API로 동작"을 요구하나 cross-repo는 본 audit 범위 밖이라, AXLE web 자체에 데모 1건을 두어 PBC 사용 evidence를 확보한다.
