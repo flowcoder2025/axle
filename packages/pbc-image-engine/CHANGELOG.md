@@ -6,7 +6,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Thi
 
 ## [Unreleased]
 
-_No unreleased changes._
+### Added
+
+- **`generate()` orchestrator** (WI-611): single entry point that runs `selectProvider()`, applies a registered preset, lazily instantiates the matching adapter (or uses one injected via `options.providers`), and normalises adapter errors into `ImageGenerationError`. Replaces the "instantiate a provider class directly" workaround the previous README documented.
+- **`getEstimatedCost()`** (WI-611): deterministic `{ credits, usd }` preview for a request. Never throws, always returns positive numbers; safe default fallback for unknown combinations.
+- **`buildPrompt()`** (WI-611): prompt normalisation helper used by `generate()` — applies preset, injects mode-aware system hint, appends negative prompt + aspect ratio tail.
+
+### Changed
+
+- README's five usage examples now lead with `generate()`; direct provider instantiation is documented as the adapter-level escape hatch rather than the recommended path.
 
 ## [0.0.1] — 2026-05-05 — Phase 19 / WI-401 ~ WI-410
 
