@@ -595,5 +595,18 @@
 - [ ] WI-611-feat pbc-image-engine `generate()` + `getEstimatedCost()` orchestrator 구현 (provider 직접 호출 우회 제거) | L1:Phase19 > L2:Gap > L3:ImageOrchestrator
 - [ ] WI-612-feat pbc-hr-payroll `createPayrollService` 팩토리 + `generateStatement` (HTML/markdown 우선) | L1:Phase19 > L2:Gap > L3:PayrollFactory
 - [ ] WI-613-feat packages/core-design-md 신규 PBC — DESIGN.md 토큰 파서 + Tailwind/CSS var 주입 hook | L1:Phase19 > L2:Gap > L3:CoreDesignMd
-- [ ] WI-614-feat apps/web (marketing)에 pbc-block-builder 사용 데모 페이지 (renderComposition 실호출) | L1:Phase19 > L2:Gap > L3:BlockBuilderDemo
-- [ ] WI-615-refactor apps/flowteams에 app-shell-ux 표준 sidebar+topbar 적용 (packages/ui sidebar 재사용) | L1:Phase19 > L2:Gap > L3:FlowTeamsShell
+- [~] WI-614-feat ~~apps/web (marketing)에 pbc-block-builder 사용 데모 페이지~~ — **취소 (v3 모듈 시스템 도입으로 의미 변경)** | L1:Phase19 > L2:Gap > L3:CANCELLED
+- [~] WI-615-refactor ~~apps/flowteams에 app-shell-ux 표준 sidebar+topbar 적용~~ — **취소 (WI-621로 대체)** | L1:Phase19 > L2:Gap > L3:CANCELLED
+
+### L2: module-system > L3: v3 모듈 시스템 + Multi-org tenancy (2026-05-11~)
+- [ ] WI-616-feat packages/core-module-system — ModuleConfig + PackConfig + registry + dependency resolver + buildSidebar | L1:Phase19 > L2:ModuleSystem > L3:Core
+- [ ] WI-617-feat apps/web/src/app/settings/modules — Pack/Module install/uninstall 카탈로그 UI | L1:Phase19 > L2:ModuleSystem > L3:CatalogUI
+- [ ] WI-618-feat 동적 사이드바 — Pack-aware + 권한 + active tenant scope 적용 | L1:Phase19 > L2:ModuleSystem > L3:Sidebar
+- [ ] WI-619-feat 모듈 ReBAC — scope permissions (customers:* / payroll:* / matching:* / ...) | L1:Phase19 > L2:ModuleSystem > L3:ReBAC
+- [ ] WI-620-feat Multi-org tenancy 모델 — ManagedOrg model + tenantOrgId + Topbar 조직 스위처 | L1:Phase19 > L2:ModuleSystem > L3:MultiOrg
+- [ ] WI-621-refactor apps/flowteams → apps/web/src/modules/hr 마이그레이션 (4페이지 + services.ts 이전, 디렉토리 제거) | L1:Phase19 > L2:ModuleSystem > L3:FlowTeamsAbsorb
+- [ ] WI-622-feat Pack A 모듈 메타데이터 (10개 module.config.ts: customers/projects/estimates/contracts/documents/portal/calendar/meetings/finance/analytics) | L1:Phase19 > L2:ModuleSystem > L3:PackA
+- [ ] WI-623-feat Pack B 모듈 메타데이터 (6개: programs/matching/journals/hwpx/checklist/ai-patterns) | L1:Phase19 > L2:ModuleSystem > L3:PackB
+- [ ] WI-624-feat Pack D 모듈 메타데이터 (5개: employees/payroll/attendance/leave/nomu) | L1:Phase19 > L2:ModuleSystem > L3:PackD
+- [ ] WI-625-feat Pack E 모듈 메타데이터 (4개: image-generation/builder/presets/workflows) | L1:Phase19 > L2:ModuleSystem > L3:PackE
+- [ ] WI-626-feat Pack G 모듈 메타데이터 (3개: portal-automation/cert-management/voice-recording) | L1:Phase19 > L2:ModuleSystem > L3:PackG

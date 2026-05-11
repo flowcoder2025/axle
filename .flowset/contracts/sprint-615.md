@@ -1,8 +1,11 @@
 # Sprint Contract — WI-615-refactor apps/flowteams app-shell-ux 표준 sidebar+topbar 적용
 
+> **CANCELLED** (2026-05-11): v3 모듈 시스템 도입으로 의미 변경. apps/flowteams 자체가 흡수 대상(WI-621). shell 적용은 무의미하므로 WI-621이 대체.
+
 ## 계약 상태
 - [x] 리드 초안 작성
 - [x] 자율 루프 진입 승인 (사용자, 2026-05-07)
+- [x] **취소** (사용자, 2026-05-11) — WI-621로 대체
 
 ## 배경
 `docs/specs/meta-platform/app-shell-ux.md`가 정의한 메타플랫폼 표준 shell(sidebar 1개 + topbar 1개)을 `apps/flowteams`가 따르지 않는다. 현재 flowteams의 `app/layout.tsx`는 metadata만 있고 sidebar/topbar 없음. AXLE web은 이미 sidebar+topbar 패턴이 있으므로, **flowteams가 동일 패턴을 공유하는지가 메타플랫폼의 핵심 검증 지표**.

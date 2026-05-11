@@ -12,6 +12,75 @@
 
 이 문서는 **AXLE의 sub-spec**이다. AXLE 본체 `PRD.md`(컨설팅 자동화 플랫폼)와 `.flowset/requirements.md`는 **건드리지 않는다**.
 
+---
+
+## 0.5 v3 모델 정정 (2026-05-11) — 핵심 변경
+
+> **사용자 피드백으로 모델이 크게 정정됨**. v1/v2의 "도메인 앱 분리" 가정은 폐기. 본 PRD의 §3 §4 §9 §11 일부는 v3 정정 사항으로 대체됨. 시각적 정의는 `/Volumes/포터블/AXLE/wireframes/` 참고.
+
+### v1/v2 → v3 변경 요약
+
+| 항목 | v1/v2 (이전 모델) | v3 (정정) |
+|---|---|---|
+| 배포 단위 | 6개 별도 앱 (axle/flowstudio/flowteams/flowvue/flowretouch/+1) | **단일 플랫폼** (apps/web 하나) |
+| FlowStudio/FlowVue/FlowRetouch | apps/* 신규 생성 | **별도 앱 미생성** — 기능을 모듈로 흡수 |
+| FlowTeams | apps/flowteams 별도 | **apps/web/src/modules/hr/ 흡수** (WI-621) |
+| 분류 단위 | 도메인 앱 | **6 Pack × 35 모듈** (자유 선택) |
+| 컨설팅 묶음 | "컨설팅 전용 13 모듈" 가정 | **해체** — 고객/견적/계약/포털 모두 누구나 사용 (clientId/projectId nullable) |
+| 연구일지 | 컨설팅 공통 | **Pack B (정부 지원사업)** 이동 |
+| 리터치 | 별도 모듈/앱 | **제거** — Pack E의 RETOUCH 모드 흡수 |
+| Tenancy | 단일 (자기 조직만) | **2-tier**: Single-org (default) / Multi-org (premium, 별도 요금제) |
+
+### v3 단일 플랫폼 모델 (Odoo-style)
+
+```
+axle.io (apps/web 하나)
+├── 공통 (항상): 로그인 / 대시보드 / 알림 / 설정 / 관리자
+├── Pack A. 비즈니스 운영 (10 modules)  default 추천
+├── Pack B. 정부 지원사업 + R&D (6)
+├── Pack D. HR (5)                      ★ apps/flowteams 흡수
+├── Pack E. 콘텐츠 (4)
+├── Pack F. ERP (7)                     1년 후
+└── Add-on G. Desktop (3)               Electron 필요
+
+★ Multi-org Tier (별도 요금제):
+  - Topbar 조직 스위처 (FlowCoder Inc. ↔ 관리 조직 N개)
+  - 적용 모듈: A 재무/분석, B AI매칭/연구일지, D 전체
+  - tenantOrgId 데이터 scope
+  - ReBAC scope: tenant:* 또는 tenant:<managedOrgId>
+```
+
+### v3 성공 기준 (구 §1 §5 대체)
+
+- 단일 플랫폼 (apps/web)에 6 Pack 운영 가능
+- 35 모듈 install/uninstall 동작 (개별 + Pack 단위)
+- Multi-org tier 운영 검증 (10+ 관리 조직)
+- 외부 1개 모듈 등록 시도 (외부 개발자 module.config.ts 제출)
+- DESIGN.md 3개 theme
+- PBC 10개
+
+### 신규 WI (v3 모듈 시스템)
+
+WI-611~613 (PBC 보강) **유지**. WI-614/615 **재정의 또는 취소** (showcase/flowteams shell은 의미가 달라짐).
+
+| WI | 내용 |
+|---|---|
+| WI-616 | `core-module-system` 패키지 (ModuleConfig + registry + dependency resolver) |
+| WI-617 | `/settings/modules` Pack 카탈로그 UI |
+| WI-618 | 동적 사이드바 빌더 (buildSidebar) |
+| WI-619 | 모듈 ReBAC (scope: customers:* / payroll:* / ...) |
+| WI-620 | Multi-org tenancy 모델 (ManagedOrg + tenantOrgId + 조직 스위처) |
+| WI-621 | apps/flowteams → apps/web/src/modules/hr/ 마이그레이션 |
+| WI-622~626 | Pack A/B/D/E/G 모듈 메타데이터 (각 module.config.ts) |
+
+### 가격 정책
+
+v3에서 가격 모델 추가됨 (TBD, 별도 라운드):
+- Pack 단위 또는 개별 모듈 install
+- Multi-org tier 별도 요금 (base + 관리 조직당)
+- 상세 가격은 와이어프레임의 `module-catalog.md` 참고 (추정치)
+
+
 **2026-05-04 갱신**: Phase 17/18 sync 결과(PR #99 `eb71097`) 핵심부가 머지 완료됨. 외부 의존 작업(14건)을 별도 트랙으로 분리하고 메타플랫폼 게이트는 "핵심부 완료"로 완화. Phase 19로의 진입이 가능한 상태.
 
 ### 외부 의존 보류 트랙 (메타플랫폼 게이트와 분리)
@@ -33,12 +102,16 @@
 - **이름**: AXLE Meta-Platform Promotion
 - **목표**: AXLE을 컨설팅 SaaS에서 **다중 도메인 메타플랫폼 monorepo**로 승격. 누적 자산(이미지 엔진 7개, 블록 빌더, HR, ERP)을 PBC(Packaged Business Capability)로 추출하여 재사용 가능한 모듈 카탈로그 구축.
 - **대상 사용자**: FlowCoder 팀 (개발), 향후 메타플랫폼 위에서 운영할 SaaS의 최종 사용자
-- **성공 기준**:
-  - 메타플랫폼 위에서 **3개 이상 도메인 앱**이 동작 (axle/flowstudio/flowteams)
-  - **3개 PBC**가 다른 앱에서 즉시 사용 가능 (`@axle/pbc-*`)
+- **성공 기준** (v3 정정 — §0.5 참고):
+  - 단일 플랫폼(apps/web)에 6 Pack 운영 가능 + 35 모듈 install/uninstall 동작
+  - Multi-org tier 운영 (10+ 관리 조직 위탁 컨설팅 검증)
+  - **3개 PBC**가 모듈에서 즉시 사용 가능 (`@axle/pbc-*`)
   - PBC 단위 테스트 커버리지 ≥ 80%
-  - 7개 이미지 생성 앱이 단일 `pbc-image-engine` 호출로 작동
-  - DESIGN.md 1개 시범 앱에 적용 (FlowStudio v2)
+  - 7개 이미지 생성 모드가 단일 `pbc-image-engine.generate()` 호출로 작동
+  - DESIGN.md 1개 theme 시범 적용
+
+  > ~~메타플랫폼 위에서 3개 이상 도메인 앱이 동작 (axle/flowstudio/flowteams)~~ — v1/v2 가정 폐기.
+  > ~~DESIGN.md 1개 시범 앱에 적용 (FlowStudio v2)~~ — FlowStudio 별도 앱 미생성, theme만 적용.
 
 ---
 
@@ -68,22 +141,22 @@
 
 ---
 
-## 3. 4-Layer 아키텍처
+## 3. 4-Layer 아키텍처 (v3 정정 — §0.5 참고)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Layer 4: DESIGN.md theme packs                             │
-│   flowcoder/ax-studio/flowvue/toss-style 등 갈아끼움          │
+│   flowcoder-default + (옵션) Pack별 theme 갈아끼움            │
 ├─────────────────────────────────────────────────────────────┤
-│  Layer 3: Module Catalog (AXLE Turborepo 확장)               │
+│  Layer 3: Single Platform + Pack 모듈 시스템                  │
 │                                                              │
 │   apps/                                                      │
-│     ├─ axle/        (현 AXLE web — 컨설팅 SaaS)              │
-│     ├─ desktop/     (현행 유지)                              │
-│     ├─ agent-bridge/(현행 유지)                              │
-│     ├─ flowvue/     (신규 — ERP shell)                       │
-│     ├─ flowteams/   (신규 — HR shell, FlowTeams 이전)        │
-│     └─ flowstudio/  (신규 — 콘텐츠 shell, FlowStudio 이전)   │
+│     ├─ web/         (★ 단일 플랫폼 — 모든 모듈 라우트 호스팅) │
+│     │    src/app/(platform)/ 안에 35 모듈 페이지              │
+│     │    src/modules/{pack-a,pack-b,pack-d,pack-e,pack-f,pack-g}/ │
+│     ├─ desktop/     (현행 유지 — Pack G 모듈 IPC 제공)        │
+│     ├─ agent-bridge/(현행 유지 — AI 백그라운드 서비스)         │
+│     └─ ~~flowvue/ flowteams/ flowstudio/~~ — v1/v2 폐기, 흡수 │
 │                                                              │
 │   packages/  [기존 11 횡단 + 신규 PBC]                       │
 │     [횡단 — AXLE 현행 11개 유지]                              │
@@ -96,7 +169,8 @@
 │     pbc-hr-payroll/      (Top 3 — FlowTeams 추출)            │
 │                                                              │
 │     [Core — 신규]                                             │
-│     core-design-md/      (DESIGN.md 로더)                    │
+│     core-design-md/      (DESIGN.md 로더, ★ WI-613)          │
+│     core-module-system/  (★ WI-616, Pack/Module registry)    │
 │     core-rebac/          (현 packages/auth ReBAC 로직 추출)  │
 ├─────────────────────────────────────────────────────────────┤
 │  Layer 2: FDP Core (현행)                                    │
@@ -137,11 +211,30 @@
 #### L2-B1: core-design-md
 - DESIGN.md 파서 + 로더
 - React 컴포넌트에 디자인 토큰 주입
-- 시범: FlowStudio v2
+- 시범: apps/web (FlowCoder default theme)
+- WI-613
 
 #### L2-B2: core-rebac
 - 현 `packages/auth/` 안의 ReBAC 로직을 분리
 - 다른 PBC들이 권한 결정 로직만 import 가능하게
+- v3에서 추가: **tenant scope** 지원 (Multi-org tier용 — tenant:* / tenant:<managedOrgId>)
+
+#### L2-B3: core-module-system (★ v3 신규)
+- Pack/Module 메타데이터 registry
+- ModuleConfig: `{ id, packId, label, route, permission, multiOrg, pbc, deps, prismaModels, onInstall }`
+- PackConfig: `{ id, label, modules, pricing, recommended }`
+- API: `registerModule` / `installModule` / `installPack` / `buildSidebar(orgId, userId, activeTenant)` / `isMultiOrgActive` / `checkDependencies`
+- WI-616
+
+### L1-D: Multi-org Tenancy (★ v3 신규)
+
+#### L2-D1: ManagedOrg 모델 + Tenant scoping
+- `model ManagedOrg { id, ownerOrgId, name, status, installedPacks }`
+- 모든 multi-org 적용 테이블에 `tenantOrgId` 추가 (self 또는 ManagedOrg.id)
+- Topbar 조직 스위처 UI
+- ReBAC scope: tenant:* (모든) / tenant:<managedOrgId> (특정)
+- 적용 모듈: A 재무/분석, B AI매칭/연구일지, D 전체
+- WI-620
 
 ### L1-C: Rust 마이크로서비스 (PoC)
 
@@ -214,17 +307,25 @@
 - ✅ Phase 18 핵심부 sync: 벤처/연구소/특허/BUNDLE/포털스크래퍼 핵심 완료 (PR #99)
 - ✅ 외부 의존 14건은 별도 트랙으로 분리
 
-### 9.2 진입 절차
-1. 본 PRD 재검토 (가정 변동 점검)
-2. `.flowset/fix_plan.md`에 Phase 19 섹션 추가:
-   - WI-401~410 pbc-image-engine 추출
-   - WI-501~511 pbc-block-builder 추출
-   - WI-601~610 pbc-hr-payroll + FlowTeams 이전
-3. `.flowset/contracts/sprint-019-pbc-image-engine.md`로 본 sub-spec의 Sprint Contract 복사
-4. **블로커 수정 먼저** (리뷰 결과):
-   - B1: `pbc-block-builder.md`의 `ImageEngine` 타입 참조 정리
-   - B2: `pbc-hr-payroll.md`의 snake_case/camelCase 일관성
-5. `flowset.sh` 재기동 → 자동 루프 진입
+### 9.2 진입 절차 (v3 정정)
+
+**완료된 단계 (~2026-05-07)**:
+1. ~~Phase 19 fix_plan 추가~~ ✅ — WI-401~410/501~511/601~610 머지 완료
+2. ~~블로커 수정 (B1/B2/S10)~~ ✅ — PR #100 머지
+3. 후속 audit (2026-05-07): WI-611~615 추가 (PBC 보강 + 모듈 시스템 도입)
+
+**v3 진입 절차 (2026-05-11~)**:
+1. `.flowset/fix_plan.md`에서 WI-614/615 취소 또는 재정의 (의미 달라짐)
+2. WI-616~626 신규 등록:
+   - WI-616 core-module-system (foundation)
+   - WI-617 Pack 카탈로그 UI
+   - WI-618 동적 사이드바
+   - WI-619 모듈 ReBAC (scope)
+   - WI-620 Multi-org tenancy 모델
+   - WI-621 apps/flowteams → src/modules/hr 마이그레이션
+   - WI-622~626 Pack A/B/D/E/G 모듈 메타데이터
+3. Sprint contracts 작성 (`.flowset/contracts/sprint-616.md` ~ `sprint-626.md`)
+4. `flowset.sh` 재기동 → WI-611~613 (PBC 보강) → WI-616~626 (모듈 시스템) 순차 진행
 
 ### 9.3 외부 의존 트랙 (병렬, 게이트 무관)
 - 14건의 외부 시스템 의존 작업은 메타플랫폼 PBC 추출과 독립적으로 진행
