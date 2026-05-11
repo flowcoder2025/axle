@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>M1 컨설팅 모듈 — 컨설팅 자동화</title>
+<link rel="stylesheet" href="../shared/design-tokens.css">
+</head>
+<body>
+<div class="wf-page">
+  <aside class="wf-sidebar">
+    <h1>AXLE</h1>
+    <nav>
+      <a href="#">⌂ Dashboard</a>
+      <span class="section-label">컨설팅 모듈 (활성)</span>
+      <a href="#" class="active">고객관리</a>
+      <a href="#">프로젝트</a>
+      <a href="#">서류</a>
+      <a href="#">지원사업</a>
+      <a href="#">매칭 분석</a>
+      <a href="#">일정</a>
+      <a href="#">미팅</a>
+      <a href="#">연구일지</a>
+      <a href="#">재무</a>
+      <a href="#">분석</a>
+      <a href="#">견적/계약</a>
+      <span class="section-label">공통</span>
+      <a href="#">알림</a><a href="#">설정</a>
+    </nav>
+  </aside>
+
+  <div class="wf-main">
+    <header class="wf-topbar">
+      <h2>M1 컨설팅 모듈 — Consulting Suite</h2>
+      <div class="actions">
+        <span class="tag tag-success">설치됨</span>
+        <span class="tag tag-accent">PBC: consulting-crm + block-builder</span>
+      </div>
+    </header>
+
+    <main class="wf-content">
+
+      <div class="doc-note">
+        <strong>대상</strong>: 컨설팅 회사 (정부 지원사업, 인증, 특허, 재무 컨설팅).
+        <strong>현재</strong>: AXLE의 원래 도메인 — 이미 구현됨. 모듈 시스템 도입 시 이 영역을 첫 번째 모듈로 마이그레이션.
+        <strong>가격</strong>: ₩99,000 / 월 / 조직.
+      </div>
+
+      <h2 class="section-title">① 모듈 메타데이터</h2>
+      <div class="page-card">
+        <header><h3>module.config.ts</h3><span class="route">src/modules/consulting/</span></header>
+        <div class="body">
+          <pre style="background: var(--surface-muted); padding: var(--s-3); border-radius: var(--r-c); font-size: 12px; overflow-x: auto;">
+{
+  id: "consulting",
+  label: "컨설팅",
+  icon: "💼",
+  pbc: ["pbc-consulting-crm", "pbc-block-builder", "pbc-scheduler"],
+  nav: [
+    { id: "clients", label: "고객관리", route: "/clients", perm: "consulting:read" },
+    { id: "projects", label: "프로젝트", route: "/projects", perm: "consulting:read" },
+    { id: "documents", label: "서류", route: "/documents", perm: "consulting:read" },
+    { id: "programs", label: "지원사업", route: "/programs", perm: "consulting:read" },
+    { id: "matching", label: "매칭 분석", route: "/matching", perm: "consulting:read" },
+    { id: "calendar", label: "일정", route: "/calendar", perm: "consulting:read" },
+    { id: "meetings", label: "미팅", route: "/meetings", perm: "consulting:read" },
+    { id: "journals", label: "연구일지", route: "/journals", perm: "consulting:read" },
+    { id: "finance", label: "재무", route: "/finance", perm: "consulting:write" },
+    { id: "analytics", label: "분석", route: "/analytics", perm: "consulting:read" },
+    { id: "estimates", label: "견적/계약", route: "/estimates", perm: "consulting:write" }
+  ],
+  widgets: [
+    { id: "active-projects", label: "활성 프로젝트", priority: 10 },
+    { id: "recent-activity", label: "최근 활동", priority: 20 }
+  ],
+  prismaModels: ["Client", "Project", "Estimate", "Contract", "Program", "Meeting", "Journal", ...]
+}</pre>
+        </div>
+      </div>
+
+      <h2 class="section-title">② 페이지 인벤토리 (11 nav · 약 35 page)</h2>
+      <div class="grid-3">
+        <div class="page-card"><header><h3>고객관리</h3><span class="route">/clients</span></header><div class="body"><div class="box"><p>목록 / 추가 / [id] 상세 / [id]/edit</p></div></div></div>
+        <div class="page-card"><header><h3>프로젝트</h3><span class="route">/projects</span></header><div class="body"><div class="box"><p>목록 / 추가 / [id]상세 (9-section SSOT) / [id]/edit</p></div></div></div>
+        <div class="page-card"><header><h3>견적/계약</h3><span class="route">/estimates · /contracts</span></header><div class="body"><div class="box"><p>견적 4-page CRUD + 계약 2-page</p></div></div></div>
+        <div class="page-card"><header><h3>서류</h3><span class="route">/documents</span></header><div class="body"><div class="box"><p>업로드 / 분류 / 공유. block-builder로 작성</p></div></div></div>
+        <div class="page-card"><header><h3>지원사업</h3><span class="route">/programs</span></header><div class="body"><div class="box"><p>크롤링된 공고 + 매칭 점수 + 신청서</p></div></div></div>
+        <div class="page-card"><header><h3>매칭 분석</h3><span class="route">/matching</span></header><div class="body"><div class="box"><p>AI 점수표 · 고객 × 지원사업</p></div></div></div>
+        <div class="page-card"><header><h3>일정</h3><span class="route">/calendar</span></header><div class="body"><div class="box"><p>월/주 뷰 (scheduler PBC)</p></div></div></div>
+        <div class="page-card"><header><h3>미팅</h3><span class="route">/meetings</span></header><div class="body"><div class="box"><p>목록 / 추가 / [id] (녹취+요약) / edit</p></div></div></div>
+        <div class="page-card"><header><h3>연구일지</h3><span class="route">/journals</span></header><div class="body"><div class="box"><p>R&amp;D 일지 markdown 에디터</p></div></div></div>
+        <div class="page-card"><header><h3>재무</h3><span class="route">/finance · /finance/[clientId]</span></header><div class="body"><div class="box"><p>전체 / 고객별 시계열</p></div></div></div>
+        <div class="page-card"><header><h3>분석</h3><span class="route">/analytics</span></header><div class="body"><div class="box"><p>KPI 차트 5종</p></div></div></div>
+        <div class="page-card"><header><h3>외부 포털</h3><span class="route">/portal/[token]</span></header><div class="body"><div class="box"><p>고객 토큰 게스트 (모듈에 포함)</p></div></div></div>
+      </div>
+
+      <h2 class="section-title">③ 권한 (ReBAC scope)</h2>
+      <div class="page-card">
+        <header><h3>consulting:* permissions</h3></header>
+        <div class="body grid-3">
+          <div class="box"><span class="label">consulting:read</span><p>대부분 페이지 조회</p></div>
+          <div class="box"><span class="label">consulting:write</span><p>견적/계약/재무 등 핵심 CRUD</p></div>
+          <div class="box"><span class="label">consulting:admin</span><p>설정 / 매칭 가중치 등</p></div>
+        </div>
+      </div>
+
+      <h2 class="section-title">④ install 시 자동 처리</h2>
+      <div class="page-card">
+        <header><h3>onInstall hook</h3></header>
+        <div class="body">
+          <table>
+            <tbody>
+              <tr><td>seed</td><td>지원사업 카테고리 표준 데이터 (크롤링 시드)</td></tr>
+              <tr><td>checklist templates</td><td>주요 지원사업별 표준 체크리스트 5개</td></tr>
+              <tr><td>HWPX templates</td><td>한글 양식 템플릿 3개</td></tr>
+              <tr><td>org-admin role</td><td>"consulting:admin" 부여</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>
