@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Add-on G — Desktop (포털 자동화/인증서/녹취)</title>
+<link rel="stylesheet" href="../shared/design-tokens.css">
+</head>
+<body>
+<div class="wf-page">
+  <aside class="wf-sidebar">
+    <h1>AXLE</h1>
+    <nav>
+      <a href="#">⌂ Dashboard</a>
+      <span class="section-label">Pack G. Desktop Add-on (활성)</span>
+      <a href="#" class="active">포털 자동화</a>
+      <a href="#">공동인증서</a>
+      <a href="#">녹취</a>
+      <span class="section-label">공통</span>
+      <a href="#">알림</a><a href="#">설정</a>
+    </nav>
+  </aside>
+
+  <div class="wf-main">
+    <header class="wf-topbar">
+      <h2>Add-on G — Desktop 통합</h2>
+      <div class="actions">
+        <span class="tag tag-success">설치됨</span>
+        <span class="tag">3 modules</span>
+        <span class="tag tag-accent">₩29,000/월 (Desktop 라이선스 포함)</span>
+      </div>
+    </header>
+
+    <main class="wf-content">
+
+      <div class="doc-note">
+        <strong>대상</strong>: AXLE Desktop 앱(Electron)을 설치한 사용자.
+        <strong>전제</strong>: apps/desktop이 실행 중. 메인 윈도우는 axle.io 임베드.
+        <strong>차이</strong>: 다른 Pack과 달리 OS 권한이 필요한 기능(공인인증서, 마이크, 외부 포털 자동화)을 묶음.
+      </div>
+
+      <h2 class="section-title">① 모듈 메타데이터</h2>
+      <div class="page-card">
+        <header><h3>pack-g/module.config.ts</h3></header>
+        <div class="body">
+          <pre style="background: var(--surface-muted); padding: var(--s-3); border-radius: var(--r-c); font-size: 12px; overflow-x: auto;">
+const PACK_G_MODULES = [
+  { id: "portal-automation", label: "포털 자동화", route: "/automation",   perm: "automation:*",
+    requiresDesktop: true,
+    integrations: ["hometax","minwon24","insurance","venturein","koita"],
+    pbc: ["crawler"] },
+  { id: "cert-management",   label: "공동인증서",  route: "/certs",        perm: "certs:*",
+    requiresDesktop: true },
+  { id: "voice-recording",   label: "녹취",        route: "/recording",    perm: "recording:*",
+    requiresDesktop: true,
+    deps: { soft: ["meetings"] } }   // 미팅(A) install 시 자동 첨부
+];</pre>
+        </div>
+      </div>
+
+      <h2 class="section-title">② 모듈별 페이지</h2>
+      <div class="grid-3">
+        <div class="page-card"><header><h3>포털 자동화</h3><span class="route">/automation</span></header><div class="body"><div class="box"><span class="label">대상 포털 5종</span><p>Hometax (세무)<br>Minwon24 (공공서류)<br>Insurance (4대보험)<br>VentureIn (벤처 인증)<br>Koita (연구소 인증)</p></div></div></div>
+        <div class="page-card"><header><h3>공동인증서</h3><span class="route">/certs</span></header><div class="body"><div class="box"><p>PKCS#12 (.p12/.pfx) 보관<br>지문 검증<br>포털 자동화 + 외부 인증 활용</p></div></div></div>
+        <div class="page-card"><header><h3>녹취</h3><span class="route">/recording</span></header><div class="body"><div class="box"><p>마이크 녹음 → WAV 출력<br>미팅(Pack A) install 시 자동 첨부 + transcribe<br>(agent-bridge Whisper)</p></div></div></div>
+      </div>
+
+      <h2 class="section-title">③ IPC 채널 (renderer → main)</h2>
+      <div class="page-card">
+        <header><h3>window.axle.* (preload bridge)</h3></header>
+        <div class="body">
+          <table>
+            <thead><tr><th>채널</th><th>모듈</th><th>설명</th></tr></thead>
+            <tbody>
+              <tr><td>recorder.{start,stop,pause,resume,getState}</td><td>녹취</td><td>음성 녹음 라이프사이클</td></tr>
+              <tr><td>cert.{load,list,verify,remove}</td><td>인증서</td><td>PKCS#12 파싱 + 검증</td></tr>
+              <tr><td>portal.{login,scrape,status,logout}</td><td>포털 자동화</td><td>Playwright 기반 (현재 스텁)</td></tr>
+              <tr><td>agent.{health,submit,transcribe}</td><td>(공통)</td><td>agent-bridge HTTP 호출</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <h2 class="section-title">④ Cross-pack integrations</h2>
+      <div class="page-card">
+        <header><h3>다른 Pack과 결합</h3></header>
+        <div class="body">
+          <table>
+            <tbody>
+              <tr><td>포털 자동화 + 재무(A)</td><td>세무 정보 자동 매출 매핑</td></tr>
+              <tr><td>포털 자동화 + 서류(A)</td><td>공공서류 자동 다운로드 + 분류</td></tr>
+              <tr><td>녹취 + 미팅(A)</td><td>녹취 자동 첨부 + AI 요약 (transcribe)</td></tr>
+              <tr><td>인증서 + 포털 자동화</td><td>로그인 시 자동 인증서 사용</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>

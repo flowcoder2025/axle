@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Pack B — 정부 지원사업 + R&D</title>
+<link rel="stylesheet" href="../shared/design-tokens.css">
+</head>
+<body>
+<div class="wf-page">
+  <aside class="wf-sidebar">
+    <h1>AXLE</h1>
+    <nav>
+      <a href="#">⌂ Dashboard</a>
+      <span class="section-label muted">Pack A. 비즈니스 운영</span>
+      <a href="#" class="muted">...</a>
+      <span class="section-label">Pack B. 정부 지원사업 (활성)</span>
+      <a href="#" class="active">지원사업</a>
+      <a href="#">AI 매칭</a>
+      <a href="#">연구일지</a>
+      <a href="#">HWPX 양식 (admin)</a>
+      <a href="#">체크리스트 템플릿 (admin)</a>
+      <a href="#">AI 패턴 (admin)</a>
+      <span class="section-label">공통</span>
+      <a href="#">알림</a><a href="#">설정</a>
+    </nav>
+  </aside>
+
+  <div class="wf-main">
+    <header class="wf-topbar">
+      <h2>Pack B — 정부 지원사업 + R&D</h2>
+      <div class="actions">
+        <span class="tag tag-success">설치됨</span>
+        <span class="tag">6 modules</span>
+        <span class="tag tag-accent">₩39,000/월</span>
+      </div>
+    </header>
+
+    <main class="wf-content">
+
+      <div class="doc-note">
+        <strong>대상</strong>: 한국 정부 지원사업 / R&D 과제 대응이 필요한 모든 조직.
+        <strong>출처</strong>: 기업마당 + K-Startup 크롤. 매칭 알고리즘은 자기 조직 또는 관리 조직 단위.
+        <strong>Multi-org Add-on</strong>: 활성 시 N개 고객사 각각의 지원사업 매칭 컨설팅 가능.
+      </div>
+
+      <h2 class="section-title">① 모듈 메타데이터</h2>
+      <div class="page-card">
+        <header><h3>pack-b/module.config.ts (6 modules)</h3></header>
+        <div class="body">
+          <pre style="background: var(--surface-muted); padding: var(--s-3); border-radius: var(--r-c); font-size: 12px; overflow-x: auto;">
+const PACK_B_MODULES = [
+  { id: "programs",    label: "지원사업",         route: "/programs",       perm: "programs:*",  pbc: ["crawler"] },
+  { id: "ai-matching", label: "AI 매칭",          route: "/matching",       perm: "matching:*",  pbc: ["matching"],   multiOrg: true,
+    deps: { hard: ["programs"] } },
+  { id: "journals",    label: "연구일지",         route: "/journals",       perm: "journals:*",  pbc: ["ai"],         multiOrg: true },
+  // Admin (PLATFORM_ADMIN scope)
+  { id: "hwpx-templates",      label: "HWPX 양식",     route: "/admin/hwpx",      perm: "platform:admin", admin: true },
+  { id: "checklist-templates", label: "체크리스트",    route: "/admin/checklist", perm: "platform:admin", admin: true,
+    deps: { hard: ["programs"] } },
+  { id: "ai-patterns",         label: "AI 패턴",        route: "/admin/ai-patterns",perm: "platform:admin", admin: true,
+    deps: { hard: ["ai-matching"] } }
+];</pre>
+        </div>
+      </div>
+
+      <h2 class="section-title">② 모듈별 핵심 페이지</h2>
+
+      <div class="grid-2">
+        <div class="page-card"><header><h3>지원사업</h3><span class="route">/programs · /programs/[id]</span></header><div class="body"><div class="box"><span class="label">목록</span><p>기업마당 + K-Startup 자동 크롤<br>마감일/금액/카테고리 필터</p></div><div class="box"><span class="label">상세</span><p>공고 본문 + 신청서 양식 + 작성 시작 CTA</p></div></div></div>
+        <div class="page-card"><header><h3>AI 매칭 <span class="tag tag-accent">multi-org</span></h3><span class="route">/matching</span></header><div class="body"><div class="box"><p>알고리즘 자동 점수 산정<br>Single-org: 자기 조직 × 공고<br>★ Multi-org: 고객사 N개 × 공고 매트릭스</p></div><div class="box"><span class="label">+ 고객(A) install 시</span><p>고객 × 공고 추천 (B2B 컨설팅 시나리오)</p></div></div></div>
+        <div class="page-card"><header><h3>연구일지 <span class="tag tag-accent">multi-org</span></h3><span class="route">/journals · /journals/[id]</span></header><div class="body"><div class="box"><span class="label">에디터</span><p>마크다운 + AI 보조 작성<br>R&D 과제 단위 (projectId optional)</p></div><div class="box"><span class="label">출력</span><p>HWPX 양식 자동 채움 (Pack A 서류 + B의 HWPX 조합 시)</p></div></div></div>
+        <div class="page-card"><header><h3>HWPX 양식 (admin)</h3><span class="route">/admin/hwpx</span></header><div class="body"><div class="box"><p>한글 양식 등록/편집<br>변수 mapping (project.* → 양식 필드)<br>지원사업 양식 표준 라이브러리</p></div></div></div>
+        <div class="page-card"><header><h3>체크리스트 (admin)</h3><span class="route">/admin/checklist</span></header><div class="body"><div class="box"><p>지원사업별 표준 체크리스트<br>제출 항목 정의 + 자동 진행률</p></div></div></div>
+        <div class="page-card"><header><h3>AI 패턴 (admin)</h3><span class="route">/admin/ai-patterns</span></header><div class="body"><div class="box"><p>매칭 점수 가중치 / AI 보조 프롬프트 패턴<br>학습된 응답 패턴 관리</p></div></div></div>
+      </div>
+
+      <h2 class="section-title">③ Multi-org 시 데이터 흐름</h2>
+      <div class="page-card">
+        <header><h3>컨설팅 회사가 50개 고객사 관리 시</h3></header>
+        <div class="body grid-2">
+          <div class="box"><span class="label">매칭 산출</span><p>50개 ManagedOrg × 매주 100개 신규 공고 → 매주 5000개 매칭 점수<br>점수 ≥ 임계치 알림 (모듈 G 알림)</p></div>
+          <div class="box"><span class="label">일지 작성</span><p>고객사 A의 R&D 과제 일지 → tenantOrgId=A로 scope<br>고객사 A의 외부 포털로 자체 작성 위임 가능</p></div>
+        </div>
+      </div>
+
+      <h2 class="section-title">④ Cross-pack integrations</h2>
+      <div class="page-card">
+        <header><h3>다른 Pack과 결합</h3></header>
+        <div class="body">
+          <table>
+            <thead><tr><th>조합</th><th>효과</th></tr></thead>
+            <tbody>
+              <tr><td>AI 매칭 + 고객(A)</td><td>고객 × 공고 매칭 (B2B 컨설팅 시나리오)</td></tr>
+              <tr><td>AI 매칭 + 프로젝트(A)</td><td>프로젝트 단위 적합 공고 추천</td></tr>
+              <tr><td>연구일지 + 프로젝트(A)</td><td>일지가 프로젝트 단위 R&D 기록</td></tr>
+              <tr><td>연구일지 + 외부 포털(A)</td><td>고객이 직접 일지 작성</td></tr>
+              <tr><td>연구일지 + 빌더(E)</td><td>일지에 23블록 활용 (도해/표/이미지)</td></tr>
+              <tr><td>연구일지 + 이미지 생성(E)</td><td>도해 자동 생성</td></tr>
+              <tr><td>HWPX + 서류(A)</td><td>양식 자동 채움</td></tr>
+              <tr><td>체크리스트 + 외부 포털(A)</td><td>고객이 체크리스트 직접 작성</td></tr>
+              <tr><td>지원사업 + 일정(A)</td><td>마감일 캘린더 자동 등록</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>

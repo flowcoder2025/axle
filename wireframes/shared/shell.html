@@ -2,15 +2,19 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<title>AXLE Meta-Platform — Unified Shell (모듈-aware)</title>
+<title>AXLE Meta-Platform — Unified Shell v3 (Pack-aware + Multi-org)</title>
 <link rel="stylesheet" href="./design-tokens.css">
 <style>
 .module-badge { font-size: 10px; padding: 1px 5px; border-radius: 3px; background: var(--sidebar-active-bg); color: var(--accent); margin-left: auto; }
-.org-switcher { padding: var(--s-3) var(--s-4); border-bottom: 1px solid var(--sidebar-border); display: flex; align-items: center; gap: var(--s-3); }
+.org-switcher { padding: var(--s-3) var(--s-4); border-bottom: 1px solid var(--sidebar-border); display: flex; align-items: center; gap: var(--s-3); cursor: pointer; }
 .org-avatar { width: 28px; height: 28px; border-radius: var(--r-c); background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 600; font-size: 13px; }
 .section-divider { margin: var(--s-3) 0; border: 0; border-top: 1px solid var(--sidebar-border); }
 .uninstalled { opacity: 0.4; }
 .uninstalled::after { content: " (미설치)"; font-size: 10px; color: var(--text-muted); }
+.topbar-org-switcher { display: flex; align-items: center; gap: var(--s-2); padding: var(--s-1) var(--s-3); border: 1px solid var(--border-default); border-radius: var(--r-c); cursor: pointer; background: var(--surface); font-size: 13px; }
+.topbar-org-switcher .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+.topbar-org-switcher.managed .dot { background: var(--warning); }
+.tenant-badge { font-size: 10px; padding: 1px 5px; border-radius: 3px; background: var(--warning); color: #fff; }
 </style>
 </head>
 <body>
@@ -18,114 +22,147 @@
   <aside class="wf-sidebar">
     <div class="org-switcher">
       <div class="org-avatar">F</div>
-      <div>
+      <div style="flex: 1;">
         <div style="font-weight: 600; font-size: 13px;">FlowCoder Inc.</div>
-        <div class="muted" style="font-size: 11px;">3 modules · 8 members</div>
+        <div class="muted" style="font-size: 11px;">5 packs · 8 members · <span class="tag-warn" style="background:rgba(217,119,6,0.12); color: var(--warning); padding: 0 4px; border-radius: 3px;">Multi-org</span></div>
       </div>
+      <span style="color: var(--text-muted);">▾</span>
     </div>
 
     <nav>
       <a href="#" class="active">⌂ Dashboard</a>
 
-      <span class="section-label">컨설팅 모듈 <span class="module-badge">M1</span></span>
-      <a href="#">고객관리</a>
+      <span class="section-label">Pack A. 비즈니스 운영 <span class="module-badge">10</span></span>
+      <a href="#">고객/거래처</a>
       <a href="#">프로젝트</a>
+      <a href="#">견적</a>
+      <a href="#">계약</a>
       <a href="#">서류</a>
-      <a href="#">지원사업</a>
-      <a href="#">매칭 분석</a>
+      <a href="#">외부 포털</a>
       <a href="#">일정</a>
       <a href="#">미팅</a>
-      <a href="#">연구일지</a>
       <a href="#">재무</a>
       <a href="#">분석</a>
-      <a href="#">견적/계약</a>
 
-      <span class="section-label">HR 모듈 <span class="module-badge">M2</span></span>
+      <span class="section-label">Pack B. 정부 지원사업 <span class="module-badge">6</span></span>
+      <a href="#">지원사업</a>
+      <a href="#">AI 매칭</a>
+      <a href="#">연구일지</a>
+
+      <span class="section-label">Pack D. HR <span class="module-badge">5</span></span>
+      <a href="#">직원</a>
       <a href="#">급여</a>
       <a href="#">근태</a>
       <a href="#">연차</a>
-      <a href="#">노무 자문</a>
+      <a href="#">노무</a>
 
-      <span class="section-label">콘텐츠 모듈 <span class="module-badge">M3</span></span>
+      <span class="section-label">Pack E. 콘텐츠 <span class="module-badge">4</span></span>
       <a href="#">이미지 생성</a>
-      <a href="#">상세페이지 빌더</a>
-      <a href="#">갤러리</a>
+      <a href="#">빌더</a>
+
+      <span class="section-label">Add-on G. Desktop <span class="module-badge">3</span></span>
+      <a href="#">포털 자동화</a>
+      <a href="#">인증서</a>
+      <a href="#">녹취</a>
 
       <span class="section-label muted">미설치</span>
-      <a href="#" class="uninstalled">ERP 모듈 (M4)</a>
-      <a href="#" class="uninstalled">리터치 모듈 (M5)</a>
+      <a href="#" class="uninstalled">Pack F. ERP</a>
 
       <hr class="section-divider">
 
       <span class="section-label">공통</span>
       <a href="#">알림</a>
-      <a href="#">모듈 카탈로그</a>
+      <a href="#">⊕ Pack 카탈로그</a>
       <a href="#">설정</a>
 
       <span class="section-label">관리자 <span class="muted">(조건부)</span></span>
+      <a href="#">HWPX 양식</a>
+      <a href="#">체크리스트</a>
+      <a href="#">AI 패턴</a>
+      <a href="#">ComfyUI 워크플로우</a>
       <a href="#">플랫폼 관리</a>
     </nav>
   </aside>
 
   <div class="wf-main">
     <header class="wf-topbar">
-      <h2>AXLE 메타플랫폼 — 통합 워크스페이스</h2>
+      <h2>v3 Shell — Pack 기반 + Multi-org 스위처</h2>
       <div class="actions">
-        <span class="tag">3 modules installed</span>
-        <span class="tag tag-accent">FlowCoder Inc.</span>
+        <div class="topbar-org-switcher managed">
+          <span class="dot"></span>
+          <span style="font-weight: 500;">ABC Manufacturing</span>
+          <span class="tenant-badge">managed</span>
+          <span style="color: var(--text-muted);">▾</span>
+        </div>
+        <span class="tag">5/6 packs</span>
       </div>
     </header>
 
     <main class="wf-content">
 
       <div class="doc-note">
-        <strong>Shell 규칙</strong>: 사이드바 1개 + topbar 1개. 사이드바는 <strong>install한 모듈 × 사용자 권한</strong>이 교차하는 nav만 표시. 모든 모듈이 같은 디자인 토큰(DESIGN.md) 사용 — 시각적 일관성.
+        <strong>v3 변경점</strong>: 사이드바는 <strong>설치된 Pack의 모듈 × 사용자 권한</strong>이 교차하는 nav만 표시. Topbar에 <strong>조직 스위처</strong>(Multi-org Add-on 활성 시) — 본인 조직 + 관리 조직 N개 사이 전환.
       </div>
 
-      <h2 class="section-title">사이드바 동적 렌더링 룰</h2>
+      <h2 class="section-title">① Topbar 조직 스위처 (★ Multi-org)</h2>
       <div class="page-card">
-        <header><h3>buildSidebar(org, user)</h3><span class="route">module-registry + ReBAC</span></header>
+        <header><h3>현재 active tenant</h3><span class="route">★ Multi-org Add-on 활성 시만 표시</span></header>
         <div class="body col">
-          <div class="grid-3">
-            <div class="box"><span class="label">Step 1</span><p>조직 install 모듈 조회<br><code>getInstalledModules(orgId)</code></p></div>
-            <div class="box"><span class="label">Step 2</span><p>사용자 권한 필터<br><code>userPerms.canAccess(moduleId)</code></p></div>
-            <div class="box"><span class="label">Step 3</span><p>모듈별 nav + 공통 + (관리자) 합쳐 렌더</p></div>
+          <div class="box">
+            <span class="label">현재 표시</span>
+            <p><span class="dot" style="display: inline-block; width:8px;height:8px;border-radius:50%;background:var(--warning);"></span> ABC Manufacturing <span class="tenant-badge">managed</span> ▾</p>
+            <p class="muted">→ 이 상태에서 사이드바 클릭은 모두 ABC Manufacturing의 데이터로 동작 (tenantOrgId=ABC)</p>
           </div>
-          <div class="box" style="border-color: var(--accent); background: var(--sidebar-active-bg);">
-            <span class="label tag-accent">예시</span>
-            <p>"FlowCoder Inc."가 컨설팅(M1) + HR(M2) + 콘텐츠(M3) install. 사용자 A는 컨설팅 readwrite + HR read만 → 사이드바: 컨설팅 11nav + HR 4nav(읽기만) + 공통.</p>
+          <div class="box">
+            <span class="label">드롭다운 펼침</span>
+            <div style="margin-top: var(--s-2);">
+              <p>● FlowCoder Inc. <span class="tag">본인</span></p>
+              <p>○ ABC Manufacturing <span class="tenant-badge">managed</span> ← active</p>
+              <p>○ XYZ Tech <span class="tenant-badge">managed</span></p>
+              <p>○ DEF Corp <span class="tenant-badge">managed</span></p>
+              <p class="muted">+ 관리 조직 추가...</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <h2 class="section-title">왼쪽 사이드바 분석</h2>
-      <div class="grid-2">
-        <div class="page-card"><header><h3>위 사이드바의 의미</h3></header><div class="body col">
-          <div class="box"><span class="label tag-success">설치됨 (M1+M2+M3)</span><p>11(컨설팅) + 4(HR) + 3(콘텐츠) = 18 nav 표시</p></div>
-          <div class="box"><span class="label tag-warn">미설치 (M4+M5)</span><p>회색 표시 + "(미설치)" — 클릭 시 카탈로그 페이지로 안내</p></div>
-          <div class="box"><span class="label">공통</span><p>모든 조직에 항상 — 알림/카탈로그/설정</p></div>
-          <div class="box"><span class="label">관리자</span><p>PLATFORM_ADMIN 역할만 → 별도 섹션</p></div>
-        </div></div>
-        <div class="page-card"><header><h3>같은 조직, 다른 사용자</h3></header><div class="body">
-          <table>
-            <thead><tr><th>사용자</th><th>역할</th><th>사이드바 표시</th></tr></thead>
-            <tbody>
-              <tr><td>관리자</td><td>org-admin</td><td>M1 + M2 + M3 + 공통 + 관리자</td></tr>
-              <tr><td>HR 담당자</td><td>hr:write</td><td>M2 + 공통</td></tr>
-              <tr><td>마케터</td><td>content:write</td><td>M3 + 공통</td></tr>
-              <tr><td>플랫폼 admin</td><td>platform-admin</td><td>전체 + 플랫폼 관리</td></tr>
-            </tbody>
-          </table>
-        </div></div>
+      <h2 class="section-title">② 사이드바 동적 렌더링 룰</h2>
+      <div class="page-card">
+        <header><h3>buildSidebar(org, user, activeTenant)</h3></header>
+        <div class="body grid-3">
+          <div class="box"><span class="label">Step 1</span><p>조직 install Pack 조회<br><code>getInstalledPacks(orgId)</code></p></div>
+          <div class="box"><span class="label">Step 2</span><p>각 Pack의 module별 user permission 필터</p></div>
+          <div class="box"><span class="label">Step 3</span><p>multi-org 모듈은 activeTenant scope로 표시</p></div>
+        </div>
       </div>
 
-      <h2 class="section-title">미설치 모듈 클릭 시</h2>
+      <h2 class="section-title">③ 모듈 vs Tenancy 매트릭스</h2>
       <div class="page-card">
-        <header><h3>Upsell Flow</h3><span class="route">/settings/modules?focus=M4</span></header>
+        <header><h3>이 사이드바의 의미</h3></header>
+        <div class="body">
+          <table>
+            <thead><tr><th>모듈</th><th>설치</th><th>Multi-org?</th><th>현재 tenant</th></tr></thead>
+            <tbody>
+              <tr><td>고객/거래처 (A)</td><td>✓</td><td>—</td><td>FlowCoder Inc. (자기 데이터)</td></tr>
+              <tr><td>재무 (A)</td><td>✓</td><td>✓</td><td>ABC Manufacturing</td></tr>
+              <tr><td>분석 (A)</td><td>✓</td><td>✓</td><td>ABC Manufacturing</td></tr>
+              <tr><td>AI 매칭 (B)</td><td>✓</td><td>✓</td><td>ABC Manufacturing</td></tr>
+              <tr><td>연구일지 (B)</td><td>✓</td><td>✓</td><td>ABC Manufacturing</td></tr>
+              <tr><td>HR 전체 (D)</td><td>✓</td><td>✓</td><td>ABC Manufacturing (위탁 운영)</td></tr>
+              <tr><td>이미지/빌더 (E)</td><td>✓</td><td>—</td><td>FlowCoder Inc. (작업물 본인 소유)</td></tr>
+              <tr><td>ERP (F)</td><td>×</td><td>—</td><td>미설치</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <h2 class="section-title">④ 미설치 모듈 클릭 시</h2>
+      <div class="page-card">
+        <header><h3>Upsell Flow</h3></header>
         <div class="body grid-3">
-          <div class="box"><span class="label">1. 클릭</span><p>"ERP 모듈 (M4)" 회색 항목 클릭</p></div>
-          <div class="box"><span class="label">2. 안내</span><p>"ERP 모듈을 설치하면 재고/주문 기능을 사용할 수 있어요"</p></div>
-          <div class="box"><span class="label">3. 설치</span><p>관리자 권한 시 install 가능 → 결제 정보 → 즉시 활성</p></div>
+          <div class="box"><span class="label">1. 클릭</span><p>"Pack F. ERP" 회색 항목</p></div>
+          <div class="box"><span class="label">2. 안내</span><p>"재고/주문 관리 7 모듈 설치"</p></div>
+          <div class="box"><span class="label">3. 설치</span><p>관리자 권한 → 결제 → 즉시 활성</p></div>
         </div>
       </div>
 

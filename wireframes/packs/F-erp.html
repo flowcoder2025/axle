@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Pack F — ERP (재고/주문)</title>
+<link rel="stylesheet" href="../shared/design-tokens.css">
+</head>
+<body>
+<div class="wf-page">
+  <aside class="wf-sidebar">
+    <h1>AXLE</h1>
+    <nav>
+      <a href="#">⌂ Dashboard</a>
+      <span class="section-label">Pack F. ERP (활성)</span>
+      <a href="#" class="active">상품</a>
+      <a href="#">재고</a>
+      <a href="#">거래처</a>
+      <a href="#">주문</a>
+      <a href="#">배송</a>
+      <a href="#">발주</a>
+      <a href="#">ERP 리포트</a>
+      <span class="section-label">공통</span>
+      <a href="#">알림</a><a href="#">설정</a>
+    </nav>
+  </aside>
+
+  <div class="wf-main">
+    <header class="wf-topbar">
+      <h2>Pack F — ERP</h2>
+      <div class="actions">
+        <span class="tag tag-success">설치됨</span>
+        <span class="tag">7 modules</span>
+        <span class="tag tag-accent">₩89,000/월</span>
+      </div>
+    </header>
+
+    <main class="wf-content">
+
+      <div class="doc-note">
+        <strong>대상</strong>: 도소매, 제조업. <strong>출처</strong>: FlowVue 통합. 1년 후 PBC 추출 (pbc-erp-inventory, pbc-erp-orders).
+      </div>
+
+      <h2 class="section-title">① 모듈 메타데이터</h2>
+      <div class="page-card">
+        <header><h3>pack-f/module.config.ts</h3></header>
+        <div class="body">
+          <pre style="background: var(--surface-muted); padding: var(--s-3); border-radius: var(--r-c); font-size: 12px; overflow-x: auto;">
+const PACK_F_MODULES = [
+  { id: "products",      label: "상품",      route: "/products",      perm: "erp:write" },
+  { id: "inventory",     label: "재고",      route: "/inventory",     perm: "erp:read",
+    deps: { hard: ["products"] } },
+  { id: "customers-erp", label: "거래처",    route: "/erp-customers", perm: "erp:read" },
+  { id: "orders",        label: "주문",      route: "/orders",        perm: "erp:write",
+    deps: { hard: ["products", "customers-erp"] } },
+  { id: "shipping",      label: "배송",      route: "/shipping",      perm: "erp:write",
+    deps: { hard: ["orders"] } },
+  { id: "purchase",      label: "발주",      route: "/purchase",      perm: "erp:write",
+    deps: { hard: ["products", "customers-erp"] } },
+  { id: "reports-erp",   label: "리포트",    route: "/reports/erp",   perm: "erp:read",
+    deps: { soft: ["products", "inventory", "orders"] } }
+];</pre>
+        </div>
+      </div>
+
+      <h2 class="section-title">② 모듈별 페이지</h2>
+      <div class="grid-3">
+        <div class="page-card"><header><h3>상품 카탈로그</h3><span class="route">/products</span></header><div class="body"><div class="box"><p>SKU/옵션/가격/이미지</p></div></div></div>
+        <div class="page-card"><header><h3>재고</h3><span class="route">/inventory</span></header><div class="body"><div class="box"><p>목록 / [sku] 상세 / 입고 / 출고</p></div></div></div>
+        <div class="page-card"><header><h3>거래처</h3><span class="route">/erp-customers</span></header><div class="body"><div class="box"><p>구매자/공급자 관리</p></div></div></div>
+        <div class="page-card"><header><h3>주문</h3><span class="route">/orders</span></header><div class="body"><div class="box"><p>목록 / [id] / /new (POS 모드)</p></div></div></div>
+        <div class="page-card"><header><h3>배송</h3><span class="route">/shipping</span></header><div class="body"><div class="box"><p>택배사 연동 + 송장 추적</p></div></div></div>
+        <div class="page-card"><header><h3>발주</h3><span class="route">/purchase</span></header><div class="body"><div class="box"><p>공급처 발주 + 입고 예정</p></div></div></div>
+        <div class="page-card"><header><h3>리포트</h3><span class="route">/reports/erp</span></header><div class="body"><div class="box"><p>매출/재고 회전/RFM 코호트</p></div></div></div>
+      </div>
+
+      <h2 class="section-title">③ Cross-pack integrations</h2>
+      <div class="page-card">
+        <header><h3>다른 Pack과 결합</h3></header>
+        <div class="body">
+          <table>
+            <thead><tr><th>조합</th><th>효과</th></tr></thead>
+            <tbody>
+              <tr><td>상품 + 이미지(E)</td><td>상품 이미지 자동 생성/보정</td></tr>
+              <tr><td>상품 + 빌더(E)</td><td>상품 상세페이지를 빌더로 작성</td></tr>
+              <tr><td>주문 + 재무(A)</td><td>매출 자동 등록</td></tr>
+              <tr><td>거래처 + 고객(A)</td><td>(별도 모델) — 거래처는 ERP 전용, 고객은 일반 CRM</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>
