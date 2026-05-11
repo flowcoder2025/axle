@@ -1,118 +1,162 @@
-# AXLE 메타플랫폼 — 아키텍처
+# 아키텍처 (v2: 단일 플랫폼 + 모듈)
 
-> **출처**: `docs/specs/meta-platform/PRD.md` §3 4-Layer 아키텍처 + 추출 매트릭스
+> v1은 6개 앱 분리 / v2는 1개 앱 + 모듈. 코드 구조와 PBC 위치는 동일하나 **앱 분리 가정 제거**.
 
 ---
 
-## 1. 4-Layer 아키텍처
+## 1. 4-Layer (v2)
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  Layer 4: Domain Apps (apps/*)                                │
-│   apps/web         (현존, 컨설팅 — 58 페이지)                 │
-│   apps/flowteams   (현존, HR — 5 페이지)                      │
-│   apps/desktop     (현존, Electron 클라이언트)                 │
-│   apps/agent-bridge(현존, AI 서비스)                          │
-│   apps/flowstudio  ★미존재 (이미지+콘텐츠)                    │
-│   apps/flowvue     ★미존재 (ERP)                              │
-│   apps/flowretouch ★미존재 (리터치)                           │
+│  Layer 4: Single Platform — apps/web                          │
+│   apps/web/                                                   │
+│     src/                                                      │
+│       app/                  ← Next.js App Router (전 라우트)  │
+│         (platform)/        ← 공통 + 모든 모듈 페이지         │
+│           dashboard/                                          │
+│           clients/  (consulting 모듈)                         │
+│           payroll/  (hr 모듈)                                 │
+│           create/   (content 모듈)                            │
+│           inventory/ (erp 모듈, install 시)                   │
+│           ...                                                 │
+│         settings/                                             │
+│           modules/         ← 모듈 카탈로그                   │
+│         admin/                                                │
+│       modules/             ← 모듈 메타데이터                 │
+│         consulting/module.config.ts                          │
+│         hr/module.config.ts                                  │
+│         content/module.config.ts                             │
+│         erp/module.config.ts                                 │
+│         retouch/module.config.ts                             │
+│       lib/                                                    │
+│         module-registry.ts ← install 상태 + 권한 체크        │
+│         sidebar.ts         ← 동적 사이드바 빌더              │
+│                                                              │
+│   companion apps (별도 배포):                                 │
+│     apps/desktop          (Electron 클라이언트)              │
+│     apps/agent-bridge     (HTTP AI 서비스)                   │
 ├──────────────────────────────────────────────────────────────┤
-│  Layer 3: Packages — 횡단(11) + PBC(3+) + Core(2)             │
-│  ┌─ 횡단 (AXLE 현행 11개, 유지) ─────────────────────────┐    │
-│  │ ai · auth · crawler · db · docgen · email · matching  │    │
-│  │ notification · ocr · storage · ui                     │    │
-│  └────────────────────────────────────────────────────────┘    │
-│  ┌─ PBC (Top 3, Phase 19) ──────────────────────────────┐     │
-│  │ pbc-image-engine    (WI-401~410, WI-611 보강)         │     │
-│  │ pbc-block-builder   (WI-501~511)                      │     │
-│  │ pbc-hr-payroll      (WI-601~610, WI-612 보강)         │     │
-│  └────────────────────────────────────────────────────────┘    │
-│  ┌─ Core (PRD §4 L1-B, 보조 인프라) ────────────────────┐     │
-│  │ core-design-md      ★ WI-613 신규                    │     │
-│  │ core-rebac          ★ 미시작 (auth에서 분리)         │     │
-│  └────────────────────────────────────────────────────────┘    │
+│  Layer 3: Packages — 횡단(11) + PBC(3+) + Core(2+)            │
+│  ┌─ 횡단 ─────────────────────────────────────────────────┐   │
+│  │ ai · auth · crawler · db · docgen · email · matching   │   │
+│  │ notification · ocr · storage · ui                      │   │
+│  └────────────────────────────────────────────────────────┘   │
+│  ┌─ PBC (Phase 19 추출 완료) ──────────────────────────────┐  │
+│  │ pbc-image-engine     (WI-611 보강)                      │  │
+│  │ pbc-block-builder                                       │  │
+│  │ pbc-hr-payroll       (WI-612 보강)                      │  │
+│  └─────────────────────────────────────────────────────────┘  │
+│  ┌─ Core ──────────────────────────────────────────────────┐  │
+│  │ core-design-md       (WI-613 신규)                      │  │
+│  │ core-rebac           (미시작, 향후 분리)                │  │
+│  │ core-module-system   (★ WI-616 신규 — 모듈 시스템 자체) │  │
+│  └─────────────────────────────────────────────────────────┘  │
 ├──────────────────────────────────────────────────────────────┤
-│  Layer 2: FDP Core (현행, 유지)                                │
-│   Next.js 16 + Prisma 7 + Auth.js v5 + ReBAC + 3-tier 세션    │
-├──────────────────────────────────────────────────────────────┤
-│  Layer 1: Rust 마이크로서비스 (3년 후 PoC)                     │
-│   services/image-engine-rs   (Z-Image + FLUX.2)               │
-│   services/ocr-engine-rs     (PaddleOCR-VL)                   │
+│  Layer 2: FDP Core (현행)                                     │
+│  Layer 1: Rust 마이크로서비스 (PoC, 3년 후)                    │
 └──────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. PBC × Apps 사용 매트릭스
+## 2. 모듈 ⊃ PBC 매트릭스
 
-`★` = WI-611~615로 보강/추가될 항목.
+`●●` 핵심 의존, `●` 사용함, `—` 미사용. `★` WI-611~615 보강 대상.
 
-| PBC \ App | web | flowteams | desktop | agent-bridge | flowstudio | flowvue | flowretouch |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| pbc-image-engine | — | — | — | — | ●● 핵심 | — | ●● 핵심 (RETOUCH) |
-| pbc-block-builder | ★ 데모 (WI-614) | — | — | — | ●● 빌더 | ● 상품상세 | — |
-| pbc-hr-payroll | — | ●● 핵심 ★ (WI-612) | — | — | — | — | — |
-| core-design-md ★ (WI-613) | ● 시범 헬퍼 | ● theme | — | — | ● theme 갈아끼움 | ● theme | ● 어두운 theme |
-| core-rebac (미시작) | ● auth 추출 | ● 권한 결정 | — | — | ● 권한 | ● 권한 | — |
-| pbc-billing (1년 후) | — | — | — | — | ● | ● | ● |
-| pbc-messaging (1년 후) | ● 알림 | — | — | — | — | ● 주문 알림 | — |
-| pbc-file-manager (1년 후) | ● 문서 | — | — | — | ● 이미지 | ● 상품 이미지 | ● 이미지 |
-| pbc-erp-inventory (1년 후) | — | — | — | — | — | ●● 핵심 | — |
-| pbc-erp-orders (1년 후) | — | — | — | — | — | ●● 핵심 | — |
-| pbc-consulting-crm (1년 후) | ●● 핵심 (추출) | — | — | — | — | — | — |
-| pbc-scheduler (1년 후) | ● 일정 | — | — | — | — | — | — |
+| 모듈 \ PBC | image-engine | block-builder | hr-payroll | core-design-md ★ | consulting-crm (미추출) | erp-inventory (1년 후) | erp-orders (1년 후) | billing (1년 후) | messaging (1년 후) | scheduler (1년 후) | file-manager (1년 후) |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| M1 컨설팅 | — | ● 서류 | — | ● theme | ●● | — | — | ● | ● | ●● | ● |
+| M2 HR | — | — | ●● ★ | ● theme | — | — | — | ● | ● | — | — |
+| M3 콘텐츠 | ●● ★ | ●● | — | ● theme | — | — | — | ● | — | — | ● |
+| M4 ERP | ● 이미지 보정 | ● 상품 상세 | — | ● theme | — | ●● | ●● | ● | ● | — | ● |
+| M5 리터치 | ●● (RETOUCH) | — | — | ● theme | — | — | — | ● | — | — | ● |
 
-`●●` = 핵심 의존, `●` = 사용함, `—` = 미사용.
+**관찰**:
+- 모든 모듈이 core-design-md 사용 (theme 갈아끼움)
+- 모든 모듈이 1년 후 pbc-billing 의존 (구독 결제)
+- image-engine은 콘텐츠(M3) + 리터치(M5)의 핵심 — WI-611 보강 우선순위 높음
 
 ---
 
-## 3. WI-611~615가 메우는 갭
+## 3. 모듈 시스템 구성 요소 (신규)
 
 ```
-[현재 상태: 평균 72%]                    [WI-611~615 후 목표: ~85%]
-                                  ─→
-pbc-image-engine 65% (orchestrator 누락) →  generate()/getEstimatedCost() 보강 (WI-611)
-pbc-hr-payroll 88% (팩토리 누락)          →  createPayrollService 보강 (WI-612)
-core-design-md  미존재                    →  신규 패키지 + 시범 헬퍼 (WI-613)
-PBC 사용 evidence 0건                     →  apps/web/showcase 데모 (WI-614)
-flowteams 표준 shell 미적용               →  sidebar+topbar 적용 (WI-615)
+core-module-system (★ WI-616)
+├── ModuleConfig 타입 (id, label, icon, nav, widgets, pbc, prismaModels, permissions, onInstall)
+├── module-registry.ts
+│   ├── registerModule(config)        모듈 등록
+│   ├── getInstalledModules(orgId)    조직 install 목록 조회
+│   ├── installModule(orgId, moduleId)
+│   └── uninstallModule(orgId, moduleId)
+├── sidebar.ts
+│   └── buildSidebar(org, user) → SidebarSection[]
+├── catalog-page.tsx                  모듈 카탈로그 UI (WI-617)
+└── permission-resolver.ts            ReBAC scope × 모듈
 ```
+
+**저장**:
+- `OrgModuleInstall` Prisma model: `{ orgId, moduleId, installedAt, settings }`
+- 권한은 기존 ReBAC `RelationTuple`에 scope 차원 추가: `(orgId, userId, "hr:write")` 등
 
 ---
 
-## 4. 데이터 플로우 (예: FlowStudio 이미지 생성)
+## 4. 핵심 데이터 흐름 (콘텐츠 모듈 install 후 이미지 생성)
 
 ```
-사용자 입력 (FlowStudio /create 페이지)
-    ↓
-Server Action / API Route (apps/flowstudio)
-    ↓ generate(req)
-@axle/pbc-image-engine
-    ├─ buildPrompt(req)              ← promptBuilder.ts (WI-611)
-    ├─ selectProvider(req)
-    ├─ provider.generate(...)        ← google-genai / vertex / openrouter / comfyui
-    └─ getEstimatedCost(req)         ← cost.ts (WI-611)
-    ↓ GenerationResult
-저장 (pbc-file-manager) + 크레딧 차감 (pbc-billing) + 결과 표시
+사용자: /create 페이지 진입
+   ↓
+middleware → org module install 체크 → "content" 모듈 install 확인
+   ↓
+middleware → user permission 체크 → "content:write" 확인
+   ↓
+페이지 렌더 (page.tsx, RSC)
+   ↓ Server Action 호출
+@axle/pbc-image-engine.generate(req)    ← ★ WI-611
+   ├─ buildPrompt(req)
+   ├─ selectProvider(req)
+   ├─ provider.generate(...)
+   └─ getEstimatedCost(req)
+   ↓
+저장 (pbc-file-manager) + 크레딧 차감 (pbc-billing)
+   ↓
+응답 → 사용자 화면에 이미지 표시
 ```
+
+**install 안 됐을 때**: middleware가 403 + "/settings/modules?focus=content"로 리다이렉트
 
 ---
 
-## 5. 의사결정 (PRD §2.3 거부 옵션)
+## 5. WI-611~615 → v2에서 의미
 
-- ❌ 새 monorepo 생성 (AXLE 인프라 재구축 비용)
-- ❌ Rust 전면 채택 (ORM 메타프로그래밍 비용 + FDP 자산 폐기)
-- ❌ AXLE 메인 PRD 덮어쓰기 (Phase 17/18 진행 중)
-
-→ **메타플랫폼은 AXLE 위에 추가**되는 형태. 기존 49 model + 11 횡단 패키지 유지.
+| WI | v2 의미 | 유효성 |
+|---|---|---|
+| WI-611 | M3 콘텐츠 + M5 리터치 모듈의 핵심 의존 PBC 보강 | ✅ 유지 (모델 무관) |
+| WI-612 | M2 HR 모듈의 PayrollService 팩토리 | ✅ 유지 |
+| WI-613 | 모든 모듈의 theme 갈아끼움 가능하게 | ✅ 유지 |
+| WI-614 (이전: showcase 데모) | ❌ 무의미 — 데모가 아니라 모듈 시스템 자체 구축이 필요 | 🔄 재정의 |
+| WI-615 (이전: flowteams shell) | ❌ flowteams 자체가 흡수 대상이라 shell 적용은 무의미 | 🔄 재정의 |
 
 ---
 
-## 6. 1년 후 도달 조건 (vision-and-expansion §1.2)
+## 6. 신규 WI 후보 (v2 도입)
 
-- 도메인 앱 6개 운영 (axle / flowstudio / flowteams / flowvue / flowretouch + 1)
+| WI | 내용 | 우선순위 |
+|---|---|---|
+| WI-616-feat | `core-module-system` 패키지 (ModuleConfig + registry) | P0 |
+| WI-617-feat | `/settings/modules` 카탈로그 UI | P0 |
+| WI-618-feat | 동적 사이드바 빌더 (buildSidebar) | P0 |
+| WI-619-feat | 모듈 권한 (ReBAC scope: consulting:*/hr:*/content:*/...) | P0 |
+| WI-620-refactor | apps/flowteams → src/modules/hr (라우트 이전 + 디렉토리 제거) | P1 |
+| WI-621-feat | 5개 모듈 메타데이터 (consulting/hr/content/erp/retouch module.config.ts) | P1 |
+| WI-622-feat | 모듈별 onInstall hook (seed 데이터, default role) | P2 |
+| WI-623-feat | 결제 모듈 단위 (Polar subscription per module) | P2 — 1년 후 |
+
+---
+
+## 7. 1년 후 도달 조건 (v2 기준)
+
+- 단일 axle.io 플랫폼 운영
+- 5-6개 모듈 운영 가능 (install/uninstall 동작)
+- 외부 1개 모듈 등록 시도 (개발자가 module.config.ts 제출 → 검증 → 카탈로그 노출)
+- DESIGN.md 3개 theme (FlowCoder default + 2개)
 - PBC 10개 (Top 3 + billing/erp×2/file-manager/messaging/scheduler/consulting-crm)
-- DESIGN.md 3개 운영 (FlowCoder default + 2개)
-- 외부 PBC 1개 등록 시도 (개발자 경험 검증)
-
-**현재 거리**: 도메인 앱 4개 / PBC 3개 / DESIGN.md 1개(미주입). WI-611~615는 이 거리를 좁히는 1차 작업.

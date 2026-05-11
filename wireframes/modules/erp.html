@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>M4 ERP 모듈 — 재고/주문/배송</title>
+<link rel="stylesheet" href="../shared/design-tokens.css">
+</head>
+<body>
+<div class="wf-page">
+  <aside class="wf-sidebar">
+    <h1>AXLE</h1>
+    <nav>
+      <a href="#">⌂ Dashboard</a>
+      <span class="section-label">ERP 모듈 (미설치 예시)</span>
+      <a href="#" class="active">재고</a>
+      <a href="#">주문</a>
+      <a href="#">배송</a>
+      <a href="#">발주</a>
+      <a href="#">거래처</a>
+      <a href="#">상품 카탈로그</a>
+      <a href="#">리포트</a>
+      <span class="section-label">공통</span>
+      <a href="#">알림</a><a href="#">설정</a>
+    </nav>
+  </aside>
+
+  <div class="wf-main">
+    <header class="wf-topbar">
+      <h2>M4 ERP 모듈 — ERP Suite</h2>
+      <div class="actions">
+        <span class="tag tag-warn">미설치 (예시)</span>
+        <span class="tag tag-accent">PBC: erp-inventory + erp-orders</span>
+      </div>
+    </header>
+
+    <main class="wf-content">
+
+      <div class="doc-note">
+        <strong>대상</strong>: 도소매, 제조업.
+        <strong>출처</strong>: FlowVue 통합. 1년 후 PBC 추출.
+        <strong>가격</strong>: ₩89,000 / 월 / 조직.
+      </div>
+
+      <h2 class="section-title">① 모듈 메타데이터</h2>
+      <div class="page-card">
+        <header><h3>module.config.ts (예정)</h3></header>
+        <div class="body">
+          <pre style="background: var(--surface-muted); padding: var(--s-3); border-radius: var(--r-c); font-size: 12px;">
+{
+  id: "erp",
+  label: "ERP",
+  icon: "📦",
+  pbc: ["pbc-erp-inventory", "pbc-erp-orders", "pbc-messaging"],
+  nav: [
+    { id: "inventory", label: "재고", route: "/inventory", perm: "erp:read" },
+    { id: "orders", label: "주문", route: "/orders", perm: "erp:write" },
+    { id: "shipping", label: "배송", route: "/shipping", perm: "erp:write" },
+    { id: "purchase", label: "발주", route: "/purchase", perm: "erp:write" },
+    { id: "customers", label: "거래처", route: "/customers", perm: "erp:read" },
+    { id: "products", label: "상품 카탈로그", route: "/products", perm: "erp:write" },
+    { id: "reports", label: "리포트", route: "/reports/erp", perm: "erp:read" }
+  ],
+  prismaModels: ["Product", "SKU", "Stock", "Order", "Shipment", "PurchaseOrder", "Supplier"]
+}</pre>
+        </div>
+      </div>
+
+      <h2 class="section-title">② 페이지</h2>
+      <div class="grid-3">
+        <div class="page-card"><header><h3>재고</h3><span class="route">/inventory</span></header><div class="body"><div class="box"><p>목록 / [sku] 상세 / /receive 입고 / /ship 출고</p></div></div></div>
+        <div class="page-card"><header><h3>주문</h3><span class="route">/orders</span></header><div class="body"><div class="box"><p>목록 / [id] / /new (POS 모드)</p></div></div></div>
+        <div class="page-card"><header><h3>배송</h3><span class="route">/shipping</span></header><div class="body"><div class="box"><p>택배사 연동 + 송장 추적</p></div></div></div>
+        <div class="page-card"><header><h3>발주</h3><span class="route">/purchase</span></header><div class="body"><div class="box"><p>공급처 발주 + 입고 예정</p></div></div></div>
+        <div class="page-card"><header><h3>거래처</h3><span class="route">/customers</span></header><div class="body"><div class="box"><p>구매자/공급자 관리</p></div></div></div>
+        <div class="page-card"><header><h3>상품 카탈로그</h3><span class="route">/products</span></header><div class="body"><div class="box"><p>SKU/옵션/가격/이미지 (콘텐츠 모듈 연동)</p></div></div></div>
+        <div class="page-card"><header><h3>리포트</h3><span class="route">/reports/erp</span></header><div class="body"><div class="box"><p>매출/재고 회전/RFM 코호트</p></div></div></div>
+      </div>
+
+      <h2 class="section-title">③ 모듈 간 연동</h2>
+      <div class="page-card">
+        <header><h3>Cross-module integrations</h3></header>
+        <div class="body grid-2">
+          <div class="box"><span class="label">+ 콘텐츠 모듈</span><p>상품 이미지 자동 리터치 + 상세페이지 빌더 호출</p></div>
+          <div class="box"><span class="label">+ HR 모듈</span><p>출고 처리한 직원 → 근태 자동 기록</p></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>

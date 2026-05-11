@@ -1,13 +1,12 @@
-# PBC × 소비처 매핑 (상세)
+# PBC × 모듈 매핑 (v2)
 
-> 각 PBC의 public API와 어느 앱이 어떤 메서드를 호출하는지 매핑.
-> WI-611~615로 채워질 부분에 ★ 표시.
+> v1은 PBC × 앱 매핑이었으나, v2는 **PBC × 모듈** 매핑. 앱은 1개라서 무의미.
 
 ---
 
 ## pbc-image-engine
 
-**Public API** (`docs/specs/meta-platform/pbc-image-engine.md` §3.2):
+**Public API**:
 
 ```typescript
 generate(req: GenerationRequest): Promise<GenerationResult>     ← ★ WI-611
@@ -16,19 +15,18 @@ getEstimatedCost(req): { credits; usd }                          ← ★ WI-611
 PRESETS: Record<string, Partial<GenerationRequest>>              ← 구현됨
 ```
 
-**소비처**:
+**모듈 사용처**:
 
-| 앱 / 컴포넌트 | 호출 패턴 | 시점 |
+| 모듈 | 어떤 페이지에서 | 호출 패턴 |
 |---|---|---|
-| apps/flowstudio /create | `generate({mode:"CREATE", prompt, aspectRatio})` | 1년 후 |
-| apps/flowstudio /edit | `generate({mode:"EDIT", reference})` | 1년 후 |
-| apps/flowstudio /poster | `generate({mode:"POSTER", layout})` | 1년 후 |
-| apps/flowstudio /retouch | `generate({mode:"RETOUCH", preset:"retouch-pro"})` | 1년 후 |
-| apps/flowretouch /editor | `generate({mode:"RETOUCH"})` 단일 모드 깊게 | 1년 후 |
-| compat/flowstudio-v1 (이미 추출) | `provider.generate(...)` 직접 (legacy) | 현재 |
-| compat/flowstudio-v2 (이미 추출) | `provider.generate(...)` 직접 (legacy) | 현재 |
+| M3 콘텐츠 | /create | `generate({mode:"CREATE", prompt})` |
+| M3 콘텐츠 | /edit | `generate({mode:"EDIT", reference})` |
+| M3 콘텐츠 | /poster | `generate({mode:"POSTER", layout})` |
+| M3 콘텐츠 | /retouch | `generate({mode:"RETOUCH", preset:"retouch-pro"})` |
+| M5 리터치 | /retouch/editor | `generate({mode:"RETOUCH"})` 단일 모드 깊게 |
+| M4 ERP | /products 이미지 보정 | `generate({mode:"RETOUCH"})` 자동 |
 
-**현재 결손**: orchestrator 자체가 없어 위 신규 앱이 PBC API를 사용할 수 없음. WI-611로 해결.
+**현재 결손**: orchestrator 미구현 → M3/M5 페이지가 PBC API를 사용할 수 없음. **WI-611로 해결**.
 
 ---
 
@@ -39,122 +37,147 @@ PRESETS: Record<string, Partial<GenerationRequest>>              ← 구현됨
 ```typescript
 renderComposition(composition, ctx: RenderContext): string | ReactNode | DocxElement
 PRESETS: { "landing-saas" | "detail-ecommerce" | "sns-card" | "business-doc" }
-generateCopy(intent, blocks)            ← AI 카피 파이프라인
+generateCopy(intent, blocks): Composition
 validateBlockData(block, data): boolean
 ```
 
-**소비처**:
+**모듈 사용처**:
 
-| 앱 / 컴포넌트 | 호출 패턴 | 상태 |
+| 모듈 | 어떤 페이지에서 | 호출 패턴 |
 |---|---|---|
-| apps/web/(marketing)/showcase ★ | `renderComposition(composition, {format:"react", theme})` | ★ WI-614 |
-| apps/flowstudio /builder/[docId] | 빌더 내부에서 23블록 → 4 포맷 출력 | 1년 후 |
-| apps/flowvue /products/[id] | 상품 상세페이지를 블록으로 구성 | 1년 후 |
-| compat/flowstudio-v2 (이미 추출) | `renderComposition` facade | 현재 사용 가능 |
+| M1 컨설팅 | /documents (서류 작성) | `renderComposition` for HWPX/PDF |
+| M3 콘텐츠 | /builder | 23 블록 빌더 본체 |
+| M4 ERP | /products/[id] (상품 상세) | `renderComposition({preset:"detail-ecommerce"})` |
+| 공통 | /settings (도움말 페이지 등) | static landing-saas |
 
-**현재 결손**: AXLE web 안에서 PBC 사용 evidence 0건. WI-614로 시범 도입.
+**현재 결손**: M1 서류 작성에 block-builder 연동 미완. 모듈 시스템 구축 후 자동으로 연결될 가능성.
 
 ---
 
 ## pbc-hr-payroll
 
-**Public API** (`docs/specs/meta-platform/pbc-hr-payroll.md` §3.2):
+**Public API**:
 
 ```typescript
 createPayrollService(deps): PayrollService                 ← ★ WI-612
-  PayrollService.calculate(input): PayrollResult
-  PayrollService.generateStatement(input): PayrollStatement ← ★ WI-612
+  .calculate(input): PayrollResult
+  .generateStatement(input): PayrollStatement ← ★ WI-612
 
 createAttendanceService(deps): AttendanceService            ← 구현됨
-  recordCheckIn / recordCheckOut / summarize
-
 createLeaveService(deps): LeaveService                       ← 구현됨
-  request / approve / reject / balance
-
 createNomuConsultationService(deps): NomuConsultationService ← 구현됨
-  ask / validate
-
-calculatePayroll(input)                                      ← 구현됨 (legacy, stateless)
+calculatePayroll(input)                                      ← legacy stateless
 ```
 
-**소비처**:
+**모듈 사용처**:
 
-| 앱 / 컴포넌트 | 호출 패턴 | 상태 |
+| 모듈 | 어떤 페이지에서 | 호출 패턴 |
 |---|---|---|
-| apps/flowteams /payroll ★ | `createPayrollService({prisma}).calculate(input)` + `generateStatement(period)` | ★ WI-612 (현재는 `calculatePayroll` 직접 호출) |
-| apps/flowteams /attendance | `createAttendanceService({prisma}).recordCheckIn(...)` | 사용 가능 |
-| apps/flowteams /leave | `createLeaveService({prisma, notification}).request(...)` | 사용 가능 |
-| apps/flowteams /nomu | `createNomuConsultationService({prisma, ai}).ask(...)` | 사용 가능 (placeholder AI) |
+| M2 HR | /payroll | `createPayrollService({prisma}).calculate(input)` ★ |
+| M2 HR | /payroll/[id]/statement | `.generateStatement(period)` → markdown/HTML ★ |
+| M2 HR | /attendance | `createAttendanceService({prisma}).recordCheckIn(...)` |
+| M2 HR | /leave | `createLeaveService({prisma}).request(...)` |
+| M2 HR | /nomu | `createNomuConsultationService({prisma, ai}).ask(...)` |
 
-**현재 결손**: PayrollService 팩토리 + generateStatement. WI-612로 해결.
+**현재 결손**: PayrollService 팩토리 + generateStatement → **WI-612**.
 
 ---
 
-## core-design-md ★ (WI-613 신규)
+## core-design-md ★ (WI-613)
 
 **Public API** (예정):
 
 ```typescript
-parseDesignMd(source: string): DesignTokens                  ← ★ WI-613
-loadDesignTokens(filePath): Promise<DesignTokens>            ← ★ WI-613
-tokensToCssVariables(tokens): { light: string; dark: string }← ★ WI-613
-tokensToTailwindConfig(tokens): Record<string, unknown>      ← ★ WI-613
+parseDesignMd(source): DesignTokens
+loadDesignTokens(filePath): Promise<DesignTokens>
+tokensToCssVariables(tokens): { light; dark }
+tokensToTailwindConfig(tokens): Record<string, unknown>
 ```
 
-**소비처**:
+**모듈 사용처**:
 
-| 앱 | DESIGN.md 파일 | 사용 |
+| 모듈 | DESIGN.md | 용도 |
 |---|---|---|
-| apps/web | `themes/flowcoder-default.design.md` (기본) | globals.css에 주입 (1년 후) |
-| apps/flowstudio | `themes/flowstudio.design.md` (1년 후) | 콘텐츠 작업 친화적 theme |
-| apps/flowvue | `themes/flowvue.design.md` (1년 후) | 데이터 표 친화적 theme |
-| apps/flowretouch | `themes/flowretouch.design.md` (1년 후) | 어두운 캔버스 친화적 theme |
+| 공통 (기본) | `themes/flowcoder-default.design.md` | 플랫폼 기본 |
+| M3 콘텐츠 | (옵션) `themes/content.design.md` | 어두운 캔버스 |
+| M5 리터치 | (옵션) `themes/retouch.design.md` | 더 어두운 + 캔버스 확대 |
+| 파트너 white-label | `themes/partner-X.design.md` | 브랜드 갈아끼움 |
 
-**WI-613 산출물**: 패키지 + `apps/web/src/lib/design-tokens.ts` 시범 헬퍼 (실 globals.css 교체는 후속 WI).
+**시범**: WI-613에서 apps/web/src/lib/design-tokens.ts에 시범 헬퍼 추가.
+
+---
+
+## core-module-system ★ (WI-616 신규)
+
+**Public API** (예정):
+
+```typescript
+interface ModuleConfig {
+  id: string;
+  label: string;
+  icon?: string;
+  pbc: string[];
+  nav: NavItem[];
+  widgets?: WidgetDef[];
+  prismaModels: string[];
+  permissions: { [scope: string]: string };
+  onInstall?: (deps: { prisma, orgId, ai? }) => Promise<void>;
+  onUninstall?: (deps) => Promise<void>;
+}
+
+registerModule(config: ModuleConfig): void
+getInstalledModules(orgId): Promise<ModuleConfig[]>
+installModule(orgId, moduleId): Promise<void>
+uninstallModule(orgId, moduleId): Promise<void>
+isModuleInstalled(orgId, moduleId): Promise<boolean>
+buildSidebar(orgId, userId): Promise<SidebarSection[]>
+```
+
+**모듈 사용처**: 모든 모듈이 자기 module.config.ts에서 registerModule 호출. middleware가 install + permission 체크.
 
 ---
 
 ## core-rebac (미시작)
 
-**의도**: 현 `packages/auth/` 안의 ReBAC 로직(RelationTuple, Google Zanzibar)을 분리해 다른 PBC가 import할 수 있게 함.
+**현 상태**: `packages/auth/` 안에 ReBAC RelationTuple 구현 존재. 추출만 하면 됨.
 
-**소비처**:
+**모듈 사용처**: 모든 모듈이 권한 결정 시 사용. PBC도 selective하게 import.
 
-| 앱 / PBC | 호출 패턴 |
-|---|---|
-| apps/web | 현재 직접 사용 → 분리 후 import 경로만 변경 |
-| apps/flowteams | 권한 결정 로직만 import |
-| pbc-billing (1년 후) | 결제 권한 검증 |
-| pbc-erp-* (1년 후) | 재고/주문 권한 |
-
-**상태**: 미시작 (audit P2 항목, 본 라운드 외).
+```typescript
+checkPermission(userId, orgId, scope: "consulting:write"): Promise<boolean>
+addPermission(userId, orgId, scope): Promise<void>
+removePermission(userId, orgId, scope): Promise<void>
+```
 
 ---
 
-## 1년 후 도입 PBC (Top 10 채우기)
+## 1년 후 도입 PBC
 
-| PBC | 출처 | 1차 소비처 |
+| PBC | 출처 | 1차 소비 모듈 |
 |---|---|---|
-| pbc-billing | Polar 래퍼 | flowstudio · flowvue · flowretouch · web (구독) |
-| pbc-consulting-crm | apps/web의 clients/contracts/programs 추출 | apps/web (자기 자신) + 외부 SaaS |
-| pbc-erp-inventory | FlowVue 재고 | apps/flowvue |
-| pbc-erp-orders | FlowVue 주문 | apps/flowvue |
-| pbc-file-manager | AXLE storage + AX Studio uploads | 모든 앱 |
-| pbc-messaging | AXLE notification + Solapi/Resend | 모든 앱 |
-| pbc-scheduler | AXLE calendar | apps/web · 미래 예약 SaaS |
+| pbc-billing | Polar 래퍼 | 모든 모듈 (구독 결제 단위) |
+| pbc-consulting-crm | M1의 clients/contracts/programs 추출 | M1 (자기 자신) + 외부 |
+| pbc-erp-inventory | FlowVue 재고 → M4로 | M4 |
+| pbc-erp-orders | FlowVue 주문 → M4로 | M4 |
+| pbc-file-manager | AXLE storage + AX Studio uploads | 모든 모듈 |
+| pbc-messaging | AXLE notification + Solapi/Resend | 모든 모듈 |
+| pbc-scheduler | AXLE calendar | M1 일정 |
 
 ---
 
-## 의존성 방향 (DAG, 단방향만 — PRD §5)
+## 의존성 방향 (단방향 DAG, PRD §5)
 
 ```
-apps/* (Layer 4)
+apps/web (Layer 4)
+   ↓ depends on
+src/modules/* (모듈 메타데이터, 페이지)
    ↓ depends on
 pbc-* + core-* + 횡단 packages (Layer 3)
    ↓ depends on
-@axle/db · @axle/auth · @axle/ai · @axle/storage · ... (횡단)
-   ↓ depends on
-Layer 2 FDP Core
+@axle/db · @axle/auth · @axle/ai · ...
 ```
 
-**금지**: PBC 간 순환 의존, PBC가 인증/결제/큐/스토리지를 직접 의존하는 것 (반드시 횡단 packages 경유).
+**금지**:
+- PBC 간 순환 의존
+- 모듈 간 직접 import (cross-module은 PBC 또는 공통 contract 경유)
+- PBC가 인증/결제/큐/스토리지 직접 의존

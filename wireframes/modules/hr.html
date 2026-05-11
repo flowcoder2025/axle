@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>M2 HR 모듈 — 직원 관리</title>
+<link rel="stylesheet" href="../shared/design-tokens.css">
+</head>
+<body>
+<div class="wf-page">
+  <aside class="wf-sidebar">
+    <h1>AXLE</h1>
+    <nav>
+      <a href="#">⌂ Dashboard</a>
+      <span class="section-label muted">컨설팅 모듈</span>
+      <a href="#" class="muted">고객관리 외 ...</a>
+      <span class="section-label">HR 모듈 (활성)</span>
+      <a href="#" class="active">급여</a>
+      <a href="#">근태</a>
+      <a href="#">연차</a>
+      <a href="#">노무 자문</a>
+      <a href="#">직원</a>
+      <span class="section-label">공통</span>
+      <a href="#">알림</a><a href="#">설정</a>
+    </nav>
+  </aside>
+
+  <div class="wf-main">
+    <header class="wf-topbar">
+      <h2>M2 HR 모듈 — HR Suite</h2>
+      <div class="actions">
+        <span class="tag tag-success">설치됨</span>
+        <span class="tag tag-accent">PBC: hr-payroll + messaging</span>
+      </div>
+    </header>
+
+    <main class="wf-content">
+
+      <div class="doc-note">
+        <strong>대상</strong>: 직원 5명 이상 회사 (스타트업, 중소기업).
+        <strong>현재</strong>: <code>apps/flowteams</code>의 4 페이지 — 모듈 시스템 도입 시 <code>apps/web/src/modules/hr/</code>로 흡수.
+        <strong>가격</strong>: ₩49,000 / 조직 + 직원 수 비례.
+        <strong>★ WI-612</strong>: createPayrollService 팩토리 + generateStatement.
+      </div>
+
+      <h2 class="section-title">① 모듈 메타데이터</h2>
+      <div class="page-card">
+        <header><h3>module.config.ts</h3><span class="route">src/modules/hr/</span></header>
+        <div class="body">
+          <pre style="background: var(--surface-muted); padding: var(--s-3); border-radius: var(--r-c); font-size: 12px; overflow-x: auto;">
+{
+  id: "hr",
+  label: "HR",
+  icon: "👥",
+  pbc: ["pbc-hr-payroll", "pbc-messaging"],
+  nav: [
+    { id: "payroll", label: "급여", route: "/payroll", perm: "hr:write" },
+    { id: "attendance", label: "근태", route: "/attendance", perm: "hr:read" },
+    { id: "leave", label: "연차", route: "/leave", perm: "hr:read" },
+    { id: "nomu", label: "노무 자문", route: "/nomu", perm: "hr:read" },
+    { id: "employees", label: "직원", route: "/employees", perm: "hr:admin" }
+  ],
+  widgets: [
+    { id: "monthly-summary", label: "이번달 요약", priority: 10 },
+    { id: "pending-payroll", label: "급여 처리 대기", priority: 20 }
+  ],
+  prismaModels: ["Employee", "Payroll", "Attendance", "LeaveRequest", "NomuConsultation"]
+}</pre>
+        </div>
+      </div>
+
+      <h2 class="section-title">② 페이지</h2>
+      <div class="grid-3">
+        <div class="page-card"><header><h3>급여</h3><span class="route">/payroll</span></header><div class="body"><div class="box"><span class="label tag-accent">WI-612</span><p>createPayrollService({prisma}).calculate(input)<br>generateStatement(period) → markdown/HTML 명세서</p></div></div></div>
+        <div class="page-card"><header><h3>근태</h3><span class="route">/attendance</span></header><div class="body"><div class="box"><p>QR / IP / GPS / MANUAL 4 method<br>일/주/월 요약</p></div></div></div>
+        <div class="page-card"><header><h3>연차</h3><span class="route">/leave</span></header><div class="body"><div class="box"><p>한국 노동법 (월1일 / 15일 / 가산)<br>승인 워크플로우</p></div></div></div>
+        <div class="page-card"><header><h3>노무 자문</h3><span class="route">/nomu</span></header><div class="body"><div class="box"><p>9 법령 인용 인식<br>AI 답변 + 인용 검증</p></div></div></div>
+        <div class="page-card"><header><h3>직원 (신규)</h3><span class="route">/employees</span></header><div class="body"><div class="box"><p>입사/퇴사/연봉 변경 이력</p></div></div></div>
+        <div class="page-card"><header><h3>월급 명세서</h3><span class="route">/payroll/[id]/statement</span></header><div class="body"><div class="box"><p>generateStatement 결과 → markdown 미리보기 + 다운로드</p></div></div></div>
+      </div>
+
+      <h2 class="section-title">③ 모듈 간 연동 (다른 모듈이 install되어 있을 때)</h2>
+      <div class="page-card">
+        <header><h3>Cross-module integrations</h3></header>
+        <div class="body grid-2">
+          <div class="box"><span class="label">+ 컨설팅 모듈</span><p>HR 직원 → 컨설팅 프로젝트의 멤버로 자동 연결</p></div>
+          <div class="box"><span class="label">+ ERP 모듈</span><p>(미래) 출고 처리한 직원 = 근태 기록 자동 연결</p></div>
+        </div>
+      </div>
+
+      <h2 class="section-title">④ install 시 자동 처리</h2>
+      <div class="page-card">
+        <header><h3>onInstall hook</h3></header>
+        <div class="body">
+          <table>
+            <tbody>
+              <tr><td>seed</td><td>4대보험 율 2025/2026 (year-aware)</td></tr>
+              <tr><td>법령 사전</td><td>9개 한국 노동법 인용 사전</td></tr>
+              <tr><td>샘플 employee</td><td>관리자 본인을 첫 직원으로 자동 등록</td></tr>
+              <tr><td>org-admin role</td><td>"hr:admin" 부여</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <h2 class="section-title">★ apps/flowteams 흡수 계획</h2>
+      <div class="page-card" style="border: 2px solid var(--accent);">
+        <header><h3>마이그레이션</h3><span class="route">기존 apps/flowteams → src/modules/hr</span></header>
+        <div class="body">
+          <table>
+            <thead><tr><th>현재 위치</th><th>이전 후</th></tr></thead>
+            <tbody>
+              <tr><td>apps/flowteams/app/payroll/page.tsx</td><td>apps/web/src/app/(platform)/payroll/page.tsx</td></tr>
+              <tr><td>apps/flowteams/app/attendance/page.tsx</td><td>apps/web/src/app/(platform)/attendance/page.tsx</td></tr>
+              <tr><td>apps/flowteams/app/leave/page.tsx</td><td>apps/web/src/app/(platform)/leave/page.tsx</td></tr>
+              <tr><td>apps/flowteams/app/nomu/page.tsx</td><td>apps/web/src/app/(platform)/nomu/page.tsx</td></tr>
+              <tr><td>apps/flowteams/lib/services.ts</td><td>apps/web/src/modules/hr/services.ts</td></tr>
+              <tr><td>apps/flowteams/ (디렉토리)</td><td>제거</td></tr>
+            </tbody>
+          </table>
+          <p class="muted" style="margin-top: var(--s-3)">★ 이 마이그레이션은 별도 WI로 등록 (이전 WI-615는 의미가 달라져 재정의 필요).</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>
