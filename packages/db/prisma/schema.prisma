@@ -1508,3 +1508,21 @@ model WorkSchedule {
   @@unique([userId, dayOfWeek])
   @@index([organizationId])
 }
+
+// =====================================================================
+// WI-616: Module system installation registry.
+// One row per (org, module) install. Settings is reserved for module-
+// specific configuration (e.g. per-org tax rates for the payroll module).
+// Pack install (installPack) writes N rows in a single transaction at
+// the application layer.
+// =====================================================================
+model OrgModuleInstall {
+  id          String   @id @default(cuid())
+  orgId       String
+  moduleId    String
+  installedAt DateTime @default(now())
+  settings    Json?
+
+  @@unique([orgId, moduleId])
+  @@index([orgId])
+}
