@@ -3,6 +3,7 @@ import Link from "next/link";
 const NAV_ITEMS = [
   { href: "/settings/organization", label: "조직 설정" },
   { href: "/settings/team", label: "팀 관리" },
+  { href: "/settings/modules", label: "Pack 카탈로그" },
   { href: "/settings/notifications", label: "알림 설정" },
   { href: "/settings/integrations", label: "연동 설정" },
   { href: "/settings/ai", label: "AI 설정" },
