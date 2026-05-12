@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@axle/auth";
+import { prisma } from "@axle/db";
 import { Toaster } from "@axle/ui";
 import type { SidebarSection } from "@axle/core-module-system";
 import { AppSidebar } from "../../src/components/app-sidebar";
@@ -7,7 +8,15 @@ import { UserMenu } from "../../src/components/user-menu";
 import { NotificationBell } from "../../src/components/notifications/notification-bell";
 import { MobileSidebar } from "../../src/components/mobile-sidebar";
 import { GlobalSearch } from "../../src/components/global-search";
+import {
+  OrgSwitcher,
+  type OrgSwitcherTenant,
+} from "../../src/components/org-switcher";
 import { buildPlatformSidebar } from "../../src/lib/sidebar-builder";
+import {
+  getActiveTenant,
+  listAvailableTenants,
+} from "../../src/lib/tenant-context";
 
 export default async function AppLayout({
   children,
@@ -23,16 +32,32 @@ export default async function AppLayout({
     <UserMenu name={user.name} email={user.email} image={user.image} />
   );
 
-  // Build dynamic sidebar for the user's active org. Falls back silently to
-  // an empty array when the org has no installed modules — AppSidebar then
-  // renders its legacy static menu so navigation never disappears.
   let sections: SidebarSection[] = [];
+  let tenants: OrgSwitcherTenant[] = [];
+  let activeTenantId = user.orgId ?? "";
+
   if (user.orgId) {
     try {
       sections = await buildPlatformSidebar(user.orgId, user.id);
     } catch {
-      // Builder failure (e.g. DB hiccup) shouldn't break the shell.
       sections = [];
+    }
+
+    try {
+      // WI-620 — fetch org name once for the tenant context helpers.
+      const ownerOrg = await prisma.organization.findUnique({
+        where: { id: user.orgId },
+        select: { name: true },
+      });
+      const ownerOrgName = ownerOrg?.name ?? "본인 조직";
+      const [active, available] = await Promise.all([
+        getActiveTenant(user.orgId, ownerOrgName),
+        listAvailableTenants(user.id, user.orgId, ownerOrgName),
+      ]);
+      activeTenantId = active.id;
+      tenants = available;
+    } catch {
+      tenants = [];
     }
   }
 
@@ -56,6 +81,7 @@ export default async function AppLayout({
           {/* Spacer for desktop */}
           <div className="hidden md:block" />
           <div className="flex items-center gap-2">
+            <OrgSwitcher activeId={activeTenantId} tenants={tenants} />
             <GlobalSearch />
             <NotificationBell />
           </div>
