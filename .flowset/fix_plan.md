@@ -604,9 +604,9 @@
 - [x] WI-618-feat 동적 사이드바 — Pack-aware + 권한 + active tenant scope 적용 | L1:Phase19 > L2:ModuleSystem > L3:Sidebar
 - [x] WI-619-feat 모듈 ReBAC — scope permissions (customers:* / payroll:* / matching:* / ...) | L1:Phase19 > L2:ModuleSystem > L3:ReBAC
 - [x] WI-620-feat Multi-org tenancy 모델 — ManagedOrg model + tenantOrgId + Topbar 조직 스위처 | L1:Phase19 > L2:ModuleSystem > L3:MultiOrg
-- [ ] WI-621-refactor apps/flowteams → apps/web/src/modules/hr 마이그레이션 (4페이지 + services.ts 이전, 디렉토리 제거) | L1:Phase19 > L2:ModuleSystem > L3:FlowTeamsAbsorb
-- [ ] WI-622-feat Pack A 모듈 메타데이터 (10개 module.config.ts: customers/projects/estimates/contracts/documents/portal/calendar/meetings/finance/analytics) | L1:Phase19 > L2:ModuleSystem > L3:PackA
-- [ ] WI-623-feat Pack B 모듈 메타데이터 (6개: programs/matching/journals/hwpx/checklist/ai-patterns) | L1:Phase19 > L2:ModuleSystem > L3:PackB
-- [ ] WI-624-feat Pack D 모듈 메타데이터 (5개: employees/payroll/attendance/leave/nomu) | L1:Phase19 > L2:ModuleSystem > L3:PackD
-- [ ] WI-625-feat Pack E 모듈 메타데이터 (4개: image-generation/builder/presets/workflows) | L1:Phase19 > L2:ModuleSystem > L3:PackE
-- [ ] WI-626-feat Pack G 모듈 메타데이터 (3개: portal-automation/cert-management/voice-recording) | L1:Phase19 > L2:ModuleSystem > L3:PackG
+- [x] WI-621-refactor apps/flowteams → apps/web/src/modules/hr 마이그레이션 (4페이지 + services.ts 이전, 디렉토리 제거) | L1:Phase19 > L2:ModuleSystem > L3:FlowTeamsAbsorb
+- [x] WI-622-feat Pack A 모듈 메타데이터 (10개 module.config.ts: customers/projects/estimates/contracts/documents/portal/calendar/meetings/finance/analytics) | L1:Phase19 > L2:ModuleSystem > L3:PackA
+- [x] WI-623-feat Pack B 모듈 메타데이터 (6개: programs/matching/journals/hwpx/checklist/ai-patterns) | L1:Phase19 > L2:ModuleSystem > L3:PackB
+- [x] WI-624-feat Pack D 모듈 메타데이터 (5개: employees/payroll/attendance/leave/nomu) | L1:Phase19 > L2:ModuleSystem > L3:PackD
+- [x] WI-625-feat Pack E 모듈 메타데이터 (4개: image-generation/builder/presets/workflows) | L1:Phase19 > L2:ModuleSystem > L3:PackE
+- [x] WI-626-feat Pack G 모듈 메타데이터 (3개: portal-automation/cert-management/voice-recording) | L1:Phase19 > L2:ModuleSystem > L3:PackG
