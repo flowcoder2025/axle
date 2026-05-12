@@ -19,7 +19,7 @@ set -euo pipefail
 #   - completed_wis.txt = Single source of truth
 #   - reconcile_fix_plan() syncs checkboxes at loop END only
 #==============================
-FLOWSET_VERSION="3.0.0"
+FLOWSET_VERSION="3.0.1"
 
 # UTF-8 강제 (Windows 한글 깨짐 방지)
 export LANG=en_US.UTF-8
@@ -195,6 +195,48 @@ mark_wi_done() {
   echo "$wi_prefix" >> "$COMPLETED_FILE"
   log "  mark_wi_done: ✅ ${wi_name}"
   update_wi_history "$wi_name" || true
+}
+
+verify_wi_actually_merged() {
+  # Guards against fake completion (gh issue 2026-05-12 #3): worker reports
+  # success but no PR was actually merged for this WI. Compares HEAD against
+  # the pre-iteration SHA and rejects if no commit in that range references
+  # the WI prefix.
+  #
+  # Returns 0 (allow mark_wi_done) when a matching commit is found, or when
+  # the baseline SHA is unknown ("none") — in that case the legacy SHA-change
+  # gate still applies.
+  # Returns 1 (block mark_wi_done) when baseline is valid but no commit
+  # mentions the WI prefix.
+  local wi_name="$1"
+  local since_sha="$2"
+  local wi_prefix="${wi_name%% *}"
+
+  if [[ -z "$since_sha" || "$since_sha" == "none" ]]; then
+    return 0
+  fi
+
+  if git log "${since_sha}..HEAD" --format=%s 2>/dev/null \
+       | grep -qF "$wi_prefix"; then
+    return 0
+  fi
+  return 1
+}
+
+block_fake_completion() {
+  # Shared logging path for verify_wi_actually_merged rejections.
+  local wi_name="$1"
+  local since_sha="$2"
+  local iter_num="${3:-?}"
+  local wi_prefix="${wi_name%% *}"
+
+  log "⚠️ 가짜 완료 차단 — ${wi_prefix} 관련 신규 커밋 없음 (mark_wi_done 차단)"
+  {
+    echo ""
+    echo "### [$(date '+%Y-%m-%d %H:%M')] 가짜 완료 차단 — ${wi_prefix} (Iteration #${iter_num})"
+    echo "wait_for_merge는 0을 반환했으나 ${since_sha}..HEAD 범위에 WI prefix 커밋 없음."
+    echo "워커가 PR 없이 보고만 한 케이스 추정. mark_wi_done 호출 차단."
+  } >> .flowset/guardrails.md
 }
 
 recover_completed_from_history() {
@@ -1952,17 +1994,30 @@ main() {
       # 워커가 생성한 브랜치 감지 (현재 브랜치 또는 최근 push한 브랜치)
       local worker_branch
       worker_branch=$(git branch --show-current 2>/dev/null || echo "main")
+      # pre-iteration baseline (last_git_sha was updated at the previous
+      # iteration's end) — used by verify_wi_actually_merged to detect fake
+      # completions where wait_for_merge matches a stale branch's old PR.
+      local pre_iter_sha="$last_git_sha"
       if [[ "$worker_branch" != "main" ]]; then
         # 워커가 브랜치에서 작업 완료 → 머지 대기
         local merge_result=0
         wait_for_merge "$worker_branch" || merge_result=$?
         safe_sync_main
+        # Force back to main so the next iteration doesn't inherit a stale
+        # worker branch (root cause of 2026-05-12 fake-completion incident #3).
+        git checkout main 2>/dev/null || true
         local fc=$(git diff --stat HEAD~1 HEAD 2>/dev/null | tail -1 | grep -oE '[0-9]+ file' | grep -oE '[0-9]+' || echo "0")
         if [[ $merge_result -eq 0 ]]; then
-          mark_wi_done "$current_wi" || true
-          consecutive_no_progress=0  # WI 완료 = progress
-          record_pattern "$current_wi" "merged" "" "$iter_elapsed" || true
-          log_trace "$current_wi" "merged" "$fc" "$iter_elapsed"
+          if verify_wi_actually_merged "$current_wi" "$pre_iter_sha"; then
+            mark_wi_done "$current_wi" || true
+            consecutive_no_progress=0  # WI 완료 = progress
+            record_pattern "$current_wi" "merged" "" "$iter_elapsed" || true
+            log_trace "$current_wi" "merged" "$fc" "$iter_elapsed"
+          else
+            block_fake_completion "$current_wi" "$pre_iter_sha" "$loop_count"
+            record_pattern "$current_wi" "fake-completion-blocked" "" "$iter_elapsed" || true
+            log_trace "$current_wi" "fake-completion-blocked" "$fc" "$iter_elapsed"
+          fi
         else
           record_pattern "$current_wi" "skipped" "" "$iter_elapsed" || true
           log_trace "$current_wi" "skipped" "0" "$iter_elapsed"
@@ -1973,11 +2028,18 @@ main() {
         local current_sha_now
         current_sha_now=$(git rev-parse HEAD 2>/dev/null || echo "none")
         if [[ "$current_sha_now" != "$last_git_sha" ]]; then
-          mark_wi_done "$current_wi" || true
-          consecutive_no_progress=0  # WI 완료 = progress
-          last_git_sha="$current_sha_now"
-          record_pattern "$current_wi" "merged" "" "$iter_elapsed" || true
-          log_trace "$current_wi" "merged" "0" "$iter_elapsed"
+          if verify_wi_actually_merged "$current_wi" "$pre_iter_sha"; then
+            mark_wi_done "$current_wi" || true
+            consecutive_no_progress=0  # WI 완료 = progress
+            last_git_sha="$current_sha_now"
+            record_pattern "$current_wi" "merged" "" "$iter_elapsed" || true
+            log_trace "$current_wi" "merged" "0" "$iter_elapsed"
+          else
+            block_fake_completion "$current_wi" "$pre_iter_sha" "$loop_count"
+            last_git_sha="$current_sha_now"
+            record_pattern "$current_wi" "fake-completion-blocked" "" "$iter_elapsed" || true
+            log_trace "$current_wi" "fake-completion-blocked" "0" "$iter_elapsed"
+          fi
         else
           record_pattern "$current_wi" "skipped" "" "$iter_elapsed" || true
           log_trace "$current_wi" "skipped" "0" "$iter_elapsed"
