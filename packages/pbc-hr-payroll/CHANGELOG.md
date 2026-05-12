@@ -1,5 +1,14 @@
 # Changelog — `@axle/pbc-hr-payroll`
 
+## 0.0.2 — 2026-05-12 (WI-612)
+
+### Added
+
+- **WI-612** — `createPayrollService(deps)` factory + `generateStatement` round-trip. `calculate` runs `calculatePayroll` then persists a `Payroll` row + 7 `PayrollItem` deduction rows via the structurally-typed `PrismaPayrollDelegateLike` (2 methods: `create`, `findMany`). `generateStatement({ userId, period })` reconstructs the full `PayrollResult` from the persisted rows. `createPrismaPayrollStore(prismaPayrollDelegate, { organizationId })` bakes `organizationId` into the delegate (same per-org pattern as `attendance/prismaStore.ts`).
+- **WI-612** — `renderStatementMarkdown(statement, ctx?)` / `renderStatementHtml(statement, ctx?)` pure string renderers for the Korean 급여명세서. HTML output escapes every dynamic value (XSS hardening: no `<script>`, no inline event handlers, escaped `documentUrl`). PDF / HWPX rendering is intentionally out-of-scope (follow-up WI).
+- **WI-612** — `apps/flowteams/lib/services.ts` now wires `createPayrollService` into `createFlowTeamsServices(opts)`; `apps/flowteams/app/payroll/page.tsx` switched to `services.payroll.calculate(...)` — direct `calculatePayroll` import removed from the page (spec §3.2 PBC abstraction).
+- 15 new unit tests (`__tests__/payroll-service.test.ts` × 6, `__tests__/statement.test.ts` × 9).
+
 ## 0.0.1 — 2026-05-05 (Phase 19 launch)
 
 WI-601 ~ WI-610. First public surface; no prior releases.

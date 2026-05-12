@@ -20,24 +20,28 @@ import {
   createKoreanLeavePolicy,
   createLeaveService,
   createNomuConsultationService,
+  createPayrollService,
   createPrismaAttendanceStore,
   createPrismaLeaveStore,
   createPrismaNomuConsultationStore,
+  createPrismaPayrollStore,
   type AttendanceServiceImpl,
   type AttendanceVerificationPolicy,
   type LeaveServiceImpl,
   type NomuAiClient,
   type NomuTopicCategory,
+  type PayrollServiceImpl,
 } from "@axle/pbc-hr-payroll";
 import type { NomuConsultationService } from "@axle/pbc-hr-payroll";
 
 export {
   // Pure functions — no per-org wiring needed; re-export verbatim.
-  calculatePayroll,
   classifyNomuTopic,
   countLeaveDays,
   extractKoreanLaborLawCitations,
   redactNomuPii,
+  renderStatementHtml,
+  renderStatementMarkdown,
   validateNomuAnswer,
   verifyDefaultFlowTeamsAttendanceEnumMapping,
 } from "@axle/pbc-hr-payroll";
@@ -46,6 +50,7 @@ const PRISMA_CLIENT = prisma as unknown as {
   attendance: Parameters<typeof createPrismaAttendanceStore>[0];
   leave: Parameters<typeof createPrismaLeaveStore>[0];
   nomuConsultation: Parameters<typeof createPrismaNomuConsultationStore>[0];
+  payroll: Parameters<typeof createPrismaPayrollStore>[0];
 };
 
 const PLACEHOLDER_ANSWER_BY_TOPIC: Record<NomuTopicCategory, string> = {
@@ -108,6 +113,7 @@ export interface FlowTeamsServices {
   attendance: AttendanceServiceImpl;
   leave: LeaveServiceImpl;
   nomu: NomuConsultationService;
+  payroll: PayrollServiceImpl;
 }
 
 const EMPTY_VERIFICATION_POLICY: AttendanceVerificationPolicy = {
@@ -141,5 +147,11 @@ export function createFlowTeamsServices(
     ai: opts.nomuAi ?? createPlaceholderNomuAiClient(),
   });
 
-  return { attendance, leave, nomu };
+  const payroll = createPayrollService({
+    prisma: createPrismaPayrollStore(PRISMA_CLIENT.payroll, {
+      organizationId: opts.organizationId,
+    }),
+  });
+
+  return { attendance, leave, nomu, payroll };
 }
