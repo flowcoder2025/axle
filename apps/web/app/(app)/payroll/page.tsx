@@ -1,4 +1,7 @@
-import { createFlowTeamsServices, renderStatementMarkdown } from "../../lib/services";
+import {
+  createFlowTeamsServices,
+  renderStatementMarkdown,
+} from "../../../src/modules/hr/services";
 
 // `payroll.calculate` performs a real prisma.payroll.create insert, so this
 // route must run per-request — opt out of prerendering and ISR.

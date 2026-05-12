@@ -43,13 +43,13 @@ vi.mock("@axle/db", () => ({
 
 describe("apps/flowteams thin-shell wiring", () => {
   it("exposes statement renderers re-exported from @axle/pbc-hr-payroll", async () => {
-    const flowteams = await import("../lib/services.js");
+    const flowteams = await import("../../../src/modules/hr/services.js");
     expect(typeof flowteams.renderStatementMarkdown).toBe("function");
     expect(typeof flowteams.renderStatementHtml).toBe("function");
   });
 
   it("createFlowTeamsServices wires Prisma stores + Korean leave policy + payroll", async () => {
-    const flowteams = await import("../lib/services.js");
+    const flowteams = await import("../../../src/modules/hr/services.js");
     const services = flowteams.createFlowTeamsServices({
       organizationId: "org_test",
       tenureYearsResolver: () => 3,
@@ -66,7 +66,7 @@ describe("apps/flowteams thin-shell wiring", () => {
   });
 
   it("payroll.calculate routes through createPayrollService and persists via prisma.payroll.create", async () => {
-    const flowteams = await import("../lib/services.js");
+    const flowteams = await import("../../../src/modules/hr/services.js");
     const db = await import("@axle/db");
     const payrollMock = (db.prisma as unknown as { payroll: { create: ReturnType<typeof vi.fn> } }).payroll;
     payrollMock.create.mockResolvedValueOnce({ id: "pay_x" });
@@ -89,7 +89,7 @@ describe("apps/flowteams thin-shell wiring", () => {
   });
 
   it("nomu service uses the stub AI client (deterministic placeholder until v1)", async () => {
-    const flowteams = await import("../lib/services.js");
+    const flowteams = await import("../../../src/modules/hr/services.js");
     const stub = flowteams.createPlaceholderNomuAiClient();
     const out = await stub.generateAnswer({
       question: "수습 기간에도 연차가 발생하나요?",
@@ -102,7 +102,7 @@ describe("apps/flowteams thin-shell wiring", () => {
   });
 
   it("FlowTeams enum mapping is verified at boot (default args wrapper)", async () => {
-    const flowteams = await import("../lib/services.js");
+    const flowteams = await import("../../../src/modules/hr/services.js");
     const r = flowteams.verifyDefaultFlowTeamsAttendanceEnumMapping();
     expect(r.ok).toBe(true);
   });

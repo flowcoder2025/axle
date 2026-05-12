@@ -23,6 +23,7 @@
     "@axle/matching": "*",
     "@axle/notification": "*",
     "@axle/ocr": "*",
+    "@axle/pbc-hr-payroll": "*",
     "@axle/storage": "*",
     "@axle/ui": "*",
     "@google/generative-ai": "^0.24.0",
