@@ -34,25 +34,21 @@ vi.mock("@axle/db", () => ({
       findUnique: vi.fn(),
       findMany: vi.fn(),
     },
+    payroll: {
+      create: vi.fn(),
+      findMany: vi.fn(),
+    },
   },
 }));
 
 describe("apps/flowteams thin-shell wiring", () => {
-  it("exposes calculatePayroll re-exported from @axle/pbc-hr-payroll", async () => {
+  it("exposes statement renderers re-exported from @axle/pbc-hr-payroll", async () => {
     const flowteams = await import("../lib/services.js");
-    expect(typeof flowteams.calculatePayroll).toBe("function");
-
-    const result = flowteams.calculatePayroll({
-      userId: "u1",
-      orgId: "org_test",
-      period: { year: 2026, month: 5 },
-      baseSalary: 3_000_000,
-    });
-    expect(result.gross).toBe(3_000_000);
-    expect(result.metadata.insuranceRatesYear).toBe(2026);
+    expect(typeof flowteams.renderStatementMarkdown).toBe("function");
+    expect(typeof flowteams.renderStatementHtml).toBe("function");
   });
 
-  it("createFlowTeamsServices wires Prisma stores + Korean leave policy", async () => {
+  it("createFlowTeamsServices wires Prisma stores + Korean leave policy + payroll", async () => {
     const flowteams = await import("../lib/services.js");
     const services = flowteams.createFlowTeamsServices({
       organizationId: "org_test",
@@ -65,6 +61,31 @@ describe("apps/flowteams thin-shell wiring", () => {
     expect(typeof services.leave.balance).toBe("function");
     expect(typeof services.nomu.ask).toBe("function");
     expect(typeof services.nomu.validate).toBe("function");
+    expect(typeof services.payroll.calculate).toBe("function");
+    expect(typeof services.payroll.generateStatement).toBe("function");
+  });
+
+  it("payroll.calculate routes through createPayrollService and persists via prisma.payroll.create", async () => {
+    const flowteams = await import("../lib/services.js");
+    const db = await import("@axle/db");
+    const payrollMock = (db.prisma as unknown as { payroll: { create: ReturnType<typeof vi.fn> } }).payroll;
+    payrollMock.create.mockResolvedValueOnce({ id: "pay_x" });
+
+    const services = flowteams.createFlowTeamsServices({
+      organizationId: "org_test",
+    });
+    const result = await services.payroll.calculate({
+      userId: "u1",
+      orgId: "org_test",
+      period: { year: 2026, month: 5 },
+      baseSalary: 3_000_000,
+    });
+    expect(result.gross).toBe(3_000_000);
+    expect(payrollMock.create).toHaveBeenCalledTimes(1);
+    const createArgs = payrollMock.create.mock.calls[0]![0];
+    expect(createArgs.data.organizationId).toBe("org_test");
+    expect(createArgs.data.userId).toBe("u1");
+    expect(createArgs.data.items.create).toHaveLength(7);
   });
 
   it("nomu service uses the stub AI client (deterministic placeholder until v1)", async () => {
@@ -92,5 +113,9 @@ describe("apps/flowteams thin-shell wiring", () => {
     expect(typeof pbc.createAttendanceService).toBe("function");
     expect(typeof pbc.createLeaveService).toBe("function");
     expect(typeof pbc.createNomuConsultationService).toBe("function");
+    expect(typeof pbc.createPayrollService).toBe("function");
+    expect(typeof pbc.createPrismaPayrollStore).toBe("function");
+    expect(typeof pbc.renderStatementMarkdown).toBe("function");
+    expect(typeof pbc.renderStatementHtml).toBe("function");
   });
 });

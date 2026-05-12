@@ -37,6 +37,40 @@ export {
 export type { InsuranceDeductionBreakdown } from "./payroll/deductions.js";
 
 export {
+  createPayrollService,
+} from "./payroll/service.js";
+export type {
+  PayrollServiceAiClient,
+  PayrollServiceDeps,
+  PayrollServiceImpl,
+} from "./payroll/service.js";
+export {
+  createPrismaPayrollStore,
+  payrollResultToItemsCreate,
+  rowToPayrollResult,
+  toNumber as payrollDecimalToNumber,
+  PAYROLL_ITEM_CATEGORY,
+  PAYROLL_ITEM_TYPE,
+} from "./payroll/prismaStore.js";
+export type {
+  DecimalLike as PayrollDecimalLike,
+  PayrollCreateData,
+  PayrollFindManyWhere,
+  PayrollItemRow,
+  PayrollRow,
+  PrismaPayrollDelegateLike,
+  PrismaPayrollRawDelegate,
+  PrismaPayrollStoreOptions,
+} from "./payroll/prismaStore.js";
+export {
+  renderStatementHtml,
+  renderStatementMarkdown,
+} from "./payroll/statement.js";
+export type {
+  PayrollStatementRenderContext,
+} from "./payroll/statement.js";
+
+export {
   verifyAttendanceContext,
   verifyGpsAttendance,
   verifyIpAttendance,
