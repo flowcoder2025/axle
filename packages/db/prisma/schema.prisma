@@ -1412,6 +1412,10 @@ model Payroll {
   id                 String        @id @default(cuid())
   userId             String
   organizationId     String
+  // WI-620 — Multi-org tenancy pilot. Null = self-org (single-org tier or
+  // legacy rows). Set to a ManagedOrg.id when the payroll record belongs to
+  // a managed (위탁) org. All payroll queries should filter on tenantOrgId.
+  tenantOrgId        String?
   periodYear         Int
   periodMonth        Int
   gross              Decimal       @db.Decimal(14, 2)
@@ -1430,6 +1434,7 @@ model Payroll {
 
   @@unique([userId, periodYear, periodMonth])
   @@index([organizationId, periodYear, periodMonth])
+  @@index([tenantOrgId])
 }
 
 model PayrollItem {
@@ -1525,4 +1530,47 @@ model OrgModuleInstall {
 
   @@unique([orgId, moduleId])
   @@index([orgId])
+}
+
+// =====================================================================
+// WI-620: Multi-org tenancy — premium tier where a consulting org can
+// host N managed orgs (위탁 운영). ManagedOrg rows describe each guest
+// org; OrgMultiOrgSubscription tracks whether the owner org has the
+// feature enabled and how many managed orgs they may add.
+//
+// Module tables that participate in multi-org (Pack A finance/analytics,
+// Pack B matching/journals, Pack D fully) carry a `tenantOrgId` column
+// that points at either ManagedOrg.id (managed scope) or null (self).
+// =====================================================================
+enum ManagedOrgStatus {
+  ACTIVE
+  PAUSED
+  TERMINATED
+}
+
+model ManagedOrg {
+  id             String           @id @default(cuid())
+  // The owner is the consulting/parent org that pays + administers.
+  ownerOrgId     String
+  name           String
+  bizRegNumber   String?
+  status         ManagedOrgStatus @default(ACTIVE)
+  // Pack ids that have been delegated to this managed org (e.g. ["D"]).
+  installedPacks Json             @default("[]")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([ownerOrgId])
+  @@index([ownerOrgId, status])
+}
+
+model OrgMultiOrgSubscription {
+  id          String    @id @default(cuid())
+  orgId       String    @unique
+  enabled     Boolean   @default(false)
+  // Plan-level cap on simultaneous managed orgs (0 = unlimited disabled).
+  maxManaged  Int       @default(0)
+  activatedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
