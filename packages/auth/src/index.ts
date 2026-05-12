@@ -31,3 +31,24 @@ export {
 
 // Session cache
 export { getCachedSession, invalidateCachedSession } from "./session-cache.js";
+
+// WI-619: Module scope ReBAC
+export {
+  MODULE_SCOPES,
+  MODULE_SCOPE_NAMESPACE,
+  TENANT_SCOPE_NAMESPACE,
+  anyScopeSatisfies,
+  checkModulePermission,
+  checkModulePermissionLegacy,
+  checkTenantScope,
+  getUserModuleScopes,
+  grantModuleScope,
+  grantTenantScope,
+  isKnownModuleScope,
+  revokeModuleScope,
+  revokeTenantScope,
+  scopeSatisfies,
+  setRelationStore,
+  type ModuleScope,
+  type RelationStore,
+} from "./rebac/index.js";

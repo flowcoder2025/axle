@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@axle/auth";
+import { getCurrentUser, checkModulePermissionLegacy } from "@axle/auth";
 import { prisma } from "@axle/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -23,6 +23,16 @@ function GrowthIcon({ growth }: { growth?: number }) {
 export default async function FinancePage() {
   const user = await getCurrentUser();
   if (!user?.orgId) notFound();
+
+  // WI-619 — module ReBAC gate. Backward-compatible: orgs without any
+  // module-scope grants pass through (legacy), but once grants exist the
+  // user needs `finance:read` (or higher) to view this page.
+  const allowed = await checkModulePermissionLegacy(
+    user.id,
+    user.orgId,
+    "finance:read",
+  );
+  if (!allowed) notFound();
 
   const currentYear = new Date().getFullYear();
 
