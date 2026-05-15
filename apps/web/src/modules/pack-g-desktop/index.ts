@@ -1,8 +1,8 @@
 import type { ModuleConfig } from "@axle/core-module-system";
-import { automationModule } from "./automation/module.config.js";
-import { certsModule } from "./certs/module.config.js";
-import { packG } from "./pack.config.js";
-import { recordingModule } from "./recording/module.config.js";
+import { automationModule } from "./automation/module.config";
+import { certsModule } from "./certs/module.config";
+import { packG } from "./pack.config";
+import { recordingModule } from "./recording/module.config";
 
 export { packG };
 export { automationModule, certsModule, recordingModule };

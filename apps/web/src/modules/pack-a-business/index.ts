@@ -1,15 +1,15 @@
 import type { ModuleConfig } from "@axle/core-module-system";
-import { analyticsModule } from "./analytics/module.config.js";
-import { calendarModule } from "./calendar/module.config.js";
-import { contractsModule } from "./contracts/module.config.js";
-import { customersModule } from "./customers/module.config.js";
-import { documentsModule } from "./documents/module.config.js";
-import { estimatesModule } from "./estimates/module.config.js";
-import { financeModule } from "./finance/module.config.js";
-import { meetingsModule } from "./meetings/module.config.js";
-import { packA } from "./pack.config.js";
-import { portalAdminModule } from "./portal-admin/module.config.js";
-import { projectsModule } from "./projects/module.config.js";
+import { analyticsModule } from "./analytics/module.config";
+import { calendarModule } from "./calendar/module.config";
+import { contractsModule } from "./contracts/module.config";
+import { customersModule } from "./customers/module.config";
+import { documentsModule } from "./documents/module.config";
+import { estimatesModule } from "./estimates/module.config";
+import { financeModule } from "./finance/module.config";
+import { meetingsModule } from "./meetings/module.config";
+import { packA } from "./pack.config";
+import { portalAdminModule } from "./portal-admin/module.config";
+import { projectsModule } from "./projects/module.config";
 
 export { packA };
 export {

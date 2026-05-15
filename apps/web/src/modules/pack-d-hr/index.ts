@@ -1,10 +1,10 @@
 import type { ModuleConfig } from "@axle/core-module-system";
-import { attendanceModule } from "./attendance/module.config.js";
-import { employeesModule } from "./employees/module.config.js";
-import { leaveModule } from "./leave/module.config.js";
-import { nomuModule } from "./nomu/module.config.js";
-import { packD } from "./pack.config.js";
-import { payrollModule } from "./payroll/module.config.js";
+import { attendanceModule } from "./attendance/module.config";
+import { employeesModule } from "./employees/module.config";
+import { leaveModule } from "./leave/module.config";
+import { nomuModule } from "./nomu/module.config";
+import { packD } from "./pack.config";
+import { payrollModule } from "./payroll/module.config";
 
 export { packD };
 export {
