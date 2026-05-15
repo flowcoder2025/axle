@@ -58,8 +58,8 @@
 + apps/web/app/(app)/erp/orders/[orderId]/page.tsx
 + apps/web/app/api/erp/orders/route.ts
 + apps/web/app/api/erp/orders/[orderId]/cancel/route.ts
-+ apps/web/src/lib/erp/auth.ts                                // requireErpScope 헬퍼
-+ apps/web/src/lib/erp/serialize.ts                           // Decimal/Date → JSON-safe
++ apps/web/lib/erp/auth.ts                                // requireErpScope 헬퍼
++ apps/web/lib/erp/serialize.ts                           // Decimal/Date → JSON-safe
 + apps/web/__tests__/api/erp/products.test.ts
 + apps/web/__tests__/api/erp/inventory.test.ts
 + apps/web/__tests__/api/erp/orders.test.ts
@@ -74,8 +74,8 @@
 + packages/ocr/__tests__/receipt.test.ts
 ~ packages/ai/src/dispatcher/handlers/ocr.ts                  // OcrInput { mode? } + mode 분기
 + packages/ai/__tests__/dispatcher/ocr.test.ts                // mode 분기 회귀
-+ apps/web/src/lib/erp/fuzzy-match.ts                         // 한국어 normalize + Levenshtein top-3
-+ apps/web/__tests__/lib/erp/fuzzy-match.test.ts
++ apps/web/lib/erp/fuzzy-match.ts                         // 한국어 normalize + Levenshtein top-3
++ apps/web/__tests__/lib/erp/   (테스트는 src 미러 X — apps/web/__tests__/ 직속)fuzzy-match.test.ts
 + apps/web/app/api/erp/intake/route.ts                        // POST upload+dispatch, GET list
 + apps/web/app/api/erp/intake/[draftId]/route.ts              // GET detail
 + apps/web/app/api/erp/intake/[draftId]/confirm/route.ts      // POST 멱등 트랜잭션
@@ -91,7 +91,7 @@
 + apps/web/src/components/erp/intake/items-table.tsx
 + apps/web/src/components/erp/intake/counterparty-autocomplete.tsx
 + apps/web/src/components/erp/intake/product-autocomplete.tsx
-+ apps/web/src/lib/erp/blob.ts                                // upload/sign URL/orphan cleanup
++ apps/web/lib/erp/blob.ts                                // upload/sign URL/orphan cleanup
 + scripts/cron/blob-orphan-cleanup.ts                         // cleanup cron 스텁
 + apps/web/__tests__/components/erp/intake-review-form.test.tsx
 ```
@@ -99,7 +99,7 @@
 ### D. Tests + docs (WI-715~717)
 
 ```
-+ apps/web/__tests__/lib/erp/fuzzy-match-korean.test.ts       // 10+ 한국어 케이스
++ apps/web/__tests__/lib/erp/   (테스트는 src 미러 X — apps/web/__tests__/ 직속)fuzzy-match-korean.test.ts       // 10+ 한국어 케이스
 + apps/web/__tests__/api/erp/intake-cross-draft-race.test.ts  // N2 race 시나리오
 + e2e/erp-intake.spec.ts                                       // E2E happy path (대화형 작성)
 ~ docs/specs/meta-platform/PRD.md                              // Phase 20 섹션 갱신
@@ -117,7 +117,29 @@
 - [ ] Phase 19 가짜 완료 복구 완료 확인: `tail -5 .flowset/completed_wis.txt` → WI-622-feat~WI-626-feat 존재
 - [ ] 환경 변수: `ANTHROPIC_API_KEY`, `BLOB_READ_WRITE_TOKEN` (Vercel Blob)
 
+## Codebase Conventions (반드시 준수 — 리뷰에서 노출된 함정)
+
+| 항목 | 실제 값 | 잘못된 가정 |
+|---|---|---|
+| TS path alias | `@/*` → `apps/web/*` (tsconfig baseUrl `.`) | ~~`apps/web/src/`~~ — `src/`는 internal, root `lib/`가 표준 |
+| Helper 디렉토리 위치 | `apps/web/lib/` (예: `apps/web/lib/scraper-blob.ts`) | ~~`apps/web/src/lib/`~~ |
+| Auth helper | `getCurrentUser()` from `@axle/auth` → `{ id, orgId, ... }` | ~~`auth()` from `@/lib/auth`~~ — 존재하지 않음 |
+| Active tenant 해소 | `getActiveTenant(ownerOrgId, ownerOrgName)` from `apps/web/src/lib/tenant-context.ts` (returns `{id, isManaged, name}`) | ~~`session.activeTenantId`~~ — 존재하지 않음. 쿠키 기반. |
+| ReBAC scope check | `checkModulePermission(userId, orgId, scope)` from `@axle/auth` | OK |
+| Client 모델 FK | `Client.orgId` (NOT `organizationId`) | 다수 모델이 `orgId` 사용 |
+| AI dispatcher 직접 호출 | 없음 — business-card route 패턴: `parseBusinessCard(buf, mimeType)` 직접 호출. `parseReceipt`도 동일하게 직접 호출. | ~~`dispatchAiJob({ type: "OCR", input })`~~ — `dispatch(type, input)`은 존재하지만 본 phase MVP는 직접 호출이 단순. AiJob row를 거치려면 별도 작업. |
+| Vercel function timeout | Hobby 10s / Pro Fluid 60s. **OCR 30s+ 예상** → `export const maxDuration = 60` 필수 (intake POST route) | 기본값 부족 |
+| sidebar-builder 시그니처 | `buildPlatformSidebar(orgId: string, userId: string, activeTenant?: string, deps?: SidebarBuilderDeps)` (4 positional args) | ~~`buildPlatformSidebar({orgId, userId}, deps)`~~ |
+
 각 WI는 **독립 브랜치 + 독립 PR + enqueue-pr.sh --wait**로 진행. 머지 후 다음 WI 시작 (rule: AXLE CLAUDE.md "머지 확인 후 다음").
+
+**PR 번호 추출 — 모든 Task 공통 패턴**: 본 plan은 가독성을 위해 `<PR_NUMBER>` 플레이스홀더를 사용. 실제 실행 시:
+```bash
+PR_URL=$(gh pr create --title "..." --body "...")
+PR_NUMBER=$(echo "$PR_URL" | grep -oE '[0-9]+$')
+bash .flowset/scripts/enqueue-pr.sh "$PR_NUMBER" --wait
+```
+또는 `gh pr create --json url --jq .number`. 플레이스홀더 그대로 사용하면 명령 실패.
 
 ---
 
@@ -321,6 +343,8 @@ git checkout -b refactor/WI-702-refactor-sidebar-builder-registry
 
 `apps/web/__tests__/lib/sidebar-builder-snapshot.test.ts`:
 
+**시그니처 주의** (Codebase Conventions 표 참조): `buildPlatformSidebar(orgId, userId, activeTenant?, deps?)` — 4 positional args.
+
 ```ts
 import { describe, expect, it, beforeEach } from "vitest";
 import { clearRegistry } from "@axle/core-module-system";
@@ -333,23 +357,29 @@ describe("sidebar-builder bootstrap → registry handoff (WI-702)", () => {
   });
 
   it("produces same sections as before — snapshot", async () => {
-    const sections = await buildPlatformSidebar({
-      orgId: "org_test", userId: "u1",
-    }, {
-      loadInstalledModules: async () => [
-        "customers","programs","employees","create","products","intake","automation",
-      ],
-      loadUserPermissions: async () => ["customers:*","programs:*","hr:*","content:*","erp:*","automation:*"],
-    });
+    const sections = await buildPlatformSidebar(
+      "org_test",
+      "u1",
+      undefined,
+      {
+        loadInstalledModules: async () => [
+          "customers","programs","employees","create","products","intake","automation",
+        ],
+        loadUserPermissions: async () => ["customers:*","programs:*","hr:*","content:*","erp:*","automation:*"],
+      },
+    );
     expect(sections.map(s => ({ id: s.id, items: s.items.map(i => i.moduleId) })))
       .toMatchInlineSnapshot();  // 첫 실행 시 자동 생성
   });
 
   it("includes Pack F when packF modules installed", async () => {
-    const sections = await buildPlatformSidebar({ orgId: "o1", userId: "u1" }, {
-      loadInstalledModules: async () => ["products","intake"],
-      loadUserPermissions: async () => ["erp:*"],
-    });
+    const sections = await buildPlatformSidebar(
+      "o1", "u1", undefined,
+      {
+        loadInstalledModules: async () => ["products","intake"],
+        loadUserPermissions: async () => ["erp:*"],
+      },
+    );
     const packF = sections.find(s => s.id === "F");
     expect(packF).toBeDefined();
     expect(packF!.items.map(i => i.moduleId).sort()).toEqual(["intake","products"]);
@@ -614,8 +644,9 @@ echo "$DATABASE_URL" | head -c 30
 - [ ] **Step 2: schema.prisma 끝에 5 enum + 5 model append**
 
 `packages/db/prisma/schema.prisma` 마지막에 spec §4의 schema 그대로 복사. 주의:
-- `User` 모델에 `intakeDrafts IntakeDraft[] @relation("IntakeDraftUser")` 추가 (back-relation)
-- `IntakeDraft.user` relation에 `@relation("IntakeDraftUser", ...)` name 명시 (User에 여러 relation 있을 시 충돌 방지)
+- `User` 모델에 `intakeDrafts IntakeDraft[]` 추가 (back-relation, name 불필요 — User에 IntakeDraft FK는 1개뿐이므로 disambiguator 없어도 OK)
+- `IntakeDraft.userId String?` (nullable — Plan review C9 fix; `onDelete: SetNull` 요건)
+- `IntakeDraft.user User? @relation(fields: [userId], references: [id], onDelete: SetNull)`
 
 - [ ] **Step 3: format + validate**
 
@@ -665,6 +696,7 @@ const userId = `user_test_${Date.now()}`;
 describe("Phase 20 ERP models", () => {
   beforeAll(async () => {
     await prisma.user.create({ data: { id: userId, email: `${userId}@test`, name: "test" }});
+    // userId는 nullable이지만 테스트에선 명시적으로 set
   });
   afterAll(async () => {
     await prisma.intakeDraft.deleteMany({ where: { orgId }});
@@ -729,12 +761,15 @@ bash .flowset/scripts/enqueue-pr.sh <PR_NUMBER> --wait
 git checkout main && git pull --ff-only
 ```
 
-- [ ] **Step 9: Vercel/프로덕션 DB migrate (사용자 승인 후)**
+- [ ] **Step 9: Vercel preview + 프로덕션 DB migrate (사용자 승인 후)**
 
 ```bash
-# Vercel deploy hook이 prisma migrate deploy를 실행하는지 확인.
-# 아니면 수동:
-# DATABASE_URL=<prod> npx prisma migrate deploy
+# Phase 17 lesson (feedback_db_migration.md): schema 변경 후 prisma db push/migrate deploy 필수.
+# Vercel build command가 `prisma migrate deploy && next build` 형태인지 확인.
+# 아니면 vercel.json buildCommand 갱신 또는 수동 실행:
+DATABASE_URL=<preview> npx prisma migrate deploy
+DATABASE_URL=<prod> npx prisma migrate deploy
+# Preview 환경에선 별도 supabase preview branch 사용 검토.
 ```
 
 ---
@@ -744,8 +779,8 @@ git checkout main && git pull --ff-only
 **Brief:** `GET/POST /api/erp/products` + `GET/PATCH/DELETE /api/erp/products/[productId]` + `/erp/products` 페이지(목록/신규/상세/편집). 모든 endpoint에 auth + erp:read/erp:write 가드. Decimal/Date serialization 헬퍼.
 
 **Files:**
-- Create: `apps/web/src/lib/erp/auth.ts`
-- Create: `apps/web/src/lib/erp/serialize.ts`
+- Create: `apps/web/lib/erp/auth.ts`
+- Create: `apps/web/lib/erp/serialize.ts`
 - Create: `apps/web/app/api/erp/products/route.ts`
 - Create: `apps/web/app/api/erp/products/[productId]/route.ts`
 - Create: `apps/web/app/(app)/erp/products/page.tsx`
@@ -771,10 +806,14 @@ import { describe, it, expect, vi } from "vitest";
 // requireErpScope에 session 없으면 401 throw, scope 없으면 403 throw
 ```
 
-`apps/web/src/lib/erp/auth.ts`:
+`apps/web/lib/erp/auth.ts`:
+
+**Codebase Conventions 준수**: `getCurrentUser()` from `@axle/auth` (business-card route 패턴), `getActiveTenant(ownerOrgId, ownerOrgName)` from `apps/web/src/lib/tenant-context.ts` — Multi-org 안전.
+
 ```ts
-import { auth } from "@/lib/auth";
-import { checkModulePermission } from "@axle/auth";
+import { getCurrentUser, checkModulePermission } from "@axle/auth";
+import { getActiveTenant } from "@/src/lib/tenant-context";
+import { prisma } from "@axle/db";
 
 export class ErpAuthError extends Error {
   constructor(public status: 401 | 403, msg: string) { super(msg); }
@@ -782,18 +821,27 @@ export class ErpAuthError extends Error {
 
 export interface ErpAuthContext {
   userId: string;
-  orgId: string;          // active tenant 우선
+  orgId: string;          // active tenant id (managed org or owner org)
+  isManagedTenant: boolean;
   scopes: string[];
 }
 
 export async function requireErpScope(scope: "erp:read" | "erp:write"): Promise<ErpAuthContext> {
-  const session = await auth();
-  if (!session?.user) throw new ErpAuthError(401, "Unauthorized");
-  const orgId = (session as any).activeTenantId ?? (session as any).orgId;
-  if (!orgId) throw new ErpAuthError(401, "No active org");
-  const ok = await checkModulePermission(session.user.id, orgId, scope);
+  const user = await getCurrentUser();
+  if (!user?.orgId) throw new ErpAuthError(401, "Unauthorized");
+
+  // owner org name 조회 (getActiveTenant 인자)
+  const ownerOrg = await prisma.organization.findUnique({ where: { id: user.orgId }, select: { name: true }});
+  if (!ownerOrg) throw new ErpAuthError(401, "Owner org not found");
+
+  // active tenant: Multi-org subscription 여부에 따라 owner org 또는 managed org id 반환
+  const tenant = await getActiveTenant(user.orgId, ownerOrg.name);
+
+  // ReBAC scope check은 active tenant orgId 기준
+  const ok = await checkModulePermission(user.id, tenant.id, scope);
   if (!ok) throw new ErpAuthError(403, `Missing scope: ${scope}`);
-  return { userId: session.user.id, orgId, scopes: [scope] };
+
+  return { userId: user.id, orgId: tenant.id, isManagedTenant: tenant.isManaged, scopes: [scope] };
 }
 
 export function toResponse(err: unknown): Response {
@@ -805,7 +853,7 @@ export function toResponse(err: unknown): Response {
 
 - [ ] **Step 3: serialize 헬퍼 + 테스트**
 
-`apps/web/src/lib/erp/serialize.ts`:
+`apps/web/lib/erp/serialize.ts`:
 ```ts
 import { Prisma } from "@prisma/client";
 
@@ -1256,6 +1304,8 @@ export async function parseReceipt(buf: Buffer, mimeType: string): Promise<Recei
   while (attempts < 2) {
     attempts++;
     const resp = await client.messages.create({
+      // Plan review M6: AnthropicProvider(packages/ai/src/providers/anthropic.ts)에서 사용하는 모델 id와 일치.
+      // SDK가 alias를 거부하면 정확한 dated id로 교체 ("claude-sonnet-4-5-20250929" 등).
       model: "claude-sonnet-4-6",
       max_tokens: 2048,
       system: SYSTEM_PROMPT,
@@ -1331,43 +1381,50 @@ git checkout -b feature/WI-709b-feat-ocr-handler-mode
 ```
 
 `packages/ai/__tests__/dispatcher/ocr.test.ts`:
+
+**Mock 패턴 주의 (Plan review C6 fix)**: 기존 `packages/ai/__tests__/dispatcher.test.ts` 패턴을 그대로 모방. `vi.mock`은 정적 hoist되므로 `await import` 대신 정적 import + factory injection. 모듈 specifier는 테스트 파일 기준 상대경로(vitest는 양쪽 specifier를 해소해 같은 모듈로 인식).
+
 ```ts
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+const fakeOcr = {
+  parseBusinessCard: vi.fn(),
+  parseReceipt: vi.fn(),
+};
+
+// vi.mock은 hoist되어 import보다 먼저 평가됨. lazy-import의 loadModule이
+// "@axle/ocr" 호출 시 fakeOcr 반환하도록 mock.
 vi.mock("../../src/dispatcher/lazy-import.js", () => ({
-  loadModule: vi.fn(),
+  loadModule: vi.fn(async () => fakeOcr),
 }));
 
-beforeEach(() => vi.clearAllMocks());
+import { ocrHandler } from "../../src/dispatcher/handlers/ocr.js";
+
+beforeEach(() => {
+  fakeOcr.parseBusinessCard.mockReset();
+  fakeOcr.parseReceipt.mockReset();
+});
 
 describe("ocrHandler mode dispatch", () => {
   it("default mode = business-card (회귀)", async () => {
-    const { loadModule } = await import("../../src/dispatcher/lazy-import.js");
-    const fakeMod = { parseBusinessCard: vi.fn(async () => ({ name: "X" })), parseReceipt: vi.fn() };
-    (loadModule as any).mockResolvedValue(fakeMod);
-    const { ocrHandler } = await import("../../src/dispatcher/handlers/ocr.js");
+    fakeOcr.parseBusinessCard.mockResolvedValueOnce({ name: "X" });
     const result = await ocrHandler.run({ imageBase64: Buffer.from("x").toString("base64"), mimeType: "image/jpeg" });
-    expect(fakeMod.parseBusinessCard).toHaveBeenCalledTimes(1);
-    expect(fakeMod.parseReceipt).not.toHaveBeenCalled();
+    expect(fakeOcr.parseBusinessCard).toHaveBeenCalledTimes(1);
+    expect(fakeOcr.parseReceipt).not.toHaveBeenCalled();
+    expect((result as any).name).toBe("X");
   });
 
   it("mode=receipt → parseReceipt", async () => {
-    const { loadModule } = await import("../../src/dispatcher/lazy-import.js");
-    const fakeMod = { parseBusinessCard: vi.fn(), parseReceipt: vi.fn(async () => ({ vendor: "GS25" })) };
-    (loadModule as any).mockResolvedValue(fakeMod);
-    const { ocrHandler } = await import("../../src/dispatcher/handlers/ocr.js");
+    fakeOcr.parseReceipt.mockResolvedValueOnce({ vendor: "GS25" });
     const result = await ocrHandler.run({ imageBase64: Buffer.from("x").toString("base64"), mimeType: "image/jpeg", mode: "receipt" });
-    expect(fakeMod.parseReceipt).toHaveBeenCalledTimes(1);
+    expect(fakeOcr.parseReceipt).toHaveBeenCalledTimes(1);
     expect((result as any).vendor).toBe("GS25");
   });
 
   it("mode=business-card → parseBusinessCard", async () => {
-    const { loadModule } = await import("../../src/dispatcher/lazy-import.js");
-    const fakeMod = { parseBusinessCard: vi.fn(async () => ({ name: "Y" })), parseReceipt: vi.fn() };
-    (loadModule as any).mockResolvedValue(fakeMod);
-    const { ocrHandler } = await import("../../src/dispatcher/handlers/ocr.js");
+    fakeOcr.parseBusinessCard.mockResolvedValueOnce({ name: "Y" });
     await ocrHandler.run({ imageBase64: Buffer.from("x").toString("base64"), mimeType: "image/jpeg", mode: "business-card" });
-    expect(fakeMod.parseBusinessCard).toHaveBeenCalled();
+    expect(fakeOcr.parseBusinessCard).toHaveBeenCalled();
   });
 });
 ```
@@ -1453,7 +1510,7 @@ git checkout main && git pull --ff-only
 **Brief:** Product/Client name fuzzy match. NFC + 단위/공백/숫자 strip 정규화 → Levenshtein 유사도 → top-3 + score.
 
 **Files:**
-- Create: `apps/web/src/lib/erp/fuzzy-match.ts`
+- Create: `apps/web/lib/erp/fuzzy-match.ts`
 - Create: `apps/web/__tests__/lib/erp/fuzzy-match.test.ts`
 
 - [ ] **Step 1: 브랜치 + 테스트 먼저**
@@ -1517,7 +1574,7 @@ cd apps/web && npx vitest run __tests__/lib/erp/fuzzy-match.test.ts
 
 - [ ] **Step 2: 구현**
 
-`apps/web/src/lib/erp/fuzzy-match.ts`:
+`apps/web/lib/erp/fuzzy-match.ts`:
 ```ts
 const UNIT_RE = /(\d+(\.\d+)?\s*)?(ml|l|kg|g|개|박스|포대|병|캔|팩|ea|ea\.|개입|입)/gi;
 
@@ -1576,7 +1633,7 @@ export function topMatches<T>(
 
 ```bash
 cd apps/web && npx vitest run __tests__/lib/erp/fuzzy-match.test.ts
-git add apps/web/src/lib/erp/fuzzy-match.ts apps/web/__tests__/lib/erp/fuzzy-match.test.ts
+git add apps/web/lib/erp/fuzzy-match.ts apps/web/__tests__/lib/erp/fuzzy-match.test.ts
 git commit -m "WI-710-feat fuzzy-match — 한국어 normalize + Levenshtein top-3"
 git push -u origin feature/WI-710-feat-fuzzy-match
 gh pr create --title "WI-710-feat fuzzy-match"
@@ -1591,7 +1648,7 @@ git checkout main && git pull --ff-only
 **Brief:** 5개 endpoint. `POST /api/erp/intake` (multipart upload + Blob + AiJob dispatch + IntakeDraft create), `GET /api/erp/intake` (list), `GET /api/erp/intake/[draftId]` (detail), `POST /api/erp/intake/[draftId]/confirm` (멱등 트랜잭션), `POST /api/erp/intake/[draftId]/discard`.
 
 **Files:**
-- Create: `apps/web/src/lib/erp/blob.ts` (upload/sign helpers)
+- Create: `apps/web/lib/erp/blob.ts` (upload/sign helpers)
 - Create: `apps/web/app/api/erp/intake/route.ts` (POST upload + GET list)
 - Create: `apps/web/app/api/erp/intake/[draftId]/route.ts` (GET detail)
 - Create: `apps/web/app/api/erp/intake/[draftId]/confirm/route.ts`
@@ -1605,7 +1662,7 @@ git checkout main && git pull --ff-only
 git checkout -b feature/WI-711-feat-intake-api
 ```
 
-`apps/web/src/lib/erp/blob.ts`:
+`apps/web/lib/erp/blob.ts`:
 ```ts
 import { put, del, list } from "@vercel/blob";
 
@@ -1633,13 +1690,23 @@ export async function listOrphanReceipts(beforeIso: string): Promise<string[]> {
 - [ ] **Step 2: upload + list route**
 
 `apps/web/app/api/erp/intake/route.ts`:
+
+**중요 변경 (Plan review C1/C4/C5/C8/M9 fix)**:
+- `dispatchAiJob` ❌ — 존재하지 않음. business-card route 패턴대로 `parseReceipt` 직접 호출.
+- `Client.organizationId` ❌ — 실제 필드는 `Client.orgId`.
+- `id: draftId` ❌ — cuid default 사용. 블롭 업로드는 draft create 후 draft.id로.
+- Vercel timeout 60s 명시.
+- matchSuggestions의 Product Decimal 필드는 string으로 변환 후 저장.
+
 ```ts
 import { prisma } from "@axle/db";
-import { z } from "zod";
+import { parseReceipt } from "@axle/ocr";   // business-card route 패턴 (직접 호출)
 import { requireErpScope, toResponse } from "@/lib/erp/auth";
 import { uploadReceipt } from "@/lib/erp/blob";
-import { dispatchAiJob } from "@axle/ai";   // 가정: dispatcher entry
 import { topMatches } from "@/lib/erp/fuzzy-match";
+
+// Vercel function timeout — Claude Vision 호출 + retry로 30s+ 가능 (Pro Fluid 60s).
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
@@ -1651,34 +1718,47 @@ export async function POST(req: Request) {
     if (file.size > 10 * 1024 * 1024) return new Response("max 10MB", { status: 413 });
 
     const buf = Buffer.from(await file.arrayBuffer());
-    const draftId = crypto.randomUUID();
-    const blobUrl = await uploadReceipt(ctx.orgId, draftId, buf, file.type);
 
-    // OCR 동기 호출 (MVP — async job queue는 Phase 21+)
+    // 1. IntakeDraft 먼저 create — cuid 자동 생성, blobUrl은 placeholder("")로 일단 저장
+    let draft = await prisma.intakeDraft.create({
+      data: {
+        orgId: ctx.orgId, userId: ctx.userId,
+        blobUrl: "",   // 다음 step에서 업로드 후 update
+        ocrJson: {}, parsedJson: {}, matchSuggestions: {},
+        status: "PENDING",
+      },
+    });
+
+    // 2. Blob 업로드 (draft.id를 키 prefix로 사용)
+    const blobUrl = await uploadReceipt(ctx.orgId, draft.id, buf, file.type);
+
+    // 3. OCR 동기 호출 (business-card route와 동일 패턴 — 직접 호출, AiJob 미생성. Phase 21+ 백그라운드 큐 검토)
     let ocrJson: any = {}, parsedJson: any = {}, errorMsg: string | null = null;
     try {
-      const ocr = await dispatchAiJob({
-        type: "OCR",
-        input: { imageBase64: buf.toString("base64"), mimeType: file.type, mode: "receipt" },
-      });
+      const ocr = await parseReceipt(buf, file.type);
       ocrJson = ocr; parsedJson = ocr;
     } catch (e: any) {
       errorMsg = e.message ?? String(e);
     }
 
-    // fuzzy match (errorMsg 없을 때만)
+    // 4. fuzzy match (errorMsg 없을 때만)
+    //    Decimal 필드는 string으로 변환 후 JSON에 저장 (Prisma Decimal은 JSON-serializable 아님)
     let matchSuggestions: any = {};
     if (!errorMsg && parsedJson.items) {
       const products = await prisma.product.findMany({ where: { orgId: ctx.orgId, archived: false }});
-      const clients = await prisma.client.findMany({ where: { organizationId: ctx.orgId }, take: 200 });
+      const clients = await prisma.client.findMany({ where: { orgId: ctx.orgId }, take: 200 });   // C4 fix
+      const productLite = products.map(p => ({ id: p.id, name: p.name, sku: p.sku, unit: p.unit, unitPrice: p.unitPrice.toString() }));
+      const clientLite = clients.map(c => ({ id: c.id, name: c.name }));
       matchSuggestions = {
-        items: parsedJson.items.map((it: any) => topMatches(it.name, products, p => p.name)),
-        counterparty: topMatches(parsedJson.vendor ?? "", clients, c => c.name),
+        items: parsedJson.items.map((it: any) => topMatches(it.name, productLite, p => p.name)),
+        counterparty: topMatches(parsedJson.vendor ?? "", clientLite, c => c.name),
       };
     }
 
-    const draft = await prisma.intakeDraft.create({
-      data: { id: draftId, orgId: ctx.orgId, userId: ctx.userId, blobUrl, ocrJson, parsedJson, matchSuggestions, status: "PENDING", errorMsg },
+    // 5. draft 갱신
+    draft = await prisma.intakeDraft.update({
+      where: { id: draft.id },
+      data: { blobUrl, ocrJson, parsedJson, matchSuggestions, errorMsg },
     });
     return Response.json({ draftId: draft.id }, { status: 201 });
   } catch (e) { return toResponse(e); }
@@ -1700,8 +1780,49 @@ export async function GET(req: Request) {
 
 - [ ] **Step 3: detail / discard route**
 
-`apps/web/app/api/erp/intake/[draftId]/route.ts` GET — orgId 검증 + draft 반환.
-`apps/web/app/api/erp/intake/[draftId]/discard/route.ts` POST — status DISCARDED로 update (where status PENDING).
+`apps/web/app/api/erp/intake/[draftId]/route.ts`:
+```ts
+import { prisma } from "@axle/db";
+import { requireErpScope, toResponse } from "@/lib/erp/auth";
+
+export async function GET(req: Request, ctx: { params: Promise<{ draftId: string }>}) {
+  try {
+    const auth = await requireErpScope("erp:read");
+    const { draftId } = await ctx.params;
+    const draft = await prisma.intakeDraft.findFirst({
+      where: { id: draftId, orgId: auth.orgId },   // orgId 스코프 강제 — cross-tenant 차단
+    });
+    if (!draft) return new Response("Not found", { status: 404 });
+    return Response.json(draft);
+  } catch (e) { return toResponse(e); }
+}
+```
+
+`apps/web/app/api/erp/intake/[draftId]/discard/route.ts`:
+```ts
+import { prisma } from "@axle/db";
+import { Prisma } from "@prisma/client";
+import { requireErpScope, toResponse } from "@/lib/erp/auth";
+
+export async function POST(_req: Request, ctx: { params: Promise<{ draftId: string }>}) {
+  try {
+    const auth = await requireErpScope("erp:write");
+    const { draftId } = await ctx.params;
+    try {
+      await prisma.intakeDraft.update({
+        where: { id: draftId, status: "PENDING", orgId: auth.orgId },   // 부분 where: PENDING만 폐기 가능
+        data: { status: "DISCARDED" },
+      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2025") {
+        return new Response("Cannot discard (not PENDING or wrong org)", { status: 409 });
+      }
+      throw e;
+    }
+    return Response.json({ ok: true });
+  } catch (e) { return toResponse(e); }
+}
+```
 
 - [ ] **Step 4: confirm route (멱등 트랜잭션) — spec §6.2 그대로**
 
@@ -1832,7 +1953,7 @@ cd apps/web && npx vitest run __tests__/api/erp/intake-confirm.test.ts
 
 ```bash
 cd /Users/jerome/AX/AXLE && npx turbo lint typecheck build test --filter=web
-git add apps/web/src/lib/erp/blob.ts apps/web/app/api/erp/intake apps/web/__tests__/api/erp
+git add apps/web/lib/erp/blob.ts apps/web/app/api/erp/intake apps/web/__tests__/api/erp
 git commit -m "WI-711-feat IntakeDraft API — upload(Blob+OCR) / list / detail / confirm(멱등 트랜잭션) / discard"
 git push -u origin feature/WI-711-feat-intake-api
 gh pr create --title "WI-711-feat Intake API"
@@ -2159,17 +2280,29 @@ git checkout -b feature/WI-713b-feat-intake-autocomplete
 
 - [ ] **Step 2: product-autocomplete.tsx**
 
+**Plan review M4/M11 fix**: type widening (matchSuggestions에 sku/unit/unitPrice 포함된 productLite 사용), `onMouseDown`으로 blur race 차단.
+
 ```tsx
 "use client";
 import { useState, useEffect } from "react";
 
+export interface ProductSuggestion {
+  id: string; name: string;
+  sku: string | null;
+  unit: string;
+  unitPrice: string;       // serialized Decimal (string)
+  score?: number;
+}
+
 export function ProductAutocomplete(props: {
   value: string;
-  initialSuggestions?: { item: { id: string; name: string }; score: number; needsNew: boolean }[];
+  initialSuggestions?: { item: ProductSuggestion; score: number; needsNew: boolean }[];
   onChange: (v: { productId: string|null; productName: string; sku: string|null; unit: string; unitPrice: number }) => void;
 }) {
   const [q, setQ] = useState(props.value);
-  const [results, setResults] = useState(props.initialSuggestions?.map(s => ({ ...s.item, score: s.score })) ?? []);
+  const [results, setResults] = useState<ProductSuggestion[]>(
+    props.initialSuggestions?.map(s => ({ ...s.item, score: s.score })) ?? [],
+  );
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -2179,22 +2312,44 @@ export function ProductAutocomplete(props: {
       setResults(r.items.slice(0, 8));
     }, 200);
     return () => clearTimeout(t);
-  }, [q]);
+  }, [q, props.value]);
 
   return (
     <div className="relative">
-      <input value={q} onChange={e => { setQ(e.target.value); setOpen(true); }} onBlur={() => setTimeout(() => setOpen(false), 150)} onFocus={() => setOpen(true)} />
+      <input
+        value={q}
+        onChange={e => { setQ(e.target.value); setOpen(true); }}
+        onBlur={() => setOpen(false)}     // mouseDown이 click보다 먼저 발화하므로 setTimeout 불필요
+        onFocus={() => setOpen(true)}
+      />
       {open && results.length > 0 && (
         <ul className="absolute bg-white border w-full max-h-40 overflow-y-auto z-10">
           {results.map(r => (
-            <li key={r.id} className="p-1 hover:bg-gray-100 cursor-pointer" onClick={() => {
-              setQ(r.name); setOpen(false);
-              props.onChange({ productId: r.id, productName: r.name, sku: r.sku ?? null, unit: r.unit ?? "개", unitPrice: Number(r.unitPrice ?? 0) });
-            }}>
-              {r.name} {('score' in r) && <span className="text-xs text-gray-500">({((r as any).score * 100 | 0)}%)</span>}
+            <li
+              key={r.id}
+              className="p-1 hover:bg-gray-100 cursor-pointer"
+              // M11 fix: blur가 click을 삼키는 것을 차단 — onMouseDown + preventDefault
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setQ(r.name); setOpen(false);
+                props.onChange({
+                  productId: r.id, productName: r.name,
+                  sku: r.sku ?? null, unit: r.unit ?? "개",
+                  unitPrice: Number(r.unitPrice ?? 0),
+                });
+              }}
+            >
+              {r.name} {r.score != null && <span className="text-xs text-gray-500">({(r.score * 100 | 0)}%)</span>}
             </li>
           ))}
-          <li className="p-1 border-t text-blue-600 cursor-pointer" onClick={() => { setOpen(false); props.onChange({ productId: null, productName: q, sku: null, unit: "개", unitPrice: 0 }); }}>
+          <li
+            className="p-1 border-t text-blue-600 cursor-pointer"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setOpen(false);
+              props.onChange({ productId: null, productName: q, sku: null, unit: "개", unitPrice: 0 });
+            }}
+          >
             + 신규 상품 "{q}"
           </li>
         </ul>
@@ -2236,10 +2391,10 @@ git checkout main && git pull --ff-only
 
 ## Task 16: WI-714-feat — Vercel Blob lifecycle (5년 보관 + orphan cleanup cron)
 
-**Brief:** Blob 보관 정책 명시 + private scope 적용 + orphan(rolled-back/discarded draft) cleanup cron 스텁. 정책 README도 함께.
+**Brief:** Blob 보관 정책 명시 + **public unguessable URL** 적용 (Plan review M3 fix — Vercel Blob은 access:"public"만 지원, signed URL은 Phase 21+) + orphan(rolled-back/discarded draft) cleanup cron 스텁. 정책 README도 함께.
 
 **Files:**
-- Modify: `apps/web/src/lib/erp/blob.ts` (private scope 옵션 + signed URL 헬퍼)
+- Modify: `apps/web/lib/erp/blob.ts` (private scope 옵션 + signed URL 헬퍼)
 - Create: `scripts/cron/blob-orphan-cleanup.ts`
 - Create: `docs/specs/2026-05-15-phase20-blob-lifecycle.md`
 
@@ -2251,7 +2406,7 @@ git checkout -b feature/WI-714-feat-blob-lifecycle
 
 - [ ] **Step 2: blob.ts private scope + signed URL**
 
-`apps/web/src/lib/erp/blob.ts` 갱신:
+`apps/web/lib/erp/blob.ts` 갱신:
 ```ts
 import { put, del, list } from "@vercel/blob";
 
@@ -2295,7 +2450,7 @@ export const RETENTION_POLICY = { days: RETENTION_DAYS, reason: "한국 세무 �
 // 3. (보관 정책) confirmed order의 blob은 RETENTION_DAYS 지나면 정책에 따라 처리
 
 import { prisma } from "@axle/db";
-import { deleteReceipt } from "../../apps/web/src/lib/erp/blob";
+import { deleteReceipt } from "../../apps/web/lib/erp/blob";
 
 async function main() {
   const cutoff30d = new Date(Date.now() - 30 * 86400 * 1000);
@@ -2324,7 +2479,7 @@ if (require.main === module) main().catch(e => { console.error(e); process.exit(
 - [ ] **Step 5: 커밋 + PR**
 
 ```bash
-git add apps/web/src/lib/erp/blob.ts scripts/cron/blob-orphan-cleanup.ts docs/specs/2026-05-15-phase20-blob-lifecycle.md
+git add apps/web/lib/erp/blob.ts scripts/cron/blob-orphan-cleanup.ts docs/specs/2026-05-15-phase20-blob-lifecycle.md
 git commit -m "WI-714-feat Vercel Blob 5년 보관 정책 + orphan cleanup cron 스텁 + lifecycle 문서"
 git push -u origin feature/WI-714-feat-blob-lifecycle
 gh pr create --title "WI-714-feat Blob lifecycle"
@@ -2398,34 +2553,69 @@ cd apps/web && npx vitest run __tests__/lib/erp/fuzzy-match-korean.test.ts
 
 minScore 임계값은 실제 측정치 기준으로 조정. **목적은 회귀 방지** — 통과 가능한 라인을 잡고 그 위로 떨어지지 않게.
 
-- [ ] **Step 3: cross-draft race 테스트**
+- [ ] **Step 3: cross-draft race 통합 테스트 (실제 Postgres 필요)**
 
-`apps/web/__tests__/api/erp/intake-cross-draft-race.test.ts`:
+`apps/web/__tests__/api/erp/intake-cross-draft-race.test.ts` — Plan review M12 fix: `expect(true)` 플레이스홀더 제거, 실제 DB 연결 시에만 실행되는 통합 테스트로 작성. CI에선 skip, 로컬 supabase에선 실행.
+
 ```ts
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { prisma } from "@axle/db";
-// 두 draft가 동시에 같은 productName(no sku)을 confirm하는 race 시나리오.
-// 현재 spec 결정: in-tx Map은 단일 transaction 내만 보장. 두 transaction이 동시 진행되면
-// findFirst null + create 둘 다 → Product 2건 생성될 수 있음.
-// 테스트는 이 race가 실제로 두 Product를 만드는지 확인 (현재 한계 명시).
+
+const HAS_DB = !!process.env.DATABASE_URL && !process.env.SKIP_INTEGRATION;
+const dbDescribe = HAS_DB ? describe : describe.skip;
 
 const orgId = `race_${Date.now()}`;
-beforeAll(async () => { await prisma.user.create({ data: { id: `u_${orgId}`, email: `${orgId}@x`, name: "x" }}); });
-afterAll(async () => { /* cleanup */ });
+const userId = `u_${orgId}`;
 
-describe("WI-715 cross-draft Product name race (current limitation)", () => {
-  it("두 draft가 같은 productName 동시 confirm 시 — 현재는 Product 2건 (개선 필요)", async () => {
-    // 두 IntakeDraft 생성, 각각 같은 name "콜라" item
-    // Promise.all로 두 confirm 호출
-    // 결과: prisma.product.findMany({ orgId, name: "콜라" }) 가 1 또는 2건
-    // 1건이면 운 좋게 race 회피, 2건이면 한계 노출
-    // 본 테스트는 알려진 한계를 문서화 — 실패 처리 X (skip 또는 toBeLessThanOrEqual(2))
-    expect(true).toBe(true);   // placeholder — 실제 시나리오는 통합 환경에서 검증 (DB 없으면 skip)
+dbDescribe("WI-715 cross-draft Product name race (integration)", () => {
+  beforeAll(async () => {
+    await prisma.user.create({ data: { id: userId, email: `${userId}@test`, name: "x" }});
+    await prisma.organization.create({ data: { id: orgId, name: "race-org" }});
+  });
+  afterAll(async () => {
+    await prisma.intakeDraft.deleteMany({ where: { orgId }});
+    await prisma.orderItem.deleteMany({ where: { order: { orgId }}});
+    await prisma.order.deleteMany({ where: { orgId }});
+    await prisma.inventoryMovement.deleteMany({ where: { orgId }});
+    await prisma.product.deleteMany({ where: { orgId }});
+    await prisma.organization.delete({ where: { id: orgId }});
+    await prisma.user.delete({ where: { id: userId }});
+  });
+
+  it("두 draft 동시 confirm 시 같은 productName(no sku) → 알려진 한계: Product 1~2건 발생 가능", async () => {
+    // 두 draft 생성 (같은 name, no sku)
+    const make = () => prisma.intakeDraft.create({
+      data: { orgId, userId, blobUrl: "x", ocrJson: {}, parsedJson: {}, matchSuggestions: {}, status: "PENDING" },
+    });
+    const [d1, d2] = await Promise.all([make(), make()]);
+
+    // confirm helper: WI-711 confirm route의 핵심 트랜잭션 로직만 호출 (전체 라우트 호출 X — 단순 시뮬레이션)
+    async function confirm(draftId: string) {
+      return prisma.$transaction(async (tx) => {
+        await tx.intakeDraft.update({ where: { id: draftId, status: "PENDING" }, data: { status: "CONFIRMED" }});
+        const existing = await tx.product.findFirst({ where: { orgId, name: "콜라", archived: false }});
+        const p = existing ?? await tx.product.create({ data: { orgId, name: "콜라", unit: "캔" }});
+        const o = await tx.order.create({
+          data: { orgId, type: "PURCHASE", counterpartyName: "X", status: "CONFIRMED", total: 1000, occurredAt: new Date(),
+            items: { create: [{ productId: p.id, productName: "콜라", qty: 1, unitPrice: 1000, lineTotal: 1000 }] }},
+        });
+        return { orderId: o.id, productId: p.id };
+      });
+    }
+
+    const results = await Promise.all([confirm(d1.id), confirm(d2.id)]);
+    const products = await prisma.product.findMany({ where: { orgId, name: "콜라" }});
+    // 알려진 한계: race 발생 시 Product 2건. 회피 시 1건.
+    expect(products.length).toBeGreaterThanOrEqual(1);
+    expect(products.length).toBeLessThanOrEqual(2);
+    if (products.length === 2) {
+      console.warn("[KNOWN LIMITATION] cross-draft Product race 노출됨. Phase 21+ 개선 후보.");
+    }
   });
 });
 ```
 
-이 테스트는 알려진 한계 노출용. spec §9 Risk N2 참조. 실제 Phase 20 launch 전엔 `@@unique([orgId, name])` 추가 또는 advisory lock 검토. 본 WI에선 테스트로 한계 가시화만.
+이 테스트는 알려진 한계를 **실제로 검증**. spec §9 Risk N2 참조. Phase 20 launch 전엔 `@@unique([orgId, name])` 또는 advisory lock 검토.
 
 - [ ] **Step 4: confirm 멱등성/Product collision 강화 (WI-711 테스트 위에)**
 
@@ -2625,7 +2815,7 @@ git checkout main && git pull --ff-only
 - [ ] **멱등성 검증**: confirm 더블클릭 → 두 번째 요청 409, Order 1건만 생성
 - [ ] **OCR confidence < 0.6 케이스 UI affordance** (경고 배너 + 사용자 검토 강조)
 - [ ] **Multi-org 스코프 검증**: active tenant 변경 시 `/erp/*` 데이터가 해당 org로만 필터됨
-- [ ] Vercel Blob: private scope + 5년 보관 정책 명시 + orphan cleanup cron 스텁
+- [ ] Vercel Blob: public unguessable URL + addRandomSuffix + 5년 보관 정책 명시 + orphan cleanup cron 스텁 (signed URL/private scope는 Phase 21+ — Vercel Blob 현재 access:"public"만 지원)
 - [ ] E2E 테스트 1건: 업로드 → 검토 → 등록 → 재고 반영 확인
 - [ ] 단위 테스트: OCR parse / 한국어 fuzzy match (10+ 케이스) / atomic commit (멱등성/Product collision/cross-draft race 한계 명시)
 - [ ] PRD + 사용자 가이드 + ER 다이어그램 갱신

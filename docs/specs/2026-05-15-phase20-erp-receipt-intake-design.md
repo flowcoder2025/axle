@@ -161,11 +161,11 @@ model OrderItem {
 model IntakeDraft {
   id                String       @id @default(cuid())
   orgId             String
-  userId            String                  // FK (User onDelete:SetNull)
-  blobUrl           String                  // 영수증 이미지 (Vercel Blob, private scope)
+  userId            String?                 // nullable — onDelete: SetNull 요건 (Plan review C9 fix)
+  blobUrl           String                  // 영수증 이미지 (Vercel Blob, public unguessable URL — Phase 20 MVP. signed URL은 Phase 21+)
   ocrJson           Json                    // raw OCR 결과
   parsedJson        Json                    // 구조화된 추출 결과
-  matchSuggestions  Json                    // product/client 매칭 후보
+  matchSuggestions  Json                    // product/client 매칭 후보 (Decimal은 string으로 변환 후 저장 — Plan review M9 fix)
   status            DraftStatus             // PENDING | CONFIRMED | DISCARDED
   confirmedOrderId  String?                 // unique (한 draft → 한 Order)
   errorMsg          String?
