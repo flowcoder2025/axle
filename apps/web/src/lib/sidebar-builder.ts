@@ -1,19 +1,19 @@
 /**
- * WI-618 → WI-702 — Dynamic sidebar builder.
+ * WI-618 → WI-702 → WI-704 — Dynamic sidebar builder.
  *
  * Marries three independent inputs into the `SidebarSection[]` shape that the
  * AppSidebar component renders:
  *   1. installedModules — from prisma.OrgModuleInstall (WI-616 model)
- *   2. userPermissions   — ReBAC scopes (WI-704 will replace the mock)
+ *   2. userPermissions   — ReBAC scopes via @axle/auth.getUserModuleScopes
+ *                          (real loader as of WI-704, with legacy fallback)
  *   3. registry catalog  — @axle/core-module-system, populated from
  *                          `apps/web/src/modules/registry.ts` via
  *                          `registerAllPacks()` (WI-622~626 + WI-701 own the
  *                          per-pack `module.config.ts` files).
  *
  * Note: `module-catalog.ts` (PACK_CATALOG) is still consumed for UI display
- * (settings/pack-card.tsx, billing summary, the default "grant all" permission
- * scope generator below). Only the runtime registry bootstrap was migrated in
- * WI-702.
+ * (settings/pack-card.tsx, billing summary). Only the runtime registry
+ * bootstrap was migrated in WI-702.
  */
 
 import {
@@ -44,20 +44,24 @@ export interface SidebarBuilderDeps {
   loadInstalledModules: (orgId: string) => Promise<string[]>;
   /**
    * Returns the user's ReBAC scopes (e.g. ["customers:*", "hr:write"]).
-   * WI-619 will replace the default impl with the real ReBAC lookup; until
-   * then we ship a "grant everything" mock so users can navigate the UI.
+   * Default impl (WI-704) reads from @axle/auth.getUserModuleScopes with a
+   * legacy fallback to grant-all for orgs that haven't been seeded yet.
    */
   loadUserPermissions: (userId: string, orgId: string) => Promise<string[]>;
 }
 
 /**
- * Default permission loader — grants every registry resource scope. Replaced
- * by WI-704 (real ReBAC lookup). Derives scopes from the actual permission
+ * Grant every registry resource scope. Used as the legacy fallback when an
+ * org has no ReBAC rows seeded yet — mirrors `checkModulePermissionLegacy`'s
+ * "no scopes → allow" rule so existing prod users keep their sidebar until
+ * the org adopts ReBAC seeds. Derives scopes from the actual permission
  * strings declared on registered modules (e.g. `erp:read` → grants `erp:*`),
- * so post-WI-702 the loader stays in sync with the registry's permission
- * scheme. Returned as a fresh array each call so callers may mutate safely.
+ * so it stays in sync with the registry's permission scheme. Returned as a
+ * fresh array each call so callers may mutate safely.
+ *
+ * Exported for tests (`grantAllPermissions` was the WI-618 mock default).
  */
-async function grantAllPermissions(): Promise<string[]> {
+export async function grantAllPermissions(): Promise<string[]> {
   const scopes = new Set<string>();
   for (const mod of ALL_MODULES) {
     const [resource] = mod.permission.split(":");
@@ -66,6 +70,30 @@ async function grantAllPermissions(): Promise<string[]> {
   // Admin scopes used by admin-flagged modules (e.g. Pack B HWPX templates).
   scopes.add("platform:admin");
   return Array.from(scopes);
+}
+
+/**
+ * Default WI-704 permission loader — reads the user's real ReBAC scopes for
+ * the given org. When the user holds zero module scopes for `orgId` we fall
+ * back to {@link grantAllPermissions}, mirroring the legacy gate documented
+ * on `checkModulePermissionLegacy`: an unseeded org keeps working until the
+ * platform explicitly grants scopes. Once any scope is seeded for a user,
+ * sidebar visibility tightens to that user's actual grants.
+ */
+export async function loadRealUserPermissions(
+  userId: string,
+  orgId: string,
+): Promise<string[]> {
+  // Import from the `@axle/auth/rebac` subpath rather than the `@axle/auth`
+  // barrel. The barrel transitively loads `next-auth` → `next/server`, which
+  // works under Next.js but breaks the vitest node-ESM resolver. The subpath
+  // resolves only the ReBAC helpers we actually need here, in both runtimes.
+  const { getUserModuleScopes } = await import("@axle/auth/rebac");
+  const scopes = await getUserModuleScopes(userId, orgId);
+  if (scopes.length === 0) {
+    return grantAllPermissions();
+  }
+  return scopes;
 }
 
 /**
@@ -84,7 +112,7 @@ async function defaultLoadInstalledModules(orgId: string): Promise<string[]> {
 
 const defaultDeps: SidebarBuilderDeps = {
   loadInstalledModules: defaultLoadInstalledModules,
-  loadUserPermissions: grantAllPermissions,
+  loadUserPermissions: loadRealUserPermissions,
 };
 
 /**

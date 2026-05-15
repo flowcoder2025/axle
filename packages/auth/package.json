@@ -11,6 +11,10 @@
     "./edge": {
       "types": "./dist/auth.config.d.ts",
       "import": "./dist/auth.config.js"
+    },
+    "./rebac": {
+      "types": "./dist/rebac/index.d.ts",
+      "import": "./dist/rebac/index.js"
     }
   },
   "scripts": {
