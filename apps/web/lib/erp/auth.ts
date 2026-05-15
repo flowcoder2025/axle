@@ -20,6 +20,28 @@ export class ErpAuthError extends Error {
   }
 }
 
+/**
+ * Domain conflict (HTTP 409). Used for idempotency violations or invalid
+ * state transitions (e.g. cancelling a DRAFT order, double-cancelling an
+ * already CANCELLED order).
+ */
+export class ErpConflictError extends Error {
+  public readonly status = 409 as const;
+  constructor(message: string) {
+    super(message);
+    this.name = "ErpConflictError";
+  }
+}
+
+/** Resource not found in the active tenant (HTTP 404). */
+export class ErpNotFoundError extends Error {
+  public readonly status = 404 as const;
+  constructor(message: string) {
+    super(message);
+    this.name = "ErpNotFoundError";
+  }
+}
+
 export interface ErpAuthContext {
   /** Authenticated user id. */
   userId: string;
@@ -77,6 +99,12 @@ export async function requireErpScope(scope: ErpScope): Promise<ErpAuthContext> 
 export function toResponse(err: unknown): Response {
   if (err instanceof ErpAuthError) {
     return new Response(err.message, { status: err.status });
+  }
+  if (err instanceof ErpConflictError) {
+    return new Response(err.message, { status: 409 });
+  }
+  if (err instanceof ErpNotFoundError) {
+    return new Response(err.message, { status: 404 });
   }
   if (isZodError(err)) {
     return Response.json(
