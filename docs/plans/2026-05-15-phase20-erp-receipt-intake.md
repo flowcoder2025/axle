@@ -876,7 +876,7 @@ export function serializeProduct(p: any) {
 ```ts
 import { describe, it, expect } from "vitest";
 import { Prisma } from "@prisma/client";
-import { decimalToString, serializeProduct } from "../../../src/lib/erp/serialize";
+import { decimalToString, serializeProduct } from "../../../lib/erp/serialize";
 
 describe("serialize", () => {
   it("Decimal → string", () => {
@@ -944,21 +944,42 @@ export async function POST(req: Request) {
 
 `apps/web/__tests__/api/erp/products.test.ts`:
 
+**Plan review N3/N4 fix**: `@axle/auth`는 `getCurrentUser` + `checkModulePermission` 둘 다 mock. `@/lib/auth` mock 제거 (dead — 사용 안 함). `tenant-context` + `organization.findUnique` mock 추가 (requireErpScope의 의존성).
+
 ```ts
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { GET, POST } from "../../../app/api/erp/products/route";
 
-// mock @/lib/auth, @axle/auth, @axle/db prisma
-vi.mock("@/lib/auth", () => ({ auth: vi.fn(async () => ({ user: { id: "u1" }, orgId: "org_test" })) }));
-vi.mock("@axle/auth", () => ({ checkModulePermission: vi.fn(async () => true) }));
+// 1. @axle/auth — getCurrentUser + checkModulePermission
+vi.mock("@axle/auth", () => ({
+  getCurrentUser: vi.fn(async () => ({ id: "u1", orgId: "org_test", email: "u1@x", name: "u" })),
+  checkModulePermission: vi.fn(async () => true),
+}));
+
+// 2. tenant-context — getActiveTenant 반환
+vi.mock("@/src/lib/tenant-context", () => ({
+  getActiveTenant: vi.fn(async (orgId: string, name: string) => ({ id: orgId, isManaged: false, name })),
+}));
+
+// 3. prisma — product + organization (requireErpScope가 owner org name 조회)
 vi.mock("@axle/db", () => ({
   prisma: {
+    organization: { findUnique: vi.fn(async () => ({ name: "test-org" }))},
     product: {
       findMany: vi.fn(async () => []),
-      create: vi.fn(async (a) => ({ id: "p1", orgId: a.data.orgId, ...a.data, unitPrice: 0, archived: false, createdAt: new Date(), updatedAt: new Date() })),
+      create: vi.fn(async (a: any) => ({
+        id: "p1", orgId: a.data.orgId, ...a.data,
+        sku: a.data.sku ?? null, category: a.data.category ?? null,
+        unitPrice: 0, archived: false,
+        createdAt: new Date(), updatedAt: new Date(),
+      })),
     },
   },
 }));
+
+import { GET, POST } from "../../../app/api/erp/products/route";
+import { checkModulePermission } from "@axle/auth";
+
+beforeEach(() => { vi.clearAllMocks(); (checkModulePermission as any).mockResolvedValue(true); });
 
 describe("/api/erp/products", () => {
   it("GET returns empty list", async () => {
@@ -977,7 +998,6 @@ describe("/api/erp/products", () => {
   });
 
   it("POST rejects when scope missing", async () => {
-    const { checkModulePermission } = await import("@axle/auth");
     (checkModulePermission as any).mockResolvedValueOnce(false);
     const res = await POST(new Request("http://x/api/erp/products", {
       method: "POST", body: JSON.stringify({ name: "콜라", unit: "캔" }),
@@ -1015,7 +1035,7 @@ cd /Users/jerome/AX/AXLE && npx turbo lint typecheck build test --filter=web
 - [ ] **Step 8: 커밋 + PR + enqueue**
 
 ```bash
-git add apps/web/src/lib/erp apps/web/app/api/erp/products apps/web/app/\(app\)/erp/products apps/web/__tests__
+git add apps/web/lib/erp apps/web/app/api/erp/products apps/web/app/\(app\)/erp/products apps/web/__tests__
 git commit -m "WI-706-feat Product CRUD API + /erp/products UI + auth/serialize 헬퍼"
 git push -u origin feature/WI-706-feat-erp-products
 gh pr create --title "WI-706-feat Product CRUD"
@@ -1522,7 +1542,7 @@ git checkout -b feature/WI-710-feat-fuzzy-match
 `apps/web/__tests__/lib/erp/fuzzy-match.test.ts`:
 ```ts
 import { describe, it, expect } from "vitest";
-import { normalizeName, similarity, topMatches } from "../../../src/lib/erp/fuzzy-match";
+import { normalizeName, similarity, topMatches } from "../../../lib/erp/fuzzy-match";
 
 describe("normalizeName", () => {
   it("NFC + lowercase + strip whitespace/punctuation", () => {
@@ -1808,16 +1828,13 @@ export async function POST(_req: Request, ctx: { params: Promise<{ draftId: stri
   try {
     const auth = await requireErpScope("erp:write");
     const { draftId } = await ctx.params;
-    try {
-      await prisma.intakeDraft.update({
-        where: { id: draftId, status: "PENDING", orgId: auth.orgId },   // 부분 where: PENDING만 폐기 가능
-        data: { status: "DISCARDED" },
-      });
-    } catch (e) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2025") {
-        return new Response("Cannot discard (not PENDING or wrong org)", { status: 409 });
-      }
-      throw e;
+    // Prisma 7: update.where는 @unique 필드만 허용. status/orgId 같은 비유일 필터는 updateMany + count 패턴.
+    const result = await prisma.intakeDraft.updateMany({
+      where: { id: draftId, status: "PENDING", orgId: auth.orgId },
+      data: { status: "DISCARDED" },
+    });
+    if (result.count === 0) {
+      return new Response("Cannot discard (not PENDING or wrong org)", { status: 409 });
     }
     return Response.json({ ok: true });
   } catch (e) { return toResponse(e); }
@@ -1860,17 +1877,13 @@ export async function POST(req: Request, ctx: { params: Promise<{ draftId: strin
     const body = ConfirmBody.parse(await req.json());
 
     const order = await prisma.$transaction(async (tx) => {
-      // C5 멱등성: PENDING → CONFIRMED 원자적 전환 (이미 CONFIRMED면 not-found throw)
-      try {
-        await tx.intakeDraft.update({
-          where: { id: draftId, status: "PENDING", orgId: auth.orgId },
-          data: { status: "CONFIRMED" },
-        });
-      } catch (e) {
-        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2025") {
-          throw new IntakeAlreadyConfirmedError();
-        }
-        throw e;
+      // C5 멱등성: PENDING → CONFIRMED 원자적 전환. Prisma 7 update.where는 @unique only이므로 updateMany + count 패턴.
+      const lockResult = await tx.intakeDraft.updateMany({
+        where: { id: draftId, status: "PENDING", orgId: auth.orgId },
+        data: { status: "CONFIRMED" },
+      });
+      if (lockResult.count === 0) {
+        throw new IntakeAlreadyConfirmedError();   // 이미 CONFIRMED이거나 다른 org이거나 draft 없음
       }
 
       // M3 Product upsert + dedup
@@ -1985,8 +1998,7 @@ git checkout -b feature/WI-712-feat-intake-list-upload
 ```tsx
 import { requireErpScope } from "@/lib/erp/auth";
 import { prisma } from "@axle/db";
-import { IntakeList } from "@/components/erp/intake/intake-list";
-import { PageHeader } from "@/components/ui/page-header";
+import { IntakeList } from "@/src/components/erp/intake/intake-list";
 import Link from "next/link";
 
 export default async function IntakeListPage({ searchParams }: { searchParams: Promise<{ status?: string }>}) {
@@ -2003,10 +2015,13 @@ export default async function IntakeListPage({ searchParams }: { searchParams: P
     confirmedOrderId: d.confirmedOrderId,
   }));
   return (
-    <>
-      <PageHeader title="영수증 등록" cta={<Link href="/erp/intake/new">+ 새 영수증</Link>} />
+    <div className="space-y-4">
+      <header className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">영수증 등록</h1>
+        <Link href="/erp/intake/new" className="text-blue-600">+ 새 영수증</Link>
+      </header>
       <IntakeList items={serialized} currentStatus={status} />
-    </>
+    </div>
   );
 }
 ```
@@ -2021,16 +2036,15 @@ export default async function IntakeListPage({ searchParams }: { searchParams: P
 `apps/web/app/(app)/erp/intake/new/page.tsx`:
 ```tsx
 import { requireErpScope } from "@/lib/erp/auth";
-import { IntakeUploader } from "@/components/erp/intake/intake-uploader";
-import { PageHeader } from "@/components/ui/page-header";
+import { IntakeUploader } from "@/src/components/erp/intake/intake-uploader";
 
 export default async function NewIntakePage() {
   await requireErpScope("erp:write");   // guard only
   return (
-    <>
-      <PageHeader title="새 영수증 업로드" />
+    <div className="space-y-4">
+      <h1 className="text-2xl font-semibold">새 영수증 업로드</h1>
       <IntakeUploader />
-    </>
+    </div>
   );
 }
 ```
@@ -2107,7 +2121,7 @@ git checkout -b feature/WI-713a-feat-intake-review-layout
 import { notFound } from "next/navigation";
 import { requireErpScope } from "@/lib/erp/auth";
 import { prisma } from "@axle/db";
-import { IntakeReviewForm } from "@/components/erp/intake/intake-review-form";
+import { IntakeReviewForm } from "@/src/components/erp/intake/intake-review-form";
 
 export default async function IntakeReviewPage({ params }: { params: Promise<{ draftId: string }>}) {
   const ctx = await requireErpScope("erp:read");
@@ -2509,7 +2523,7 @@ git checkout -b test/WI-715-test-erp-edge-cases
 `apps/web/__tests__/lib/erp/fuzzy-match-korean.test.ts`:
 ```ts
 import { describe, it, expect } from "vitest";
-import { normalizeName, similarity, topMatches } from "../../../src/lib/erp/fuzzy-match";
+import { normalizeName, similarity, topMatches } from "../../../lib/erp/fuzzy-match";
 
 describe("Korean fuzzy match — 10+ realistic cases", () => {
   const cases: { a: string; b: string; minScore: number; label: string }[] = [
@@ -2592,7 +2606,8 @@ dbDescribe("WI-715 cross-draft Product name race (integration)", () => {
     // confirm helper: WI-711 confirm route의 핵심 트랜잭션 로직만 호출 (전체 라우트 호출 X — 단순 시뮬레이션)
     async function confirm(draftId: string) {
       return prisma.$transaction(async (tx) => {
-        await tx.intakeDraft.update({ where: { id: draftId, status: "PENDING" }, data: { status: "CONFIRMED" }});
+        const r = await tx.intakeDraft.updateMany({ where: { id: draftId, status: "PENDING" }, data: { status: "CONFIRMED" }});
+        if (r.count === 0) throw new Error("already confirmed");
         const existing = await tx.product.findFirst({ where: { orgId, name: "콜라", archived: false }});
         const p = existing ?? await tx.product.create({ data: { orgId, name: "콜라", unit: "캔" }});
         const o = await tx.order.create({
