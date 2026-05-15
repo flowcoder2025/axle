@@ -122,4 +122,75 @@ describe("buildConfirmBody", () => {
     expect(body.total).toBe(0);
     expect(body.items).toEqual([]);
   });
+
+  it("forwards counterpartyId verbatim when the autocomplete picked an existing client", () => {
+    // WI-713b: CounterpartyAutocomplete sets counterpartyId when the user
+    // selects from the dropdown; the form must thread it through to the
+    // confirm body so the route can skip the upsert-by-name path.
+    const body = buildConfirmBody({
+      type: "PURCHASE",
+      counterpartyName: "ABC마트",
+      counterpartyId: "client_existing_42",
+      date: "2026-05-15",
+      items: sampleItems(),
+      tax: 0,
+      autoRegister: true,
+    });
+    expect(body.counterpartyId).toBe("client_existing_42");
+    expect(body.counterpartyName).toBe("ABC마트");
+  });
+
+  it("keeps counterpartyId null when the user typed a new vendor name", () => {
+    // After editing the autocomplete input the id reference is cleared, so
+    // the confirm endpoint falls back to resolving by name.
+    const body = buildConfirmBody({
+      type: "SALE",
+      counterpartyName: "신규 거래처",
+      counterpartyId: null,
+      date: "2026-05-15",
+      items: sampleItems(),
+      tax: 0,
+      autoRegister: false,
+    });
+    expect(body.counterpartyId).toBeNull();
+    expect(body.counterpartyName).toBe("신규 거래처");
+    expect(body.autoRegisterProducts).toBe(false);
+  });
+
+  it("preserves per-item shouldRegister flags through the confirm body", () => {
+    // WI-713b adds the per-row "신규 등록" checkbox; ensure it survives
+    // serialization since the route uses it to decide whether to create a
+    // Product row for productId === null items.
+    const items: IntakeReviewItem[] = [
+      {
+        productId: null,
+        productName: "신규 상품",
+        sku: null,
+        qty: 1,
+        unitPrice: 100,
+        unit: "개",
+        shouldRegister: true,
+      },
+      {
+        productId: null,
+        productName: "임시 품목",
+        sku: null,
+        qty: 1,
+        unitPrice: 100,
+        unit: "개",
+        shouldRegister: false,
+      },
+    ];
+    const body = buildConfirmBody({
+      type: "PURCHASE",
+      counterpartyName: "X",
+      counterpartyId: null,
+      date: "2026-05-15",
+      items,
+      tax: 0,
+      autoRegister: false,
+    });
+    expect(body.items[0].shouldRegister).toBe(true);
+    expect(body.items[1].shouldRegister).toBe(false);
+  });
 });

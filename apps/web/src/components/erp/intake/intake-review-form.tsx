@@ -32,8 +32,18 @@ import {
   type IntakeReviewItem,
   type ItemMatchSuggestion,
 } from "./items-table";
+import {
+  CounterpartyAutocomplete,
+  type CounterpartySeedCandidate,
+} from "./counterparty-autocomplete";
 
 export type IntakeOrderType = "SALE" | "PURCHASE";
+
+/** Shape of `matchSuggestions.counterparty` produced by the intake upload route. */
+export interface CounterpartyMatchSuggestion {
+  query: string;
+  candidates: CounterpartySeedCandidate[];
+}
 
 export interface IntakeReviewFormProps {
   draftId: string;
@@ -41,8 +51,8 @@ export interface IntakeReviewFormProps {
   status: string;
   parsed: Partial<ReceiptData> | null;
   matchSuggestions: {
-    items?: ItemMatchSuggestion[][];
-    vendor?: ItemMatchSuggestion[];
+    items?: ItemMatchSuggestion[];
+    counterparty?: CounterpartyMatchSuggestion;
   } | null;
   errorMsg: string | null;
   confirmedOrderId: string | null;
@@ -136,9 +146,10 @@ export function IntakeReviewForm(props: IntakeReviewFormProps) {
   const [counterpartyName, setCounterpartyName] = useState<string>(
     props.parsed?.vendor ?? "",
   );
-  // WI-713b will wire counterpartyId via the autocomplete; for now it is
-  // always null and the API resolves by name.
-  const [counterpartyId] = useState<string | null>(null);
+  // counterpartyId is set when the user picks an existing client from the
+  // autocomplete. When null, the confirm endpoint resolves by name (and may
+  // upsert per the route contract).
+  const [counterpartyId, setCounterpartyId] = useState<string | null>(null);
   const [items, setItems] = useState<IntakeReviewItem[]>(() =>
     toReviewItems(props.parsed),
   );
@@ -312,13 +323,17 @@ export function IntakeReviewForm(props: IntakeReviewFormProps) {
             </label>
             <label className="block text-sm">
               <span className="block font-medium">거래처</span>
-              <input
-                type="text"
+              <CounterpartyAutocomplete
                 value={counterpartyName}
-                onChange={(e) => setCounterpartyName(e.target.value)}
+                initialSuggestions={
+                  props.matchSuggestions?.counterparty?.candidates ?? []
+                }
+                onChange={(sel) => {
+                  setCounterpartyName(sel.counterpartyName);
+                  setCounterpartyId(sel.counterpartyId);
+                }}
                 disabled={formDisabled}
-                maxLength={200}
-                className="mt-1 w-full rounded border px-2 py-1 disabled:bg-muted"
+                ariaLabel="거래처"
               />
             </label>
           </div>

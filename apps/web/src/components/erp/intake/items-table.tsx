@@ -3,13 +3,10 @@
 /**
  * ItemsTable — Editable line-item grid for /erp/intake/[draftId].
  *
- * Phase 20 WI-713a scope: plain text/number inputs for productName / qty /
- * unitPrice, row delete, and an "add row" footer. Autocomplete + per-row
- * shouldRegister toggle land in WI-713b.
- *
- * The `suggestions` prop is accepted (and currently unused) so this
- * component's external contract stays stable when 713b layers the
- * matchSuggestions UI on top.
+ * Phase 20 WI-713b: the productName input is now a ProductAutocomplete that
+ * seeds from matchSuggestions and live-searches /api/erp/products. Each row
+ * gets a "신규 등록 시" checkbox (`shouldRegister`) that decides whether the
+ * confirm endpoint creates a Product row when productId is null.
  *
  * `disabled` reflects the parent's "draft is no longer PENDING or a submit
  * is in flight" state — when set, the inputs become read-only and the
@@ -17,6 +14,11 @@
  * snapshot rather than an editable form.
  */
 import type { Dispatch, SetStateAction } from "react";
+import {
+  ProductAutocomplete,
+  type ProductSeedCandidate,
+  type ProductSelection,
+} from "./product-autocomplete";
 
 export interface IntakeReviewItem {
   productId: string | null;
@@ -28,17 +30,19 @@ export interface IntakeReviewItem {
   shouldRegister: boolean;
 }
 
-/** Shape of one match suggestion. Kept loose; the consumer (WI-713b) will narrow. */
+/**
+ * One entry from `matchSuggestions.items[i]` produced by the intake upload
+ * route. `candidates` are fuzzy-match top-N over the org's Product list.
+ */
 export interface ItemMatchSuggestion {
-  productId?: string | null;
-  productName?: string | null;
-  score?: number;
+  query: string;
+  candidates: ProductSeedCandidate[];
 }
 
 interface ItemsTableProps {
   items: IntakeReviewItem[];
   setItems: Dispatch<SetStateAction<IntakeReviewItem[]>>;
-  suggestions?: ItemMatchSuggestion[][];
+  suggestions?: ItemMatchSuggestion[];
   disabled?: boolean;
 }
 
@@ -59,11 +63,24 @@ function blankItem(): IntakeReviewItem {
 export function ItemsTable({
   items,
   setItems,
-  suggestions: _suggestions,
+  suggestions = [],
   disabled = false,
 }: ItemsTableProps) {
   function updateAt(index: number, patch: Partial<IntakeReviewItem>) {
     setItems((prev) => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)));
+  }
+
+  function applyProductSelection(index: number, sel: ProductSelection) {
+    updateAt(index, {
+      productId: sel.productId,
+      productName: sel.productName,
+      sku: sel.sku,
+      unit: sel.unit,
+      // Don't trample a user-edited unitPrice with 0 when they're typing a
+      // brand-new name (productId === null && unitPrice === 0). Only adopt
+      // the suggestion's price when the user picked an existing product.
+      ...(sel.productId !== null ? { unitPrice: sel.unitPrice } : {}),
+    });
   }
 
   function removeAt(index: number) {
@@ -83,6 +100,7 @@ export function ItemsTable({
             <th className="px-3 py-2 text-right">수량</th>
             <th className="px-3 py-2 text-right">단가</th>
             <th className="px-3 py-2 text-right">합계</th>
+            <th className="px-3 py-2 text-center">신규 등록 시</th>
             <th className="px-3 py-2" aria-label="삭제" />
           </tr>
         </thead>
@@ -90,7 +108,7 @@ export function ItemsTable({
           {items.length === 0 ? (
             <tr>
               <td
-                colSpan={5}
+                colSpan={6}
                 className="px-3 py-6 text-center text-xs text-muted-foreground"
               >
                 품목이 없습니다. 아래 &quot;품목 추가&quot;로 등록하세요.
@@ -99,18 +117,17 @@ export function ItemsTable({
           ) : (
             items.map((it, i) => {
               const lineTotal = it.qty * it.unitPrice;
+              const rowSuggestions = suggestions[i]?.candidates ?? [];
+              const isExistingMatch = it.productId !== null;
               return (
                 <tr key={i} className="border-t">
                   <td className="px-3 py-2">
-                    <input
-                      type="text"
+                    <ProductAutocomplete
                       value={it.productName}
-                      onChange={(e) =>
-                        updateAt(i, { productName: e.target.value })
-                      }
+                      initialSuggestions={rowSuggestions}
+                      onChange={(sel) => applyProductSelection(i, sel)}
                       disabled={disabled}
-                      aria-label={`품목 ${i + 1} 상품명`}
-                      className="w-full rounded border px-2 py-1 text-sm disabled:bg-muted disabled:text-muted-foreground"
+                      ariaLabel={`품목 ${i + 1} 상품명`}
                     />
                   </td>
                   <td className="px-3 py-2 text-right">
@@ -144,6 +161,28 @@ export function ItemsTable({
                   <td className="px-3 py-2 text-right tabular-nums">
                     {CURRENCY_FMT.format(lineTotal)}
                   </td>
+                  <td className="px-3 py-2 text-center">
+                    {/*
+                      When productId is set we matched an existing product;
+                      the flag is moot (no creation happens). We still render
+                      the checkbox so the UI is consistent, but disable it.
+                    */}
+                    <input
+                      type="checkbox"
+                      checked={it.shouldRegister}
+                      onChange={(e) =>
+                        updateAt(i, { shouldRegister: e.target.checked })
+                      }
+                      disabled={disabled || isExistingMatch}
+                      aria-label={`품목 ${i + 1} 신규 등록`}
+                      title={
+                        isExistingMatch
+                          ? "기존 상품과 매칭됨"
+                          : "체크 시 신규 상품으로 등록"
+                      }
+                      className="h-4 w-4 disabled:opacity-50"
+                    />
+                  </td>
                   <td className="px-3 py-2 text-right">
                     <button
                       type="button"
@@ -162,7 +201,7 @@ export function ItemsTable({
         </tbody>
         <tfoot>
           <tr className="border-t">
-            <td colSpan={5} className="px-3 py-2">
+            <td colSpan={6} className="px-3 py-2">
               <button
                 type="button"
                 onClick={addRow}
