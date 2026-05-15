@@ -1,0 +1,86 @@
+%% Phase 20 — AI-driven ERP / 영수증 OCR Intake 데이터 모델
+%% Mermaid ER diagram (renders on GitHub + VSCode Mermaid preview)
+%% Reference: docs/specs/2026-05-15-phase20-erp-receipt-intake-design.md §4
+
+erDiagram
+    Product ||--o{ InventoryMovement : "이력 발생"
+    Product ||--o{ OrderItem : "라인 참조 (nullable, ad-hoc 허용)"
+    Order ||--o{ OrderItem : "주문 라인 (cascade delete)"
+    Order ||--o{ InventoryMovement : "source=ORDER 자동 발생"
+    IntakeDraft ||--o| Order : "confirm 시 1:1 연결 (confirmedOrderId @unique)"
+    User ||--o{ IntakeDraft : "업로드 사용자 (onDelete SetNull)"
+
+    Product {
+        string id PK
+        string orgId "Multi-org 스코프 (managed org id 포함)"
+        string sku "nullable, orgId+sku 유니크"
+        string name
+        string unit "개 / 박스 / kg 등"
+        decimal unitPrice "KRW"
+        string category "nullable"
+        boolean archived "default false"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    InventoryMovement {
+        string id PK
+        string orgId
+        string productId FK
+        enum type "IN | OUT | ADJUST"
+        int qty "unsigned, 방향은 type이 결정"
+        enum source "RECEIPT_INTAKE | ORDER | MANUAL | INITIAL"
+        string sourceId "nullable"
+        decimal unitCost "nullable"
+        string note "nullable"
+        datetime occurredAt
+        datetime createdAt
+    }
+
+    Order {
+        string id PK
+        string orgId
+        enum type "SALE | PURCHASE"
+        string counterpartyId "free-form (FK 없음, Phase 21 ErpCounterparty 도입 예정)"
+        string counterpartyName "표시용 snapshot"
+        enum status "DRAFT | CONFIRMED | CANCELLED"
+        decimal total
+        decimal tax
+        datetime occurredAt
+        enum source "RECEIPT_INTAKE | ORDER | MANUAL | INITIAL"
+        string sourceId "nullable (RECEIPT_INTAKE 시 IntakeDraft.id)"
+        string note "nullable"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    OrderItem {
+        string id PK
+        string orderId FK
+        string productId FK "nullable, ad-hoc 라인 허용 (InventoryMovement 미생성)"
+        string productName "snapshot"
+        int qty
+        decimal unitPrice
+        decimal lineTotal
+    }
+
+    IntakeDraft {
+        string id PK
+        string orgId
+        string userId FK "nullable, onDelete SetNull"
+        string blobUrl "Vercel Blob URL (5년 보관, unguessable suffix)"
+        json ocrJson "raw Claude Vision 결과"
+        json parsedJson "구조화된 추출 결과 (vendor/date/items/total/tax)"
+        json matchSuggestions "Product/Client top-3 후보 (Decimal은 string 직렬화)"
+        enum status "PENDING | CONFIRMED | DISCARDED"
+        string confirmedOrderId "nullable @unique — 멱등성 1차 방어"
+        string errorMsg "nullable"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    User {
+        string id PK
+        string name
+        string email
+    }

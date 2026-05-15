@@ -83,6 +83,109 @@ v3에서 가격 모델 추가됨 (TBD, 별도 라운드):
 
 **2026-05-04 갱신**: Phase 17/18 sync 결과(PR #99 `eb71097`) 핵심부가 머지 완료됨. 외부 의존 작업(14건)을 별도 트랙으로 분리하고 메타플랫폼 게이트는 "핵심부 완료"로 완화. Phase 19로의 진입이 가능한 상태.
 
+---
+
+## 0.6 Phase 20 — AI-driven ERP / 영수증 OCR Intake (2026-05-15)
+
+> **상태**: 19 WI 중 18 완료 (WI-716 E2E는 대화형 deferred), main 머지 완료
+> **상세 사양**: [`../2026-05-15-phase20-erp-receipt-intake-design.md`](../2026-05-15-phase20-erp-receipt-intake-design.md)
+> **사용자 가이드**: [`../2026-05-15-phase20-erp-receipt-intake-userguide.md`](../2026-05-15-phase20-erp-receipt-intake-userguide.md)
+> **데이터 모델**: [`../2026-05-15-phase20-erp-data-model.mmd`](../2026-05-15-phase20-erp-data-model.mmd)
+> **Blob 라이프사이클**: [`../2026-05-15-phase20-blob-lifecycle.md`](../2026-05-15-phase20-blob-lifecycle.md)
+
+### 목표
+
+AI-driven ERP의 첫 킬러 워크플로우 — **영수증 이미지 OCR → 사용자 승인 → Order/InventoryMovement 자동 등록**. Pack F를 메타플랫폼 모듈 카탈로그의 6번째 Pack으로 등록(35 → **36 모듈**)하고, 그중 4개 모듈(products / inventory / orders / intake)을 라이브로 제공한다. Phase 19에서 누락된 사양 마무리(sidebar-builder registry handoff 일원화 + flowset 병렬모드 가짜 완료 게이트)도 함께 마감.
+
+### 산출물
+
+- **Pack F (ERP) 8 modules** 카탈로그 등록 (multiOrg: true)
+  - **라이브 4개**: products / inventory / orders / intake
+  - **placeholder 4개** (Phase 21+): erp-customers / shipping / purchase / erp-reports
+- **Prisma 5 신규 model** + 5 신규 enum
+  - Product / InventoryMovement / Order / OrderItem / IntakeDraft
+  - MovementType / ReferenceType / OrderType / OrderStatus / DraftStatus
+- **5 ERP API endpoints**
+  - `POST /api/erp/products` (+ CRUD) — orgId 스코프 + `erp:read|write` guard
+  - `GET /api/erp/inventory` — timeline + 집계 쿼리
+  - `POST /api/erp/orders/[id]/cancel` — 역방향 InventoryMovement 자동 발생
+  - `POST /api/erp/intake` — Blob 업로드 + AiJob dispatch (OCR type)
+  - `POST /api/erp/intake/[id]/confirm` / `/discard` — 멱등성 트랜잭션
+- **4 UI 페이지**
+  - `/erp/products`, `/erp/inventory`, `/erp/orders` (+ 상세)
+  - `/erp/intake` (목록) + `/erp/intake/new` (업로드) + `/erp/intake/[draftId]` (검토)
+- **OCR 파이프라인**: `@axle/ocr.parseReceipt` 신규 export
+  - Anthropic Claude Sonnet 4.6 (vision) + JSON schema prompt
+  - JSON parse 실패 1회 feedback retry
+  - 기존 `ocrHandler` (business-card)에 `mode: "receipt"` 분기 (회귀 무영향)
+- **한국어 fuzzy match**: NFC normalize + 단위/공백/숫자 strip + Levenshtein 유사도. Product/Client 각 top-3 후보 매칭.
+- **Idempotent confirm transaction**: PENDING→CONFIRMED 원자적 전환 + `confirmedOrderId @unique`로 더블클릭 방어 (두 번째 요청 409)
+- **Vercel Blob 5년 보관 정책** (한국 세무 보관 의무) — 자세한 정책 [`../2026-05-15-phase20-blob-lifecycle.md`](../2026-05-15-phase20-blob-lifecycle.md) 참고
+- **사양 마무리 2건**:
+  - sidebar-builder bootstrap → `registry.ts.registerAllPacks()` 위임 (module-catalog.ts는 UI display 메타로 잔존)
+  - `flowset.sh` 병렬 모드(worktree 경로) `verify_wi_actually_merged` 게이트 적용 + 글로벌 템플릿 동기화
+
+### 데이터 모델 요약
+
+5개 신규 model. 자세한 관계는 [`../2026-05-15-phase20-erp-data-model.mmd`](../2026-05-15-phase20-erp-data-model.mmd) (Mermaid ER) 참조.
+
+- **Product** (`orgId`, `sku?`, `name`, `unit`, `unitPrice`, `archived`) — `@@unique([orgId, sku])`
+- **InventoryMovement** (`orgId`, `productId`, `type: IN|OUT|ADJUST`, `qty` unsigned, `source`, `sourceId`, `occurredAt`)
+- **Order** (`orgId`, `type: SALE|PURCHASE`, `counterpartyId?` free-form, `counterpartyName` snapshot, `status`, `total`, `tax`, `occurredAt`)
+- **OrderItem** (`orderId`, `productId?` nullable for ad-hoc, `productName` snapshot, `qty`, `unitPrice`, `lineTotal`)
+- **IntakeDraft** (`orgId`, `userId?` SetNull, `blobUrl`, `ocrJson`, `parsedJson`, `matchSuggestions`, `status: PENDING|CONFIRMED|DISCARDED`, `confirmedOrderId? @unique`)
+
+**핵심 invariant**: ad-hoc OrderItem(`productId=null`)은 **InventoryMovement를 만들지 않음**. confirm 시 "신규 상품 자동 등록" 토글로 명시적 선택해야 Product 생성 + Movement 발생.
+
+### 사용자 워크플로우 (5단계)
+
+1. **영수증 업로드**: `/erp/intake/new` → 드래그/카메라/파일 선택 (JPG/PNG/WebP/HEIC, PDF 미지원)
+2. **OCR 자동 추출**: Vercel Blob 업로드 → AiJob dispatch → Claude Vision (10~20초) → IntakeDraft 생성 → 검토 페이지로 자동 redirect
+3. **검토 + 자동완성**: 좌측 영수증 미리보기 + 우측 편집 폼. 거래처/상품 매칭 후보 top-3 표시 + 신규 등록 토글
+4. **등록**: PENDING → CONFIRMED 원자적 전환 + Order 생성 + OrderItem N개 + InventoryMovement 자동 발생 (PURCHASE→IN, SALE→OUT)
+5. **취소**: 주문 상세 → 취소 → 역방향 InventoryMovement 자동 생성 → 재고 원복
+
+자세한 사용 가이드는 [`../2026-05-15-phase20-erp-receipt-intake-userguide.md`](../2026-05-15-phase20-erp-receipt-intake-userguide.md) 참고.
+
+### WI 분할 (총 19건)
+
+| 그룹 | WI | 내용 |
+|---|---|---|
+| A. Pack F + 사양 마무리 | WI-701~704 | Pack F 카탈로그, sidebar-builder handoff, flowset 게이트, ReBAC loader 확인 |
+| B. Data layer | WI-705~708 | Prisma schema + products / inventory / orders 페이지 + API |
+| C. OCR intake | WI-709a/b ~ 714 | parseReceipt + ocrHandler 분기 + fuzzy + IntakeDraft API + UI + Blob 라이프사이클 |
+| D. 테스트 + 문서 | WI-715~717 | 단위테스트(fuzzy + 멱등성/충돌/race) + E2E(대화형 deferred) + 문서 |
+
+**상태 (2026-05-15)**: 18 WI 머지 완료 / WI-716(E2E)만 대화형 작성 deferred.
+
+### Phase 21 Backlog (Phase 20 Non-Goals 누적)
+
+- **ErpCounterparty 모델**: 매입/판매 거래처를 CRM `Client`와 분리 (현재 `Order.counterpartyId`는 free-form snapshot)
+- **Vercel Blob signed URL** + private scope 마이그레이션 (Phase 20은 public + unguessable random suffix)
+- **Cross-draft Product name race fix**: advisory lock 또는 `(orgId, name) WHERE archived=false` partial unique index (현재는 in-tx Map dedup만)
+- **한국어 fuzzy 강화**: jamo 분해 + synonym 사전 + 카테고리 weight (현재는 NFC + 단위/공백/숫자 strip + 단순 Levenshtein)
+- **Ad-hoc bulk import 채널**: 이메일 / PDF / 여러 장 일괄 업로드 (현재는 이미지 1장씩)
+- **Multi-warehouse / Multi-currency**: 현재는 단일 창고 + KRW 고정
+- **FIFO / 이동평균 평가법**: 현재는 평가법 없음 (단순 수량 집계)
+- **Auto-commit (고신뢰도 자동 등록)**: 현재는 사용자 confirm 게이트 필수
+- **ErpReports**: 재고 평가 / 판매 통계 / 매입 분석 (현재는 메타데이터만)
+- **Shipping / Purchase 워크플로우**: 현재는 placeholder 모듈만
+- **OCR 셀렉터 self-repair** + 사용자 수정 데이터 fine-tuning 활용
+- **Parallel mark_wi_done gate hardening**: flowset.sh v3.0.1 게이트 강화 (worktree 병렬모드에서 가짜 완료 재발 방지) — Phase 20 WI-703에서 1차 적용했으나 추가 시나리오 모니터링 필요
+- **음수 재고 차단/alert**: 현재는 음수 허용 (외상 출고 등 시나리오)
+- **`module-catalog.ts` 전면 폐기**: 현재는 registry runtime handoff만 swap, UI display catalog는 잔존
+
+### 모듈 카탈로그 업데이트
+
+| Pack | 변경 전 | 변경 후 | 비고 |
+|---|---|---|---|
+| Pack F (ERP) | 7 modules (placeholder) | **8 modules (4 live + 4 placeholder)** | intake 신규 추가, 전 모듈 `multiOrg: true` 전환 |
+| **총계** | 35 modules | **36 modules** | |
+
+`module-catalog.ts` + `registry.ts.registerAllPacks()` 두 source 동시 갱신. `pack-f.test.ts`로 8 모듈 / multiOrg / scope 일관성 검증.
+
+
+
 ### 외부 의존 보류 트랙 (메타플랫폼 게이트와 분리)
 
 다음 14건은 외부 시스템(공공포털/스크래퍼) 의존도가 높아 메타플랫폼 추출과 무관하게 별도 진행한다:
