@@ -16,12 +16,12 @@ import {
   registerPack,
 } from "@axle/core-module-system";
 
-import { packA, packAModules } from "./pack-a-business/index.js";
-import { packB, packBModules } from "./pack-b-rd-support/index.js";
-import { packD, packDModules } from "./pack-d-hr/index.js";
-import { packE, packEModules } from "./pack-e-content/index.js";
-import { packF, packFModules } from "./pack-f-erp/index.js";
-import { packG, packGModules } from "./pack-g-desktop/index.js";
+import { packA, packAModules } from "./pack-a-business/index";
+import { packB, packBModules } from "./pack-b-rd-support/index";
+import { packD, packDModules } from "./pack-d-hr/index";
+import { packE, packEModules } from "./pack-e-content/index";
+import { packF, packFModules } from "./pack-f-erp/index";
+import { packG, packGModules } from "./pack-g-desktop/index";
 
 let registered = false;
 

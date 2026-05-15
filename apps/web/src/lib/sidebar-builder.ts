@@ -1,79 +1,42 @@
 /**
- * WI-618 — Dynamic sidebar builder.
+ * WI-618 → WI-702 — Dynamic sidebar builder.
  *
  * Marries three independent inputs into the `SidebarSection[]` shape that the
  * AppSidebar component renders:
  *   1. installedModules — from prisma.OrgModuleInstall (WI-616 model)
- *   2. userPermissions   — ReBAC scopes (WI-619 will replace the mock)
- *   3. registry catalog  — @axle/core-module-system (bootstrapped from
- *                          apps/web/src/lib/module-catalog.ts because the
- *                          per-module module.config.ts files only ship in
- *                          WI-622~626; per sprint-618 §제약, this WI may not
- *                          author those config files).
+ *   2. userPermissions   — ReBAC scopes (WI-704 will replace the mock)
+ *   3. registry catalog  — @axle/core-module-system, populated from
+ *                          `apps/web/src/modules/registry.ts` via
+ *                          `registerAllPacks()` (WI-622~626 + WI-701 own the
+ *                          per-pack `module.config.ts` files).
  *
- * The bootstrap converts every CatalogModule + CatalogPack to a ModuleConfig +
- * PackConfig with sensible defaults (no hard deps, plain permission `<id>:*`).
- * That gives the buildSidebar engine enough data to group modules under their
- * pack and filter by permission. Once WI-622+ lands, the bootstrap can be
- * dropped in favour of `import "@axle/pack-a/registry"` style side-effect
- * imports.
+ * Note: `module-catalog.ts` (PACK_CATALOG) is still consumed for UI display
+ * (settings/pack-card.tsx, billing summary, the default "grant all" permission
+ * scope generator below). Only the runtime registry bootstrap was migrated in
+ * WI-702.
  */
 
 import {
   buildSidebar as buildSidebarSections,
-  clearRegistry,
-  registerModule,
-  registerPack,
-  type ModuleConfig,
-  type PackConfig,
   type SidebarSection,
 } from "@axle/core-module-system";
-import { PACK_CATALOG } from "./module-catalog";
-
-let bootstrapped = false;
+import {
+  ALL_MODULES,
+  registerAllPacks,
+  resetPlatformRegistration,
+} from "../modules/registry";
 
 /**
- * Idempotently register every catalog pack + module into the in-memory
- * registry. Safe to call from every request — subsequent calls are no-ops.
+ * Idempotently register every pack + module into the in-memory registry.
+ * Delegates to `registerAllPacks()` which is itself idempotent.
  */
 export function bootstrapPlatformRegistry(): void {
-  if (bootstrapped) return;
-  for (const pack of PACK_CATALOG) {
-    const moduleIds = pack.modules.map((m) => m.id);
-    const packConfig: PackConfig = {
-      id: pack.id,
-      label: pack.title,
-      modules: moduleIds,
-      pricing: { monthly: pack.pricing.monthly },
-      recommended: pack.recommended,
-    };
-    registerPack(packConfig);
-
-    for (const mod of pack.modules) {
-      const moduleConfig: ModuleConfig = {
-        id: mod.id,
-        packId: pack.id,
-        label: mod.label,
-        route: `/${mod.id}`,
-        // Until WI-619 wires actual ReBAC scopes, use the conventional
-        // `<moduleId>:*` shape so a permission set like ["customers:*"] matches.
-        permission: `${mod.id}:*`,
-        multiOrg: mod.multiOrg,
-        pbc: [],
-        deps: {},
-        prismaModels: [],
-        admin: mod.admin,
-      };
-      registerModule(moduleConfig);
-    }
-  }
-  bootstrapped = true;
+  registerAllPacks();
 }
 
-/** Test-only — re-bootstrap on the next call. */
+/** Test-only — clear the registry and let the next call re-register. */
 export function resetPlatformRegistry(): void {
-  clearRegistry();
-  bootstrapped = false;
+  resetPlatformRegistration();
 }
 
 export interface SidebarBuilderDeps {
@@ -88,17 +51,19 @@ export interface SidebarBuilderDeps {
 }
 
 /**
- * Default permission loader — grants every catalog scope. Replaced by WI-619.
- * Returned as a fresh array each call so callers may mutate safely.
+ * Default permission loader — grants every registry resource scope. Replaced
+ * by WI-704 (real ReBAC lookup). Derives scopes from the actual permission
+ * strings declared on registered modules (e.g. `erp:read` → grants `erp:*`),
+ * so post-WI-702 the loader stays in sync with the registry's permission
+ * scheme. Returned as a fresh array each call so callers may mutate safely.
  */
 async function grantAllPermissions(): Promise<string[]> {
   const scopes = new Set<string>();
-  for (const pack of PACK_CATALOG) {
-    for (const mod of pack.modules) {
-      scopes.add(`${mod.id}:*`);
-    }
+  for (const mod of ALL_MODULES) {
+    const [resource] = mod.permission.split(":");
+    if (resource) scopes.add(`${resource}:*`);
   }
-  // Admin scopes used by Pack B admin modules
+  // Admin scopes used by admin-flagged modules (e.g. Pack B HWPX templates).
   scopes.add("platform:admin");
   return Array.from(scopes);
 }
