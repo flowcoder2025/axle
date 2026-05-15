@@ -18,6 +18,8 @@ async function getCreateMock() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Silence the structured retry warn — it's verified via call structure, not stdout.
+  vi.spyOn(console, "warn").mockImplementation(() => {});
   process.env.ANTHROPIC_API_KEY = "test-key";
 });
 
@@ -82,7 +84,11 @@ describe("parseReceipt", () => {
     expect(r.vendor).toBe("X");
     expect(create).toHaveBeenCalledTimes(2);
     const secondCall = create.mock.calls[1][0];
-    expect(JSON.stringify(secondCall)).toContain("not valid JSON");
+    expect(secondCall.messages).toHaveLength(3);
+    expect(secondCall.messages[0].role).toBe("user");
+    expect(secondCall.messages[1].role).toBe("assistant");
+    expect(secondCall.messages[2].role).toBe("user");
+    expect(JSON.stringify(secondCall.messages[2])).toContain("not valid JSON");
   });
 
   it("throws ParseReceiptError after 2 failures", async () => {
@@ -98,5 +104,96 @@ describe("parseReceipt", () => {
       parseReceipt(Buffer.from("fake"), "image/jpeg")
     ).rejects.toBeInstanceOf(ParseReceiptError);
     expect(create).toHaveBeenCalledTimes(2);
+  });
+
+  it("throws ParseReceiptError on Anthropic SDK error (no retry)", async () => {
+    const create = await getCreateMock();
+    create.mockRejectedValueOnce(new Error("429 rate limit"));
+
+    const { parseReceipt, ParseReceiptError } = await import(
+      "../src/receipt.js"
+    );
+    await expect(
+      parseReceipt(Buffer.from("fake"), "image/jpeg")
+    ).rejects.toBeInstanceOf(ParseReceiptError);
+    // SDK transport errors must not enter the retry loop.
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
+  it("validates items[] element shape — missing qty fails", async () => {
+    const create = await getCreateMock();
+    create.mockResolvedValue({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            vendor: "X",
+            date: null,
+            type: "unknown",
+            items: [{ name: "콜라", unitPrice: 1500 }], // missing qty
+            subtotal: null,
+            tax: null,
+            total: null,
+            currency: "KRW",
+            confidence: 0.5,
+          }),
+        },
+      ],
+    });
+
+    const { parseReceipt, ParseReceiptError } = await import(
+      "../src/receipt.js"
+    );
+    await expect(
+      parseReceipt(Buffer.from("fake"), "image/jpeg")
+    ).rejects.toBeInstanceOf(ParseReceiptError);
+  });
+
+  it("validates type enum — invalid value fails", async () => {
+    const create = await getCreateMock();
+    create.mockResolvedValue({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            vendor: "X",
+            date: null,
+            type: "refund", // invalid
+            items: [],
+            subtotal: null,
+            tax: null,
+            total: null,
+            currency: "KRW",
+            confidence: 0.5,
+          }),
+        },
+      ],
+    });
+
+    const { parseReceipt, ParseReceiptError } = await import(
+      "../src/receipt.js"
+    );
+    await expect(
+      parseReceipt(Buffer.from("fake"), "image/jpeg")
+    ).rejects.toBeInstanceOf(ParseReceiptError);
+  });
+
+  it("extracts multi-block text content", async () => {
+    const create = await getCreateMock();
+    create.mockResolvedValueOnce({
+      content: [
+        { type: "text", text: '{"vendor": "GS25", "date": "2026-05-15"' },
+        {
+          type: "text",
+          text: ', "type": "purchase", "items": [], "subtotal": null, "tax": null, "total": null, "currency": "KRW", "confidence": 0.9}',
+        },
+      ],
+    });
+
+    const { parseReceipt } = await import("../src/receipt.js");
+    const r = await parseReceipt(Buffer.from("fake"), "image/jpeg");
+    expect(r.vendor).toBe("GS25");
+    expect(r.date).toBe("2026-05-15");
+    expect(r.type).toBe("purchase");
   });
 });
