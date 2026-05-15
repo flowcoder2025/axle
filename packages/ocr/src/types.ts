@@ -14,3 +14,22 @@ export interface BusinessVerifyResult {
   businessName?: string;
   ceoName?: string;
 }
+
+export interface ReceiptItem {
+  name: string;
+  qty: number;
+  unitPrice: number;
+  unit: string | null;
+}
+
+export interface ReceiptData {
+  vendor: string;
+  date: string | null;
+  type: "purchase" | "sale" | "unknown";
+  items: ReceiptItem[];
+  subtotal: number | null;
+  tax: number | null;
+  total: number | null;
+  currency: "KRW";
+  confidence: number;
+}
