@@ -1024,7 +1024,7 @@ cd apps/web && npx vitest run __tests__/api/erp/products.test.ts
 `apps/web/app/(app)/erp/products/[productId]/page.tsx`: 상세 + 재고 history 링크
 `apps/web/app/(app)/erp/products/[productId]/edit/page.tsx`: 편집 폼
 
-각 페이지는 `<PageHeader>` + `<DataTable>` 기존 컴포넌트 재사용 (apps/web/src/components/ui).
+각 페이지는 inline `<h1 className="text-2xl font-semibold">제목</h1>` 헤더 + 순수 HTML `<table>` 사용 (PageHeader/DataTable 공유 컴포넌트는 codebase에 없음 — 필요한 인터랙티브 요소만 `@axle/ui`에서 import).
 
 - [ ] **Step 7: lint + build 통과**
 
