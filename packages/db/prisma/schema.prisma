@@ -53,6 +53,9 @@ model User {
   nomuConsultations NomuConsultation[] @relation("NomuUser")
   workSchedules     WorkSchedule[]     @relation("WorkScheduleUser")
 
+  // Phase 20 ERP intake back-relation (WI-705).
+  intakeDrafts IntakeDraft[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -1573,4 +1576,133 @@ model OrgMultiOrgSubscription {
   activatedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+// ========================================
+// Phase 20: Pack F ERP + Receipt OCR Intake (WI-705)
+// spec: docs/specs/2026-05-15-phase20-erp-receipt-intake-design.md §4
+// ========================================
+
+model Product {
+  id        String   @id @default(cuid())
+  orgId     String // Multi-org: managed org id로도 사용
+  sku       String?
+  name      String
+  unit      String // 개, 박스, kg
+  unitPrice Decimal  @default(0) // KRW
+  category  String?
+  archived  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movements  InventoryMovement[]
+  orderItems OrderItem[]
+
+  @@unique([orgId, sku]) // sku 부재 시 nullable이라 collision 없음
+  @@index([orgId, name])
+  @@index([orgId, archived])
+}
+
+model InventoryMovement {
+  id         String         @id @default(cuid())
+  orgId      String
+  productId  String
+  type       MovementType // IN | OUT | ADJUST
+  qty        Int // unsigned (양수). 방향은 type이 결정.
+  source     ReferenceType?
+  sourceId   String?
+  unitCost   Decimal?
+  note       String?
+  occurredAt DateTime
+  createdAt  DateTime       @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orgId, productId, occurredAt])
+  @@index([orgId, occurredAt])
+}
+
+model Order {
+  id               String         @id @default(cuid())
+  orgId            String
+  type             OrderType // SALE | PURCHASE
+  counterpartyId   String? // free-form snapshot (FK 없음, Phase 21에 ErpCounterparty FK 도입)
+  counterpartyName String // 표시용 snapshot
+  status           OrderStatus // DRAFT | CONFIRMED | CANCELLED
+  total            Decimal
+  tax              Decimal        @default(0)
+  occurredAt       DateTime
+  source           ReferenceType?
+  sourceId         String?
+  note             String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  items OrderItem[]
+
+  @@index([orgId, type, occurredAt])
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  productId   String? // null = ad-hoc item (사전등록 안 된 품목, InventoryMovement 미생성)
+  productName String // snapshot
+  qty         Int
+  unitPrice   Decimal
+  lineTotal   Decimal
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+}
+
+model IntakeDraft {
+  id               String      @id @default(cuid())
+  orgId            String
+  userId           String? // nullable — onDelete: SetNull 요건 (Plan review C9 fix)
+  blobUrl          String // 영수증 이미지 (Vercel Blob, public unguessable URL — Phase 20 MVP. signed URL은 Phase 21+)
+  ocrJson          Json // raw OCR 결과
+  parsedJson       Json // 구조화된 추출 결과
+  matchSuggestions Json // product/client 매칭 후보 (Decimal은 string으로 변환 후 저장 — Plan review M9 fix)
+  status           DraftStatus // PENDING | CONFIRMED | DISCARDED
+  confirmedOrderId String? // unique (한 draft → 한 Order)
+  errorMsg         String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([confirmedOrderId]) // 멱등성 1차 방어
+  @@index([orgId, status, createdAt])
+  @@index([orgId, userId, status])
+}
+
+enum MovementType {
+  IN
+  OUT
+  ADJUST
+}
+
+enum ReferenceType {
+  RECEIPT_INTAKE
+  ORDER
+  MANUAL
+  INITIAL
+}
+
+enum OrderType {
+  SALE
+  PURCHASE
+}
+
+enum OrderStatus {
+  DRAFT
+  CONFIRMED
+  CANCELLED
+}
+
+enum DraftStatus {
+  PENDING
+  CONFIRMED
+  DISCARDED
 }
