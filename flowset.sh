@@ -19,7 +19,7 @@ set -euo pipefail
 #   - completed_wis.txt = Single source of truth
 #   - reconcile_fix_plan() syncs checkboxes at loop END only
 #==============================
-FLOWSET_VERSION="3.0.1"
+FLOWSET_VERSION="3.0.2"
 
 # UTF-8 강제 (Windows 한글 깨짐 방지)
 export LANG=en_US.UTF-8
@@ -199,9 +199,14 @@ mark_wi_done() {
 
 verify_wi_actually_merged() {
   # Guards against fake completion (gh issue 2026-05-12 #3): worker reports
-  # success but no PR was actually merged for this WI. Compares HEAD against
-  # the pre-iteration SHA and rejects if no commit in that range references
-  # the WI prefix.
+  # success but no PR was actually merged for this WI. Compares the head ref
+  # against the pre-iteration SHA and rejects if no commit in that range
+  # references the WI prefix.
+  #
+  # Args: <wi_name> <since_sha> [<head_ref>]
+  #   head_ref defaults to HEAD (sequential 모드).
+  #   병렬 모드 Site 2 는 PR 머지 전이라 main HEAD 가 아닌 worktree SHA(또는
+  #   push 된 PR 브랜치)를 head_ref 로 넘긴다.
   #
   # Returns 0 (allow mark_wi_done) when a matching commit is found, or when
   # the baseline SHA is unknown ("none") — in that case the legacy SHA-change
@@ -210,13 +215,14 @@ verify_wi_actually_merged() {
   # mentions the WI prefix.
   local wi_name="$1"
   local since_sha="$2"
+  local head_ref="${3:-HEAD}"
   local wi_prefix="${wi_name%% *}"
 
   if [[ -z "$since_sha" || "$since_sha" == "none" ]]; then
     return 0
   fi
 
-  if git log "${since_sha}..HEAD" --format=%s 2>/dev/null \
+  if git log "${since_sha}..${head_ref}" --format=%s 2>/dev/null \
        | grep -qF "$wi_prefix"; then
     return 0
   fi
@@ -1461,7 +1467,8 @@ execute_parallel() {
   local -a wis=()
   local -a pids=()
   local -a worktree_info=()
-  local -a worktree_wi=()   # worktree_info와 1:1 매핑되는 WI 이름
+  local -a worktree_wi=()             # worktree_info와 1:1 매핑되는 WI 이름
+  local -a worktree_pre_iter_sha=()   # mark_wi_done 게이트용 main repo HEAD baseline
 
   # PR auto-merge 완료 반영 (이전 iteration PR이 머지됐을 수 있음)
   safe_sync_main
@@ -1480,6 +1487,11 @@ execute_parallel() {
 
   log "🔀 병렬 실행: ${wi_count}개 WI 동시 처리"
 
+  # 병렬 dispatch 직전 main repo HEAD 캡처 (verify_wi_actually_merged 게이트용).
+  # 모든 워커는 동일 baseline에서 분기하므로 단일 SHA 를 1:1로 worktree_pre_iter_sha 에 복제.
+  local parallel_pre_iter_sha
+  parallel_pre_iter_sha=$(git rev-parse HEAD 2>/dev/null || echo "${last_git_sha:-none}")
+
   # Setup worktrees and launch claude in each
   for i in "${!wis[@]}"; do
     local idx=$((i + 1))
@@ -1490,6 +1502,7 @@ execute_parallel() {
     info=$(setup_worktree "$wi" "$idx") || continue
     worktree_info+=("$info")
     worktree_wi+=("$wi")
+    worktree_pre_iter_sha+=("$parallel_pre_iter_sha")
 
     local wt_path="${info%%|*}"
 
@@ -1602,8 +1615,15 @@ ${rag_context}"
     elif [[ "$wt_sha" == "$base_sha" ]]; then
       # 코드 변경 없음
       if [[ "$has_status" == true ]] && grep -q 'TASKS_COMPLETED_THIS_LOOP: 1' "$worker_log" 2>/dev/null; then
-        mark_wi_done "${worktree_wi[$i]}" || true
-        log "  [Worker $idx] 이미 구현됨 — completed_wis.txt 기록"
+        local _baseline_sha="${worktree_pre_iter_sha[$i]:-${last_git_sha:-none}}"
+        if verify_wi_actually_merged "${worktree_wi[$i]}" "$_baseline_sha"; then
+          mark_wi_done "${worktree_wi[$i]}" || true
+          log "  [Worker $idx] 이미 구현됨 — completed_wis.txt 기록"
+        else
+          block_fake_completion "${worktree_wi[$i]}" "$_baseline_sha" "$loop_count"
+          log "  [Worker $idx] ⚠️ 가짜 완료 차단 — ${worktree_wi[$i]}"
+          record_pattern "${worktree_wi[$i]}" "fake-completion-blocked" "" "$elapsed" || true
+        fi
       elif [[ "$has_status" == false ]]; then
         log "  [Worker $idx] ⚠️ 턴 제한 도달 (FLOWSET_STATUS 없음) — 스킵"
         record_pattern "${worktree_wi[$i]}" "timeout" "" "$elapsed" || true
@@ -1653,9 +1673,18 @@ ${rag_context}"
 
         if [[ -n "$pr_url" ]]; then
           merged=$((merged + 1))
-          mark_wi_done "${worktree_wi[$i]}" || true
-          log "  [Worker $idx] ✅ PR 생성: $pr_url"
-          record_pattern "$wi" "merged" "$changed_files" "$elapsed" || true
+          # 병렬 모드: PR 머지 전이라 main HEAD 에는 WI 커밋이 없음.
+          # head_ref 를 worktree SHA 로 전달해 PR 브랜치 범위에서 WI prefix 확인.
+          local _baseline_sha="${worktree_pre_iter_sha[$i]:-${last_git_sha:-none}}"
+          if verify_wi_actually_merged "${worktree_wi[$i]}" "$_baseline_sha" "$wt_sha"; then
+            mark_wi_done "${worktree_wi[$i]}" || true
+            log "  [Worker $idx] ✅ PR 생성: $pr_url"
+            record_pattern "$wi" "merged" "$changed_files" "$elapsed" || true
+          else
+            block_fake_completion "${worktree_wi[$i]}" "$_baseline_sha" "$loop_count"
+            log "  [Worker $idx] ✅ PR 생성: $pr_url (가짜 완료 차단 — mark_wi_done 보류)"
+            record_pattern "$wi" "fake-completion-blocked" "$changed_files" "$elapsed" || true
+          fi
 
           # merge queue에 등록 (CI 통과 시 자동 머지)
           local pr_number
