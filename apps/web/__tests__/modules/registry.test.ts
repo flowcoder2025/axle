@@ -17,10 +17,10 @@ describe("apps/web platform module registry", () => {
     resetPlatformRegistration();
   });
 
-  it("registerAllPacks loads 5 packs and 28 modules", () => {
+  it("registerAllPacks loads 6 packs and 36 modules", () => {
     registerAllPacks();
-    expect(listPacks()).toHaveLength(5);
-    expect(listModules()).toHaveLength(28);
+    expect(listPacks()).toHaveLength(6);
+    expect(listModules()).toHaveLength(36);
   });
 
   it("ALL_MODULES is the flat concatenation of pack module arrays", () => {
@@ -34,7 +34,7 @@ describe("apps/web platform module registry", () => {
   it("registerAllPacks is idempotent", () => {
     registerAllPacks();
     registerAllPacks();
-    expect(listModules()).toHaveLength(28);
+    expect(listModules()).toHaveLength(36);
   });
 
   it("every module id is unique across packs", () => {

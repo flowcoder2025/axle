@@ -23,8 +23,8 @@ describe("WI-617 — module catalog shape", () => {
     expect(PACK_IDS).toEqual(["A", "B", "D", "E", "F", "G"]);
   });
 
-  it("totals 35 modules across all packs", () => {
-    expect(ALL_MODULE_IDS).toHaveLength(35);
+  it("totals 36 modules across all packs", () => {
+    expect(ALL_MODULE_IDS).toHaveLength(36);
   });
 
   it("has no duplicate module ids across packs", () => {
