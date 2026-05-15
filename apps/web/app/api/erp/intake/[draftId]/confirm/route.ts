@@ -36,7 +36,12 @@
 
 import { prisma } from "@axle/db";
 import { z } from "zod";
-import { requireErpScope, toResponse } from "@/lib/erp/auth";
+import {
+  requireErpScope,
+  toResponse,
+  erpBadRequest,
+  ErpConflictError,
+} from "@/lib/erp/auth";
 
 interface RouteContext {
   params: Promise<{ draftId: string }>;
@@ -81,7 +86,7 @@ export async function POST(
     const ctx = await requireErpScope("erp:write");
     const { draftId } = await context.params;
     if (!draftId) {
-      return new Response("draftId is required", { status: 400 });
+      return erpBadRequest("draftId is required");
     }
 
     const body = ConfirmBody.parse(await req.json());
@@ -216,7 +221,7 @@ export async function POST(
     return Response.json({ orderId: order.id }, { status: 200 });
   } catch (err) {
     if (err instanceof IntakeAlreadyConfirmedError) {
-      return new Response("Already confirmed", { status: 409 });
+      return toResponse(new ErpConflictError("Already confirmed"));
     }
     return toResponse(err);
   }

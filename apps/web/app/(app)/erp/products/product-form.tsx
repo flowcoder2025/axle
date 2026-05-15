@@ -25,6 +25,34 @@ interface ProductFormProps {
   initial?: Partial<ProductFormValues>;
 }
 
+/**
+ * Pull a human-readable message out of an error `Response`. Tries to parse
+ * the canonical AXLE envelope `{ error: { code, message } }` first; falls
+ * back to raw text so callers still get *something* if the body is plain.
+ */
+async function extractErrorMessage(res: Response): Promise<string> {
+  const ct = res.headers.get("content-type") ?? "";
+  if (ct.includes("application/json")) {
+    try {
+      const body = (await res.json()) as
+        | { error?: { code?: string; message?: string } }
+        | undefined;
+      const msg = body?.error?.message;
+      if (typeof msg === "string" && msg.trim().length > 0) {
+        return msg;
+      }
+    } catch {
+      // fall through to text
+    }
+    return "";
+  }
+  try {
+    return await res.text();
+  } catch {
+    return "";
+  }
+}
+
 const EMPTY: ProductFormValues = {
   sku: "",
   name: "",
@@ -71,8 +99,12 @@ export function ProductForm({ mode, productId, initial }: ProductFormProps) {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `HTTP ${res.status}`);
+        // The API uses the canonical AXLE envelope
+        // `{ error: { code, message } }`. We try JSON first and only fall
+        // back to plain text if the body is not JSON — keeps the user-facing
+        // message readable instead of dumping the raw stringified envelope.
+        const message = await extractErrorMessage(res);
+        throw new Error(message || `HTTP ${res.status}`);
       }
       const saved = (await res.json()) as { id: string };
       router.push(`/erp/products/${saved.id}`);

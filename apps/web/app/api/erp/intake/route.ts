@@ -29,6 +29,8 @@ import { parseReceipt } from "@axle/ocr";
 import {
   requireErpScope,
   toResponse,
+  erpBadRequest,
+  erpErrorResponse,
   ErpAuthError,
 } from "@/lib/erp/auth";
 import { uploadReceipt } from "@/lib/erp/blob";
@@ -58,18 +60,18 @@ export async function POST(req: Request): Promise<Response> {
     try {
       formData = await req.formData();
     } catch {
-      return new Response("multipart/form-data required", { status: 400 });
+      return erpBadRequest("multipart/form-data required");
     }
 
     const file = formData.get("file");
     if (!(file instanceof File)) {
-      return new Response("file required", { status: 400 });
+      return erpBadRequest("file required");
     }
     if (!file.type || !file.type.startsWith("image/")) {
-      return new Response("image only", { status: 400 });
+      return erpBadRequest("image only");
     }
     if (file.size > MAX_UPLOAD_BYTES) {
-      return new Response("max 10MB", { status: 413 });
+      return erpErrorResponse(413, "PAYLOAD_TOO_LARGE", "max 10MB");
     }
 
     const buf = Buffer.from(await file.arrayBuffer());

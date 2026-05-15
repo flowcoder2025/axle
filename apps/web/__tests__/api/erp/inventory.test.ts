@@ -174,8 +174,45 @@ describe("GET /api/erp/inventory", () => {
     expect(findManyArgs.where.occurredAt.gte).toBeInstanceOf(Date);
     expect(findManyArgs.where.occurredAt.lte).toBeInstanceOf(Date);
     expect((findManyArgs.where.occurredAt.gte as Date).toISOString()).toBe(
-      new Date("2026-04-01").toISOString(),
+      "2026-04-01T00:00:00.000Z",
     );
+  });
+
+  it("bare-date `to` is end-of-day inclusive (covers 23:59 records)", async () => {
+    // Regression: previously a `to=2026-04-30` filter excluded a 14:00 record
+    // because the bare date parsed to 00:00 of April 30. The shared
+    // `parseInventoryDateParam` now expands bare dates to end-of-day for
+    // the `to` edge so range filters match what the user expects.
+    await GET(
+      req(
+        "http://x/api/erp/inventory?productId=p1&from=2026-04-01&to=2026-04-30",
+      ),
+    );
+    const findManyArgs = movementMock.findMany.mock.calls[0]?.[0];
+    const lte = findManyArgs.where.occurredAt.lte as Date;
+    expect(lte.toISOString()).toBe("2026-04-30T23:59:59.999Z");
+    // A movement at 14:00 on April 30 must fall within the range.
+    const sample = new Date("2026-04-30T14:00:00.000Z");
+    expect(sample.getTime()).toBeLessThanOrEqual(lte.getTime());
+  });
+
+  it("surfaces `truncated: true` when movements hit the 500-row cap", async () => {
+    const many = Array.from({ length: 500 }, (_, i) =>
+      makeMovement({ id: `m${i}` }),
+    );
+    movementMock.findMany.mockResolvedValueOnce(many);
+    const res = await GET(req("http://x/api/erp/inventory?productId=p1"));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.truncated).toBe(true);
+    expect(body.movements).toHaveLength(500);
+  });
+
+  it("surfaces `truncated: false` when movements are under the cap", async () => {
+    movementMock.findMany.mockResolvedValueOnce([makeMovement()]);
+    const res = await GET(req("http://x/api/erp/inventory?productId=p1"));
+    const body = await res.json();
+    expect(body.truncated).toBe(false);
   });
 
   it("computes balance as inSum - outSum (ADJUST not folded in)", async () => {

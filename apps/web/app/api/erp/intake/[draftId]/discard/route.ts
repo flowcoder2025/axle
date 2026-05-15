@@ -13,7 +13,12 @@
  */
 
 import { prisma } from "@axle/db";
-import { requireErpScope, toResponse } from "@/lib/erp/auth";
+import {
+  requireErpScope,
+  toResponse,
+  erpBadRequest,
+  ErpConflictError,
+} from "@/lib/erp/auth";
 
 interface RouteContext {
   params: Promise<{ draftId: string }>;
@@ -27,7 +32,7 @@ export async function POST(
     const ctx = await requireErpScope("erp:write");
     const { draftId } = await context.params;
     if (!draftId) {
-      return new Response("draftId is required", { status: 400 });
+      return erpBadRequest("draftId is required");
     }
 
     const result = await prisma.intakeDraft.updateMany({
@@ -35,9 +40,7 @@ export async function POST(
       data: { status: "DISCARDED" },
     });
     if (result.count === 0) {
-      return new Response("Cannot discard (not PENDING or wrong org)", {
-        status: 409,
-      });
+      throw new ErpConflictError("Cannot discard (not PENDING or wrong org)");
     }
     return Response.json({ ok: true });
   } catch (err) {

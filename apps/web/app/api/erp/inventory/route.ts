@@ -29,20 +29,22 @@
  *  only.
  */
 
-import { prisma } from "@axle/db";
-import { Prisma, MovementType } from "@prisma/client";
-import { requireErpScope, toResponse } from "@/lib/erp/auth";
-import { serializeInventoryMovement } from "@/lib/erp/serialize";
-
-const MAX_MOVEMENTS = 500;
+import { MovementType } from "@prisma/client";
+import {
+  requireErpScope,
+  toResponse,
+  erpBadRequest,
+  ErpNotFoundError,
+} from "@/lib/erp/auth";
+import {
+  fetchInventoryView,
+  INVENTORY_MOVEMENT_LIMIT,
+  parseInventoryDateParam,
+} from "@/lib/erp/inventory";
 
 const VALID_TYPES = new Set<string>(["IN", "OUT", "ADJUST"]);
 
-function parseDateParam(raw: string | null): Date | undefined {
-  if (!raw) return undefined;
-  const d = new Date(raw);
-  return Number.isNaN(d.getTime()) ? undefined : d;
-}
+export const INVENTORY_MAX_MOVEMENTS = INVENTORY_MOVEMENT_LIMIT;
 
 export async function GET(req: Request): Promise<Response> {
   try {
@@ -50,72 +52,29 @@ export async function GET(req: Request): Promise<Response> {
     const url = new URL(req.url);
     const productId = url.searchParams.get("productId")?.trim();
     if (!productId) {
-      return new Response("productId is required", { status: 400 });
+      return erpBadRequest("productId is required");
     }
 
-    // Verify the product belongs to the active tenant before fetching
-    // movements — prevents disclosing existence of cross-tenant products
-    // through a 200-with-empty-list signal.
-    const product = await prisma.product.findFirst({
-      where: { id: productId, orgId: ctx.orgId },
-      select: { id: true },
-    });
-    if (!product) {
-      return new Response("Not found", { status: 404 });
-    }
-
-    const from = parseDateParam(url.searchParams.get("from"));
-    const to = parseDateParam(url.searchParams.get("to"));
+    const from = parseInventoryDateParam(url.searchParams.get("from"), "start");
+    const to = parseInventoryDateParam(url.searchParams.get("to"), "end");
     const typeRaw = url.searchParams.get("type");
-    const type = typeRaw && VALID_TYPES.has(typeRaw) ? (typeRaw as MovementType) : undefined;
+    const type =
+      typeRaw && VALID_TYPES.has(typeRaw) ? (typeRaw as MovementType) : undefined;
 
-    const occurredAtFilter: Prisma.DateTimeFilter | undefined =
-      from || to
-        ? {
-            ...(from ? { gte: from } : {}),
-            ...(to ? { lte: to } : {}),
-          }
-        : undefined;
-
-    const movementsWhere: Prisma.InventoryMovementWhereInput = {
-      orgId: ctx.orgId,
-      productId,
-      ...(occurredAtFilter ? { occurredAt: occurredAtFilter } : {}),
-      ...(type ? { type } : {}),
-    };
-
-    const stockWhere: Prisma.InventoryMovementWhereInput = {
-      orgId: ctx.orgId,
-      productId,
-    };
-
-    const [movements, stockGroups] = await Promise.all([
-      prisma.inventoryMovement.findMany({
-        where: movementsWhere,
-        orderBy: { occurredAt: "desc" },
-        take: MAX_MOVEMENTS,
-      }),
-      prisma.inventoryMovement.groupBy({
-        by: ["type"],
-        where: stockWhere,
-        _sum: { qty: true },
-      }),
-    ]);
-
-    const stockByType: Record<string, number> = { IN: 0, OUT: 0, ADJUST: 0 };
-    for (const g of stockGroups) {
-      stockByType[g.type] = g._sum.qty ?? 0;
+    let view;
+    try {
+      view = await fetchInventoryView(ctx.orgId, { productId, from, to, type });
+    } catch (err) {
+      if (err instanceof ErpNotFoundError) {
+        return toResponse(err);
+      }
+      throw err;
     }
-    const stock = {
-      in: stockByType.IN,
-      out: stockByType.OUT,
-      adjust: stockByType.ADJUST,
-      balance: stockByType.IN - stockByType.OUT,
-    };
 
     return Response.json({
-      movements: movements.map(serializeInventoryMovement),
-      stock,
+      movements: view.movements,
+      stock: view.stock,
+      truncated: view.truncated,
     });
   } catch (err) {
     return toResponse(err);

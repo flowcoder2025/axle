@@ -22,6 +22,11 @@ interface PageProps {
   searchParams: Promise<{ q?: string; includeArchived?: string }>;
 }
 
+/** Hard cap on rows surfaced in the product list page. Mirrors the API's
+ * `MAX_LIST` so the UI does not silently differ. When `rows.length` equals
+ * this value the UI shows a truncation notice asking the user to narrow. */
+const PRODUCT_LIST_LIMIT = 200;
+
 export default async function ErpProductsPage({ searchParams }: PageProps) {
   const ctx = await requireErpScope("erp:read");
   const { q: qRaw, includeArchived: archivedRaw } = await searchParams;
@@ -37,9 +42,10 @@ export default async function ErpProductsPage({ searchParams }: PageProps) {
   const rows = await prisma.product.findMany({
     where,
     orderBy: { name: "asc" },
-    take: 200,
+    take: PRODUCT_LIST_LIMIT,
   });
   const products = rows.map(serializeProduct);
+  const truncated = rows.length === PRODUCT_LIST_LIMIT;
 
   return (
     <div className="space-y-6">
@@ -76,6 +82,12 @@ export default async function ErpProductsPage({ searchParams }: PageProps) {
         </label>
         <Button type="submit" variant="outline" size="sm">검색</Button>
       </form>
+
+      {truncated ? (
+        <p className="text-xs text-muted-foreground">
+          최대 {PRODUCT_LIST_LIMIT}개까지 표시됩니다. 검색으로 좁혀주세요.
+        </p>
+      ) : null}
 
       <div className="rounded-md border">
         <table className="w-full text-sm">

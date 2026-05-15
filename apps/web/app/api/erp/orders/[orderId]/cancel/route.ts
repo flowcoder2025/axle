@@ -4,7 +4,11 @@
  *  POST — Cancel a CONFIRMED order.
  *
  *  Effect (single atomic $transaction):
- *    1. Set order.status = CANCELLED.
+ *    1. Atomic conditional flip of order.status from CONFIRMED → CANCELLED
+ *       via `updateMany({ where: { id, orgId, status: "CONFIRMED" } })`.
+ *       Returning `count === 0` means the row does not satisfy the predicate;
+ *       a follow-up `findFirst` disambiguates between 404 (wrong tenant /
+ *       missing id) and 409 (wrong status).
  *    2. For every original InventoryMovement that this order created
  *       (source=ORDER, sourceId=orderId, NOT already a reversal), create a
  *       reverse movement with:
@@ -16,6 +20,14 @@
  *         - note:     "[취소] 원본 {origId}" — marks the row as a reversal
  *                     so subsequent cancels won't see it as "original".
  *
+ *  Concurrency contract:
+ *    - Under READ COMMITTED isolation (Postgres default), the previous
+ *      find-then-update sequence let two concurrent POSTs both pass the
+ *      status check and both write reversal sets. Using `updateMany` with
+ *      the status predicate pushes the check into a single SQL statement;
+ *      Postgres row-level locks guarantee at most one caller observes
+ *      count===1 and the other observes count===0.
+ *
  *  Idempotency contract:
  *    - Double-cancel: a CANCELLED order returns 409 and writes NO new
  *      movements. The reversal set therefore stays at exactly one set per
@@ -25,9 +37,9 @@
  *
  *  We exclude reversal rows when selecting "originals" by filtering on
  *  `note` not starting with the "[취소]" marker. This is a defense in
- *  depth: the status guard above already prevents a second cancel from
- *  ever reaching this code path, but the filter keeps the invariant
- *  robust against any future status manipulation.
+ *  depth: the conditional flip above already prevents a second cancel from
+ *  ever reaching this code path, but the filter keeps the invariant robust
+ *  against any future status manipulation.
  */
 
 import { prisma } from "@axle/db";
@@ -35,6 +47,7 @@ import { MovementType } from "@prisma/client";
 import {
   requireErpScope,
   toResponse,
+  erpBadRequest,
   ErpConflictError,
   ErpNotFoundError,
 } from "@/lib/erp/auth";
@@ -58,38 +71,35 @@ export async function POST(_req: Request, context: RouteContext): Promise<Respon
     const ctx = await requireErpScope("erp:write");
     const { orderId } = await context.params;
     if (!orderId) {
-      return new Response("orderId is required", { status: 400 });
+      return erpBadRequest("orderId is required");
     }
 
     const updated = await prisma.$transaction(async (tx) => {
-      const order = await tx.order.findFirst({
-        where: { id: orderId, orgId: ctx.orgId },
-        include: { items: true },
+      // 1. Atomic conditional flip — the status predicate is part of the
+      //    UPDATE statement so concurrent callers cannot both succeed.
+      const flip = await tx.order.updateMany({
+        where: { id: orderId, orgId: ctx.orgId, status: "CONFIRMED" },
+        data: { status: "CANCELLED" },
       });
-      if (!order) {
-        throw new ErpNotFoundError("Order not found");
-      }
-      if (order.status === "CANCELLED") {
-        throw new ErpConflictError("Order already cancelled");
-      }
-      if (order.status !== "CONFIRMED") {
+      if (flip.count === 0) {
+        // Disambiguate: 404 (wrong tenant / missing id) vs 409 (wrong status).
+        const existing = await tx.order.findFirst({
+          where: { id: orderId, orgId: ctx.orgId },
+          select: { status: true },
+        });
+        if (!existing) {
+          throw new ErpNotFoundError("Order not found");
+        }
+        if (existing.status === "CANCELLED") {
+          throw new ErpConflictError("Order already cancelled");
+        }
         throw new ErpConflictError(
-          `Cannot cancel order in status ${order.status}`,
+          `Cannot cancel order in status ${existing.status}`,
         );
       }
 
-      // Flip status first so concurrent callers racing this transaction will
-      // see CANCELLED on retry (Prisma's interactive $transaction wraps a
-      // PostgreSQL transaction; subsequent reads in the SAME tx see the new
-      // status).
-      const next = await tx.order.update({
-        where: { id: orderId },
-        data: { status: "CANCELLED" },
-        include: { items: true },
-      });
-
-      // Find original movements created by this order. Exclude rows that
-      // are already reversals (note starts with the "[취소]" marker).
+      // 2. Find original movements created by this order. Exclude rows that
+      //    are already reversals (note starts with the "[취소]" marker).
       const originals = await tx.inventoryMovement.findMany({
         where: {
           orgId: ctx.orgId,
@@ -116,6 +126,17 @@ export async function POST(_req: Request, context: RouteContext): Promise<Respon
         });
       }
 
+      // 3. Re-fetch the updated row for the response.
+      const next = await tx.order.findFirst({
+        where: { id: orderId, orgId: ctx.orgId },
+        include: { items: true },
+      });
+      if (!next) {
+        // Should be unreachable: we just successfully updated this row inside
+        // the same transaction. Surface as an internal error so we notice if
+        // it ever fires (would indicate schema drift or a corrupted tx).
+        throw new Error("Order vanished after update");
+      }
       return next;
     });
 

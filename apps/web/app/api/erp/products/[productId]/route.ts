@@ -12,7 +12,7 @@
 import { prisma } from "@axle/db";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
-import { requireErpScope, toResponse } from "@/lib/erp/auth";
+import { requireErpScope, toResponse, ErpNotFoundError } from "@/lib/erp/auth";
 import { serializeProduct } from "@/lib/erp/serialize";
 
 const PatchBody = z.object({
@@ -35,7 +35,7 @@ export async function GET(_req: Request, { params }: Params): Promise<Response> 
       where: { id: productId, orgId: ctx.orgId },
     });
     if (!product) {
-      return new Response("Not found", { status: 404 });
+      throw new ErpNotFoundError("Product not found");
     }
     return Response.json(serializeProduct(product));
   } catch (err) {
@@ -56,7 +56,7 @@ export async function PATCH(req: Request, { params }: Params): Promise<Response>
       select: { id: true },
     });
     if (!existing) {
-      return new Response("Not found", { status: 404 });
+      throw new ErpNotFoundError("Product not found");
     }
 
     const data: Prisma.ProductUpdateInput = {
@@ -88,7 +88,7 @@ export async function DELETE(_req: Request, { params }: Params): Promise<Respons
       select: { id: true },
     });
     if (!existing) {
-      return new Response("Not found", { status: 404 });
+      throw new ErpNotFoundError("Product not found");
     }
 
     const updated = await prisma.product.update({
