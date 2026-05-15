@@ -7,8 +7,8 @@ set -euo pipefail
 COMMIT_MSG_FILE="$1"
 COMMIT_MSG=$(head -1 "$COMMIT_MSG_FILE")
 
-# WI-NNN-[type] 패턴 검증 (서브넘버링 WI-NNN-N-fix 허용, 번호 없는 WI-chore도 허용)
-PATTERN="^WI-[0-9]{3,4}(-[0-9]+)?-(feat|fix|docs|style|refactor|test|chore|perf|ci|revert) .+"
+# WI-NNN-[type] 패턴 검증 (서브넘버링 WI-NNN-N-fix 허용, 알파 서픽스 WI-NNNa-type 허용, 번호 없는 WI-chore도 허용)
+PATTERN="^WI-[0-9]{3,4}[a-z]?(-[0-9]+)?-(feat|fix|docs|style|refactor|test|chore|perf|ci|revert) .+"
 PATTERN_SYSTEM="^WI-(chore|docs) .+"
 PATTERN_MERGE="^Merge "
 

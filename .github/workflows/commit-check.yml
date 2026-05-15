@@ -25,7 +25,7 @@ jobs:
             exit 0
           fi
 
-          PATTERN="^WI-[0-9]{3,4}(-[0-9]+)?-(feat|fix|docs|style|refactor|test|chore|perf|ci|revert) .+"
+          PATTERN="^WI-[0-9]{3,4}[a-z]?(-[0-9]+)?-(feat|fix|docs|style|refactor|test|chore|perf|ci|revert) .+"
           PATTERN_SYSTEM="^WI-(chore|docs) .+"
           PATTERN_MERGE="^Merge "
           FAILED=0
