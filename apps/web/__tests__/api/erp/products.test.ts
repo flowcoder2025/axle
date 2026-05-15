@@ -161,6 +161,28 @@ describe("POST /api/erp/products", () => {
     );
     expect(res.status).toBe(403);
   });
+
+  it("maps Prisma P2002 unique-violation to 409 CONFLICT with field info", async () => {
+    // Recreate the prisma KnownRequestError shape without depending on the
+    // runtime class (the mocked `@axle/db` doesn't import Prisma's error
+    // classes). `lib/erp/auth.ts:toResponse` matches with
+    // `err instanceof Prisma.PrismaClientKnownRequestError`, so we
+    // construct via the real class.
+    const { Prisma } = await import("@prisma/client");
+    const err = new Prisma.PrismaClientKnownRequestError(
+      "Unique constraint failed on the fields: (`sku`)",
+      { code: "P2002", clientVersion: "x.y", meta: { target: ["sku"] } },
+    );
+    productMock.create.mockRejectedValueOnce(err);
+
+    const res = await POST(
+      jsonReq("http://x/api/erp/products", "POST", { name: "콜라", unit: "캔", sku: "DUP" }),
+    );
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.error.code).toBe("CONFLICT");
+    expect(body.error.fields).toEqual(["sku"]);
+  });
 });
 
 describe("GET /api/erp/products/[productId]", () => {

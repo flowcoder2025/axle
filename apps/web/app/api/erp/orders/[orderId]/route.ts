@@ -10,7 +10,12 @@
  */
 
 import { prisma } from "@axle/db";
-import { requireErpScope, toResponse } from "@/lib/erp/auth";
+import {
+  requireErpScope,
+  toResponse,
+  erpBadRequest,
+  ErpNotFoundError,
+} from "@/lib/erp/auth";
 import { serializeOrder } from "@/lib/erp/serialize";
 
 interface RouteContext {
@@ -22,7 +27,7 @@ export async function GET(_req: Request, context: RouteContext): Promise<Respons
     const ctx = await requireErpScope("erp:read");
     const { orderId } = await context.params;
     if (!orderId) {
-      return new Response("orderId is required", { status: 400 });
+      return erpBadRequest("orderId is required");
     }
 
     const order = await prisma.order.findFirst({
@@ -37,7 +42,7 @@ export async function GET(_req: Request, context: RouteContext): Promise<Respons
     });
 
     if (!order) {
-      return new Response("Not found", { status: 404 });
+      throw new ErpNotFoundError("Order not found");
     }
 
     return Response.json(serializeOrder(order));

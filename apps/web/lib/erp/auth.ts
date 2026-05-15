@@ -5,10 +5,20 @@
  * checks the requested ReBAC scope (erp:read / erp:write / etc.) against the
  * resolved tenant id. Throws {@link ErpAuthError} on failure so route handlers
  * can map the error to a consistent HTTP response via {@link toResponse}.
+ *
+ * Error envelope — all responses produced by {@link toResponse} follow the
+ * canonical AXLE shape:
+ *   { error: { code: <UPPER_SNAKE>, message: <human-readable> } }
+ * which matches `apps/web/lib/api-helpers.ts`. Status codes:
+ *   401 UNAUTHORIZED, 403 FORBIDDEN, 404 NOT_FOUND, 409 CONFLICT,
+ *   400 VALIDATION_ERROR, 500 INTERNAL_ERROR.
  */
 
 import { getCurrentUser, checkModulePermission } from "@axle/auth";
 import { prisma } from "@axle/db";
+import { Prisma } from "@prisma/client";
+import { ZodError } from "zod";
+import { NextResponse } from "next/server";
 import { getActiveTenant } from "@/src/lib/tenant-context";
 
 export type ErpScope = "erp:read" | "erp:write";
@@ -23,11 +33,15 @@ export class ErpAuthError extends Error {
 /**
  * Domain conflict (HTTP 409). Used for idempotency violations or invalid
  * state transitions (e.g. cancelling a DRAFT order, double-cancelling an
- * already CANCELLED order).
+ * already CANCELLED order, or unique-constraint violations from the DB).
  */
 export class ErpConflictError extends Error {
   public readonly status = 409 as const;
-  constructor(message: string) {
+  constructor(
+    message: string,
+    /** Optional list of fields that triggered the conflict (e.g. ["sku"]). */
+    public readonly fields?: string[],
+  ) {
     super(message);
     this.name = "ErpConflictError";
   }
@@ -90,48 +104,75 @@ export async function requireErpScope(scope: ErpScope): Promise<ErpAuthContext> 
 }
 
 /**
+ * Build a canonical error response: `{ error: { code, message, ...extra } }`.
+ */
+export function erpErrorResponse(
+  status: number,
+  code: string,
+  message: string,
+  extra?: Record<string, unknown>,
+): Response {
+  return NextResponse.json(
+    { error: { code, message, ...(extra ?? {}) } },
+    { status },
+  );
+}
+
+/** Shortcut for inline 400 responses in route handlers (e.g. missing path
+ * parameters that schema validation cannot catch). */
+export function erpBadRequest(message: string): Response {
+  return erpErrorResponse(400, "VALIDATION_ERROR", message);
+}
+
+/**
  * Convert an error caught in an ERP route into a `Response`.
  *
- * - {@link ErpAuthError} → its declared status with the message body.
- * - `ZodError` (duck-typed) → 400 with the issue array as JSON.
- * - Anything else → 500 with a generic message; the original error is logged.
+ * Envelope: `{ error: { code, message, ...details } }` — see file header.
+ *
+ *  - {@link ErpAuthError} 401 → UNAUTHORIZED, 403 → FORBIDDEN
+ *  - {@link ErpConflictError} → 409 CONFLICT (with optional `fields` array)
+ *  - {@link ErpNotFoundError} → 404 NOT_FOUND
+ *  - {@link ZodError} → 400 VALIDATION_ERROR (with `issues` array)
+ *  - {@link Prisma.PrismaClientKnownRequestError} P2002 → 409 CONFLICT (with
+ *    `fields` from `err.meta.target`). Other P codes fall through to 500.
+ *  - Anything else → 500 INTERNAL_ERROR (original error is logged).
  */
 export function toResponse(err: unknown): Response {
   if (err instanceof ErpAuthError) {
-    return new Response(err.message, { status: err.status });
-  }
-  if (err instanceof ErpConflictError) {
-    return new Response(err.message, { status: 409 });
-  }
-  if (err instanceof ErpNotFoundError) {
-    return new Response(err.message, { status: 404 });
-  }
-  if (isZodError(err)) {
-    return Response.json(
-      { error: "ValidationError", issues: err.issues },
-      { status: 400 },
+    return erpErrorResponse(
+      err.status,
+      err.status === 401 ? "UNAUTHORIZED" : "FORBIDDEN",
+      err.message,
     );
   }
+  if (err instanceof ErpConflictError) {
+    return erpErrorResponse(409, "CONFLICT", err.message, {
+      ...(err.fields ? { fields: err.fields } : {}),
+    });
+  }
+  if (err instanceof ErpNotFoundError) {
+    return erpErrorResponse(404, "NOT_FOUND", err.message);
+  }
+  if (err instanceof ZodError) {
+    const issues = err.issues ?? [];
+    const message =
+      issues
+        .map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`)
+        .join("; ") || "Validation failed";
+    return erpErrorResponse(400, "VALIDATION_ERROR", message, { issues });
+  }
+  if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+    const target = err.meta?.target;
+    const fields = Array.isArray(target)
+      ? (target as string[])
+      : typeof target === "string"
+        ? [target]
+        : undefined;
+    const fieldList = fields && fields.length > 0 ? fields.join(", ") : "unique field";
+    return erpErrorResponse(409, "CONFLICT", `Duplicate value for ${fieldList}`, {
+      ...(fields ? { fields } : {}),
+    });
+  }
   console.error("[erp] internal error:", err);
-  return new Response("Internal error", { status: 500 });
-}
-
-interface ZodIssueLike {
-  path: (string | number)[];
-  message: string;
-  code?: string;
-}
-
-interface ZodErrorLike {
-  name: string;
-  issues: ZodIssueLike[];
-}
-
-function isZodError(err: unknown): err is ZodErrorLike {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    (err as { name?: unknown }).name === "ZodError" &&
-    Array.isArray((err as { issues?: unknown }).issues)
-  );
+  return erpErrorResponse(500, "INTERNAL_ERROR", "Internal server error");
 }

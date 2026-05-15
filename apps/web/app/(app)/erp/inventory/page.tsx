@@ -7,16 +7,20 @@
  *     filters applied via URL params. Filtering is a plain GET form so we
  *     can keep the page a Server Component (no client state required).
  *
- * Auth: `erp:read`. We fetch via `prisma` directly (not the API route) to
- * skip the extra HTTP hop on the server side. The data shape mirrors the
- * `/api/erp/inventory` response for parity.
+ * Auth: `erp:read`. We delegate to {@link fetchInventoryView} (same module
+ * the `/api/erp/inventory` route uses) so the page and the API never drift
+ * on filter semantics, take limit, or balance computation.
  */
 
 import Link from "next/link";
-import { Prisma, MovementType } from "@prisma/client";
+import { MovementType } from "@prisma/client";
 import { prisma } from "@axle/db";
-import { requireErpScope } from "@/lib/erp/auth";
-import { serializeInventoryMovement } from "@/lib/erp/serialize";
+import { requireErpScope, ErpNotFoundError } from "@/lib/erp/auth";
+import {
+  fetchInventoryView,
+  INVENTORY_MOVEMENT_LIMIT,
+  parseInventoryDateParam,
+} from "@/lib/erp/inventory";
 import { StockSummary } from "@/src/components/erp/inventory/stock-summary";
 import { MovementTimeline } from "@/src/components/erp/inventory/movement-timeline";
 
@@ -34,13 +38,7 @@ interface PageProps {
 }
 
 const VALID_TYPES = new Set<string>(["IN", "OUT", "ADJUST"]);
-const MAX_MOVEMENTS = 500;
-
-function parseDate(raw: string | undefined): Date | undefined {
-  if (!raw) return undefined;
-  const d = new Date(raw);
-  return Number.isNaN(d.getTime()) ? undefined : d;
-}
+const PRODUCT_LIST_LIMIT = 200;
 
 export default async function ErpInventoryPage({ searchParams }: PageProps) {
   const ctx = await requireErpScope("erp:read");
@@ -52,12 +50,12 @@ export default async function ErpInventoryPage({ searchParams }: PageProps) {
   const typeFilter =
     typeRaw && VALID_TYPES.has(typeRaw) ? (typeRaw as MovementType) : undefined;
 
-  // Left pane: products to pick from. Capped at 200 like /erp/products.
+  // Left pane: products to pick from. Capped like /erp/products.
   const products = await prisma.product.findMany({
     where: { orgId: ctx.orgId, archived: false },
     orderBy: { name: "asc" },
     select: { id: true, name: true, unit: true, sku: true },
-    take: 200,
+    take: PRODUCT_LIST_LIMIT,
   });
 
   // If a product is selected, validate ownership and fetch its detail.
@@ -68,51 +66,29 @@ export default async function ErpInventoryPage({ searchParams }: PageProps) {
       })
     : null;
 
-  let movements: ReturnType<typeof serializeInventoryMovement>[] = [];
+  let movements: Awaited<ReturnType<typeof fetchInventoryView>>["movements"] = [];
   let stock = { in: 0, out: 0, adjust: 0, balance: 0 };
+  let truncated = false;
 
   if (selectedProduct) {
-    const from = parseDate(fromRaw);
-    const to = parseDate(toRaw);
-    const occurredAtFilter: Prisma.DateTimeFilter | undefined =
-      from || to
-        ? {
-            ...(from ? { gte: from } : {}),
-            ...(to ? { lte: to } : {}),
-          }
-        : undefined;
-
-    const movementsWhere: Prisma.InventoryMovementWhereInput = {
-      orgId: ctx.orgId,
-      productId: selectedProduct.id,
-      ...(occurredAtFilter ? { occurredAt: occurredAtFilter } : {}),
-      ...(typeFilter ? { type: typeFilter } : {}),
-    };
-
-    const [rows, stockGroups] = await Promise.all([
-      prisma.inventoryMovement.findMany({
-        where: movementsWhere,
-        orderBy: { occurredAt: "desc" },
-        take: MAX_MOVEMENTS,
-      }),
-      prisma.inventoryMovement.groupBy({
-        by: ["type"],
-        where: { orgId: ctx.orgId, productId: selectedProduct.id },
-        _sum: { qty: true },
-      }),
-    ]);
-
-    movements = rows.map(serializeInventoryMovement);
-    const byType: Record<string, number> = { IN: 0, OUT: 0, ADJUST: 0 };
-    for (const g of stockGroups) {
-      byType[g.type] = g._sum.qty ?? 0;
+    const from = parseInventoryDateParam(fromRaw, "start");
+    const to = parseInventoryDateParam(toRaw, "end");
+    try {
+      const view = await fetchInventoryView(ctx.orgId, {
+        productId: selectedProduct.id,
+        from,
+        to,
+        type: typeFilter,
+      });
+      movements = view.movements;
+      stock = view.stock;
+      truncated = view.truncated;
+    } catch (err) {
+      // We already verified ownership above, so a NotFound here would be a
+      // race (product archived/deleted between queries). Treat as empty so
+      // the user sees the picker rather than a crash.
+      if (!(err instanceof ErpNotFoundError)) throw err;
     }
-    stock = {
-      in: byType.IN,
-      out: byType.OUT,
-      adjust: byType.ADJUST,
-      balance: byType.IN - byType.OUT,
-    };
   }
 
   return (
@@ -242,9 +218,9 @@ export default async function ErpInventoryPage({ searchParams }: PageProps) {
               </form>
 
               <MovementTimeline movements={movements} unit={selectedProduct.unit} />
-              {movements.length === MAX_MOVEMENTS ? (
+              {truncated ? (
                 <p className="text-xs text-muted-foreground">
-                  최근 {MAX_MOVEMENTS}건만 표시합니다. 기간을 좁히면 이전 기록을 확인할 수 있습니다.
+                  최근 {INVENTORY_MOVEMENT_LIMIT}건만 표시합니다. 기간을 좁히면 이전 기록을 확인할 수 있습니다.
                 </p>
               ) : null}
             </>

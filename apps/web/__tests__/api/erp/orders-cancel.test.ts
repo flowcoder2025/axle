@@ -16,6 +16,7 @@ vi.mock("@axle/db", () => {
   const order = {
     findFirst: vi.fn(),
     update: vi.fn(),
+    updateMany: vi.fn(),
   };
   const inventoryMovement = {
     findMany: vi.fn(),
@@ -62,14 +63,14 @@ function ctx(orderId = "o1") {
   return { params: Promise.resolve({ orderId }) };
 }
 
-function makeConfirmed(overrides: Record<string, unknown> = {}) {
+function makeOrder(overrides: Record<string, unknown> = {}) {
   return {
     id: "o1",
     orgId: "org_test",
     type: "SALE",
     counterpartyId: null,
     counterpartyName: "ACME",
-    status: "CONFIRMED",
+    status: "CANCELLED",
     total: 15000,
     tax: 1500,
     occurredAt: new Date("2026-05-10"),
@@ -118,18 +119,16 @@ beforeEach(() => {
   txMock.mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) => {
     return cb({ order: orderMock, inventoryMovement: movementMock });
   });
-  orderMock.findFirst.mockResolvedValue(null);
-  orderMock.update.mockImplementation(async (args: { data: unknown }) => ({
-    ...makeConfirmed(),
-    ...(args.data as object),
-  }));
+  // Default to "happy path" base: conditional flip succeeds, post-update
+  // re-fetch returns the cancelled order, no movements to reverse.
+  orderMock.updateMany.mockResolvedValue({ count: 1 });
+  orderMock.findFirst.mockResolvedValue(makeOrder({ status: "CANCELLED" }));
   movementMock.findMany.mockResolvedValue([]);
   movementMock.create.mockResolvedValue({});
 });
 
 describe("POST /api/erp/orders/[orderId]/cancel — happy path", () => {
   it("CONFIRMED → CANCELLED + creates exactly one reverse movement per original", async () => {
-    orderMock.findFirst.mockResolvedValueOnce(makeConfirmed());
     movementMock.findMany.mockResolvedValueOnce([
       makeMovement({ id: "m_orig", type: "OUT", qty: 10, productId: "p1", unitCost: 1500 }),
     ]);
@@ -139,12 +138,15 @@ describe("POST /api/erp/orders/[orderId]/cancel — happy path", () => {
     const body = await res.json();
     expect(body.status).toBe("CANCELLED");
 
-    // Status updated exactly once
-    expect(orderMock.update).toHaveBeenCalledTimes(1);
-    expect(orderMock.update.mock.calls[0]?.[0]).toMatchObject({
-      where: { id: "o1" },
+    // The atomic flip ran exactly once with the status predicate baked into
+    // the WHERE clause so it cannot race.
+    expect(orderMock.updateMany).toHaveBeenCalledTimes(1);
+    expect(orderMock.updateMany.mock.calls[0]?.[0]).toMatchObject({
+      where: { id: "o1", orgId: "org_test", status: "CONFIRMED" },
       data: { status: "CANCELLED" },
     });
+    // No legacy `update` call.
+    expect(orderMock.update).not.toHaveBeenCalled();
 
     // Exactly one reverse movement created
     expect(movementMock.create).toHaveBeenCalledTimes(1);
@@ -163,7 +165,6 @@ describe("POST /api/erp/orders/[orderId]/cancel — happy path", () => {
   });
 
   it("reverses each original movement (IN→OUT, OUT→IN, ADJUST→ADJUST)", async () => {
-    orderMock.findFirst.mockResolvedValueOnce(makeConfirmed());
     movementMock.findMany.mockResolvedValueOnce([
       makeMovement({ id: "m_in", type: "IN", qty: 5 }),
       makeMovement({ id: "m_out", type: "OUT", qty: 7 }),
@@ -181,7 +182,6 @@ describe("POST /api/erp/orders/[orderId]/cancel — happy path", () => {
   });
 
   it("excludes already-reversed movements from the originals query", async () => {
-    orderMock.findFirst.mockResolvedValueOnce(makeConfirmed());
     await POST(postReq(), ctx());
     const findArgs = movementMock.findMany.mock.calls[0]?.[0];
     expect(findArgs.where.source).toBe("ORDER");
@@ -192,33 +192,34 @@ describe("POST /api/erp/orders/[orderId]/cancel — happy path", () => {
   });
 
   it("creates no movements when the order had none (ad-hoc items only)", async () => {
-    orderMock.findFirst.mockResolvedValueOnce(makeConfirmed());
     movementMock.findMany.mockResolvedValueOnce([]); // no originals
     const res = await POST(postReq(), ctx());
     expect(res.status).toBe(200);
-    expect(orderMock.update).toHaveBeenCalledTimes(1);
+    expect(orderMock.updateMany).toHaveBeenCalledTimes(1);
     expect(movementMock.create).not.toHaveBeenCalled();
   });
 });
 
 describe("POST cancel — idempotency / invalid state", () => {
   it("double-cancel returns 409 and writes NO new movement", async () => {
-    orderMock.findFirst.mockResolvedValueOnce(
-      makeConfirmed({ status: "CANCELLED" }),
-    );
+    // Conditional flip misses (status no longer CONFIRMED), then disambig
+    // re-fetch finds the row already in CANCELLED.
+    orderMock.updateMany.mockResolvedValueOnce({ count: 0 });
+    orderMock.findFirst.mockResolvedValueOnce({ status: "CANCELLED" });
 
     const res = await POST(postReq(), ctx());
     expect(res.status).toBe(409);
+    // The atomic flip was attempted but didn't match; no further mutations.
+    expect(orderMock.updateMany).toHaveBeenCalledTimes(1);
     expect(orderMock.update).not.toHaveBeenCalled();
     expect(movementMock.create).not.toHaveBeenCalled();
-    // findMany is also never reached
+    // findMany for originals is never reached when the flip misses.
     expect(movementMock.findMany).not.toHaveBeenCalled();
   });
 
   it("cannot cancel a DRAFT order (409)", async () => {
-    orderMock.findFirst.mockResolvedValueOnce(
-      makeConfirmed({ status: "DRAFT" }),
-    );
+    orderMock.updateMany.mockResolvedValueOnce({ count: 0 });
+    orderMock.findFirst.mockResolvedValueOnce({ status: "DRAFT" });
     const res = await POST(postReq(), ctx());
     expect(res.status).toBe(409);
     expect(orderMock.update).not.toHaveBeenCalled();
@@ -226,6 +227,7 @@ describe("POST cancel — idempotency / invalid state", () => {
   });
 
   it("returns 404 when the order is not in the active tenant", async () => {
+    orderMock.updateMany.mockResolvedValueOnce({ count: 0 });
     orderMock.findFirst.mockResolvedValueOnce(null);
     const res = await POST(postReq(), ctx("missing"));
     expect(res.status).toBe(404);
@@ -252,20 +254,45 @@ describe("POST cancel — idempotency / invalid state", () => {
   });
 
   it("invariant: after cancel + attempted double-cancel, only one reversal set per movement was written", async () => {
-    // First call: confirmed → cancel succeeds with 1 reversal
-    orderMock.findFirst.mockResolvedValueOnce(makeConfirmed());
+    // First call: flip succeeds (count=1) with 1 movement → 1 reversal
+    orderMock.updateMany.mockResolvedValueOnce({ count: 1 });
     movementMock.findMany.mockResolvedValueOnce([makeMovement({ id: "m_orig" })]);
     const res1 = await POST(postReq(), ctx());
     expect(res1.status).toBe(200);
     expect(movementMock.create).toHaveBeenCalledTimes(1);
 
-    // Second call: order is now CANCELLED → 409, no extra reversal
-    orderMock.findFirst.mockResolvedValueOnce(
-      makeConfirmed({ status: "CANCELLED" }),
-    );
+    // Second call: flip misses (already CANCELLED) → 409, no extra reversal
+    orderMock.updateMany.mockResolvedValueOnce({ count: 0 });
+    orderMock.findFirst.mockResolvedValueOnce({ status: "CANCELLED" });
     const res2 = await POST(postReq(), ctx());
     expect(res2.status).toBe(409);
     // Still exactly one create across both attempts
+    expect(movementMock.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("race-safe: parallel cancels — only one succeeds, second sees count=0", async () => {
+    // Simulate the SQL-level guarantee: even if both POSTs enter the tx
+    // concurrently, only one updateMany returns count=1. The other returns
+    // count=0 and the disambiguation re-fetch sees CANCELLED.
+    orderMock.updateMany
+      .mockResolvedValueOnce({ count: 1 }) // winner
+      .mockResolvedValueOnce({ count: 0 }); // loser
+    movementMock.findMany.mockResolvedValueOnce([makeMovement({ id: "m_orig" })]);
+    // Two `findFirst` callers in the route:
+    //  - winner: post-flip re-fetch needs the full order (with items) for serialization
+    //  - loser: disambiguation needs just `{ status }`
+    // We seed both — order of resolution depends on which tx wins the race.
+    orderMock.findFirst
+      .mockResolvedValueOnce(makeOrder({ status: "CANCELLED" })) // winner re-fetch
+      .mockResolvedValueOnce({ status: "CANCELLED" }); // loser disambig
+
+    const [res1, res2] = await Promise.all([
+      POST(postReq(), ctx()),
+      POST(postReq(), ctx()),
+    ]);
+    const statuses = [res1.status, res2.status].sort();
+    expect(statuses).toEqual([200, 409]);
+    // Exactly one reversal was written despite the parallel attempts.
     expect(movementMock.create).toHaveBeenCalledTimes(1);
   });
 });
