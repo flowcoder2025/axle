@@ -3,7 +3,7 @@
 - **Status**: Approved (사용자 승인 2026-05-15) — **Revised 2026-05-15** (evaluator feedback C1~C5 + M1~M5 반영)
 - **Author**: flowcoder25 (Jerome)
 - **Phase 19 종속**: 6 Pack × 35 모듈 + Multi-org tenancy + core-module-system 인프라 완료 위에 구축
-- **목표 기간**: 4~5주 (WI 18건 — C1·C4 분할 반영)
+- **목표 기간**: 4~5주 (WI 19건 — C1 OCR handler 분할 + UI 검토 페이지 분할 반영)
 
 ## 0. Prerequisites (revision 2026-05-15 추가)
 
@@ -399,7 +399,7 @@ Pack config: `{ id: "F", label: "Pack F. ERP", modules: [...8 ids...], pricing: 
 
 2. **flowset.sh 병렬 모드 게이트**: worktree 경로(`mark_wi_done` 호출 line ~1563, ~1614)에도 `verify_wi_actually_merged` 게이트 적용. 글로벌 템플릿(`~/.claude/templates/flowset/flowset.sh`) 동기화 + smoke test 추가.
 
-## 8. WI 분할 (총 18건 — 사양 마무리 4 + ERP 14)
+## 8. WI 분할 (총 19건 — 사양 마무리 4 + ERP 데이터 4 + OCR intake 8 + 테스트/문서 3)
 
 ```
 A. Pack F + 사양 마무리 (1주)
@@ -427,7 +427,7 @@ C. OCR intake (2주)
   WI-714-feat  Vercel Blob 라이프사이클: 5년 보관 정책 + private scope + orphan cleanup cron 스텁
 
 D. 테스트 + 문서 (C와 병행)
-  WI-715-test  단위테스트: OCR parse + 한국어 fuzzy match (10+ 케이스) + atomic commit (멱등성/충돌)
+  WI-715-test  단위테스트: OCR parse + 한국어 fuzzy match (10+ 케이스) + atomic commit (멱등성/Product collision/cross-draft Product name race 시나리오)
   WI-716-test  E2E intake happy path (대화형 작성, page.goto + UI 인터랙션)
   WI-717-docs  PRD update + ERP intake 사용자 가이드 + 데이터 모델 다이어그램
 ```
@@ -451,7 +451,9 @@ D. 테스트 + 문서 (C와 병행)
 
 ## 10. Definition of Done — revision
 
-- [ ] Pack F 8 모듈 메타데이터 main에 머지 — `module-catalog.ts`(36 modules) + `registry.ts`(5→6 packs) 동시 갱신
+- [ ] Pack F 8 모듈 메타데이터 main에 머지 — `module-catalog.ts`(36 modules, **Pack F 7 모듈의 multiOrg false→true** + intake 신규) + `registry.ts`(5→6 packs) 동시 갱신
+- [ ] `pack-f.test.ts`가 multiOrg=true 검증 (live 4 모듈)
+- [ ] **Decimal/Date serialization** 적용: `/erp/orders`, `/erp/inventory` Server Component → Client 전달 시 Decimal→string + Date→ISO 변환 (Phase 17 lesson `feedback_decimal_serialization.md` 참조)
 - [ ] sidebar-builder가 `module-catalog.ts` 부트스트랩 대신 `registry.ts.registerAllPacks()`로 위임 (snapshot 회귀 없음)
 - [ ] flowset.sh 병렬 모드 가짜 완료 게이트 동작 + smoke test 통과
 - [ ] `loadUserPermissions` 실 ReBAC loader 동작 확인 (또는 별도 WI 등록 + 본 Phase deferred 명시)
