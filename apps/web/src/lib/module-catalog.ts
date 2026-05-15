@@ -1,7 +1,8 @@
 /**
  * WI-617 — Pack/module catalog source of truth for the platform UI.
  *
- * Mirrors `wireframes/module-catalog.md` (35 modules grouped into 6 packs).
+ * Mirrors `wireframes/module-catalog.md` (36 modules grouped into 6 packs;
+ * Pack F gained the `intake` module in WI-701 / Phase 20).
  * Keeps the catalog declarative so the settings page, billing summary, and
  * sidebar (WI-618) all read from one shape.
  *
@@ -127,15 +128,17 @@ export const PACK_CATALOG: CatalogPack[] = [
     icon: "📦",
     accentColor: "#F59E0B",
     audience: "도소매 / 제조업",
-    description: "재고·주문·배송·발주·거래처·리포트. 1년 후 PBC 추출 예정.",
+    description:
+      "영수증 OCR + 재고·주문·배송·발주·거래처·리포트. 1년 후 PBC 추출 예정.",
     modules: [
-      { id: "products", label: "상품", multiOrg: false },
-      { id: "inventory", label: "재고", multiOrg: false },
-      { id: "erp-customers", label: "거래처", multiOrg: false },
-      { id: "orders", label: "주문", multiOrg: false },
-      { id: "shipping", label: "배송", multiOrg: false },
-      { id: "purchase", label: "발주", multiOrg: false },
-      { id: "erp-reports", label: "리포트", multiOrg: false },
+      { id: "products", label: "상품", multiOrg: true },
+      { id: "inventory", label: "재고", multiOrg: true },
+      { id: "erp-customers", label: "거래처", multiOrg: true },
+      { id: "orders", label: "주문", multiOrg: true },
+      { id: "intake", label: "영수증 등록", multiOrg: true },
+      { id: "shipping", label: "배송", multiOrg: true },
+      { id: "purchase", label: "발주", multiOrg: true },
+      { id: "erp-reports", label: "리포트", multiOrg: true },
     ],
     pricing: { monthly: 89_000 },
   },
