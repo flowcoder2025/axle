@@ -117,21 +117,37 @@ jobs:
           } >> "$GITHUB_ENV"
           echo "Supabase local stack ready: API=$API_URL DB=$DB_URL"
 
-      - name: Enable pgvector extension
-        # supabase/postgres ships the pgvector binary but doesn't auto-enable
-        # the extension per-database. Schema uses `vector(1536)` (Document.embedding)
-        # which fails Prisma db push without this step.
+      - name: Install psql for shadow DB setup
+        # Needed to create the _prisma_shadow database used by the drift check below.
+        # pgvector extension itself is now created by the baseline migration (0_init),
+        # so the old `psql -c "CREATE EXTENSION vector"` step is no longer required.
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Drift detection (migrations ↔ schema)
+        # If schema.prisma drifted from prisma/migrations/, fail the build —
+        # forcing developers to add a new migration instead of silent `db push`.
+        # Replays migrations into _prisma_shadow and diffs against schema.prisma.
+        working-directory: packages/db
         run: |
-          sudo apt-get update && sudo apt-get install -y postgresql-client
-          psql "$DATABASE_URL" -c "CREATE EXTENSION IF NOT EXISTS vector;"
+          set -e
+          psql "$DATABASE_URL" -c "DROP DATABASE IF EXISTS _prisma_shadow;"
+          psql "$DATABASE_URL" -c "CREATE DATABASE _prisma_shadow;"
+          SHADOW_URL="$(echo "$DATABASE_URL" | sed 's|/postgres|/_prisma_shadow|')"
+          npx prisma migrate diff \
+            --from-migrations ./prisma/migrations \
+            --to-schema ./prisma/schema.prisma \
+            --shadow-database-url "$SHADOW_URL" \
+            --exit-code
 
       - name: Prisma generate
         working-directory: packages/db
         run: npx prisma generate
 
-      - name: Prisma db push
+      - name: Prisma migrate deploy
+        # Apply versioned migrations (replaces `db push --accept-data-loss`).
+        # Baseline 0_init creates the pgvector extension before any vector column.
         working-directory: packages/db
-        run: npx prisma db push --accept-data-loss
+        run: npx prisma migrate deploy
 
       # NOTE: skip packages/db/seed.ts — it has stale fixture data (AiJob.orgId
       # is now NOT NULL but the seed predates that migration). The E2E tests only
