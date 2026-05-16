@@ -22,6 +22,14 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
+      - name: Generate Prisma Client
+        # Run explicitly before any turbo task to eliminate race conditions where
+        # `node_modules/.prisma/client/**` ends up partially written (turbo's cache
+        # output spec only covers dist/**, not node_modules — so cached @axle/db
+        # build replays logs without recreating the client). Eager generation here
+        # guarantees a complete client in node_modules before downstream typecheck.
+        # See .flowset/tech-debt.md "CI typecheck Prisma client 레이스 컨디션".
+        run: npx prisma generate --schema=packages/db/prisma/schema.prisma
       - run: npx turbo build --filter='./packages/*'
       - run: npx turbo lint
 
@@ -36,6 +44,14 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
+      - name: Generate Prisma Client
+        # Run explicitly before any turbo task to eliminate race conditions where
+        # `node_modules/.prisma/client/**` ends up partially written (turbo's cache
+        # output spec only covers dist/**, not node_modules — so cached @axle/db
+        # build replays logs without recreating the client). Eager generation here
+        # guarantees a complete client in node_modules before downstream typecheck.
+        # See .flowset/tech-debt.md "CI typecheck Prisma client 레이스 컨디션".
+        run: npx prisma generate --schema=packages/db/prisma/schema.prisma
       - run: npx turbo build --filter='./packages/*'
       - run: npx turbo typecheck
 
@@ -51,6 +67,8 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
+      - name: Generate Prisma Client
+        run: npx prisma generate --schema=packages/db/prisma/schema.prisma
       - run: npx turbo build
 
   test:
@@ -65,5 +83,13 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
+      - name: Generate Prisma Client
+        # Run explicitly before any turbo task to eliminate race conditions where
+        # `node_modules/.prisma/client/**` ends up partially written (turbo's cache
+        # output spec only covers dist/**, not node_modules — so cached @axle/db
+        # build replays logs without recreating the client). Eager generation here
+        # guarantees a complete client in node_modules before downstream typecheck.
+        # See .flowset/tech-debt.md "CI typecheck Prisma client 레이스 컨디션".
+        run: npx prisma generate --schema=packages/db/prisma/schema.prisma
       - run: npx turbo build --filter='./packages/*'
       - run: npx turbo test
