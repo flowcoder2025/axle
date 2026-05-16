@@ -1626,8 +1626,8 @@ model Order {
   id               String         @id @default(cuid())
   orgId            String
   type             OrderType // SALE | PURCHASE
-  counterpartyId   String? // free-form snapshot (FK 없음, Phase 21에 ErpCounterparty FK 도입)
-  counterpartyName String // 표시용 snapshot
+  counterpartyId   String? // FK to ErpCounterparty (Phase 21 WI-723a — NOT VALID, validated in WI-723c)
+  counterpartyName String // historical display snapshot (preserved after FK introduction)
   status           OrderStatus // DRAFT | CONFIRMED | CANCELLED
   total            Decimal
   tax              Decimal        @default(0)
@@ -1638,9 +1638,11 @@ model Order {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
-  items OrderItem[]
+  items        OrderItem[]
+  counterparty ErpCounterparty? @relation(fields: [counterpartyId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([orgId, type, occurredAt])
+  @@index([orgId, counterpartyId, occurredAt])
 }
 
 model OrderItem {
@@ -1751,6 +1753,7 @@ model ErpCounterparty {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
+  orders        Order[]                                    // WI-723a: Order.counterpartyId FK (NOT VALID, validated in WI-723c)
   mergeLogsFrom CounterpartyMergeLog[] @relation("mergeFrom")
   mergeLogsInto CounterpartyMergeLog[] @relation("mergeInto")
 
