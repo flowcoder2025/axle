@@ -64,11 +64,12 @@ test.describe("ERP inventory @smoke", () => {
       page.getByRole("heading", { name: FIXTURE.productName }),
     ).toBeVisible();
 
-    // Cards exist (we don't assert exact totals — see header note).
-    await expect(page.getByText("현재 재고")).toBeVisible();
-    await expect(page.getByText("입고 합계")).toBeVisible();
-    await expect(page.getByText("출고 합계")).toBeVisible();
-    await expect(page.getByText("조정 합계")).toBeVisible();
+    // Cards exist (we don't assert exact totals — see header note). exact: true
+    // because the page header paragraph also contains the phrase "현재 재고".
+    await expect(page.getByText("현재 재고", { exact: true })).toBeVisible();
+    await expect(page.getByText("입고 합계", { exact: true })).toBeVisible();
+    await expect(page.getByText("출고 합계", { exact: true })).toBeVisible();
+    await expect(page.getByText("조정 합계", { exact: true })).toBeVisible();
 
     // Timeline rows — assert presence of seed rows via their unique notes.
     await expect(page.getByText("초기 입고 (E2E)")).toBeVisible();

@@ -132,9 +132,11 @@ test.describe("ERP product CRUD @smoke", () => {
       await expect(page.getByText("E2E 보관 테스트 상품")).toHaveCount(0);
 
       // Toggle the `보관됨 포함` checkbox + submit → the row reappears
-      // with the 보관됨 badge.
+      // with the 보관됨 badge. The global app shell mounts a "검색 ⌘K"
+      // command-palette button so we must use exact: true to target only
+      // the list-form's submit button labeled "검색".
       await page.getByLabel(/보관됨 포함/).check();
-      await page.getByRole("button", { name: "검색" }).click();
+      await page.getByRole("button", { name: "검색", exact: true }).click();
       await page.waitForURL(/includeArchived=1/);
 
       const row = page.locator("tr", { hasText: "E2E 보관 테스트 상품" });
