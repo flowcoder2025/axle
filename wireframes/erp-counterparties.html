@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>ErpCounterparty 페이지 (Phase 21 WI-732)</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; margin: 0; color: #1a1a1a; }
+  header { padding: 14px 24px; border-bottom: 1px solid #e5e5e5; display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 18px; margin: 0; }
+  nav.crumbs { font-size: 13px; color: #666; }
+  main { padding: 20px 24px; }
+  .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+  .toolbar input[type="search"] { flex: 1; padding: 8px 12px; border: 1px solid #d0d0d0; border-radius: 6px; }
+  .toolbar button { padding: 8px 14px; border-radius: 6px; border: 1px solid #d0d0d0; background: #fff; cursor: pointer; }
+  .toolbar button.primary { background: #1f6feb; color: #fff; border-color: #1f6feb; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 10px 12px; border-bottom: 1px solid #eee; text-align: left; }
+  th { background: #fafafa; font-weight: 600; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  .badge.customer { background: #e3f2fd; color: #1565c0; }
+  .badge.supplier { background: #fff3e0; color: #ef6c00; }
+  .badge.both { background: #f3e5f5; color: #6a1b9a; }
+  .row-actions { display: flex; gap: 6px; }
+  .row-actions button { font-size: 12px; padding: 4px 10px; }
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; }
+  .modal[data-open="true"] { display: flex; }
+  .modal-content { background: #fff; padding: 20px 24px; border-radius: 8px; width: 480px; max-width: 90vw; }
+  .modal-content h2 { font-size: 16px; margin-top: 0; }
+  .form-row { display: grid; grid-template-columns: 110px 1fr; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .form-row label { font-size: 13px; color: #555; }
+  .form-row input, .form-row select { padding: 6px 10px; border: 1px solid #d0d0d0; border-radius: 5px; font-size: 13px; }
+  .modal-actions { margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px; }
+  .empty { padding: 40px; text-align: center; color: #999; }
+  .merge-warning { background: #fff8e1; border: 1px solid #ffe082; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 12px; }
+</style>
+</head>
+<body data-testid="page-erp-counterparties">
+
+<header>
+  <div>
+    <nav class="crumbs">AXLE › ERP › 거래처</nav>
+    <h1>거래처 관리</h1>
+  </div>
+  <div class="row-actions">
+    <button data-testid="duplicates-button">중복 감지 (3건)</button>
+    <button class="primary" data-testid="counterparty-new-button">+ 신규 거래처</button>
+  </div>
+</header>
+
+<main>
+
+  <div class="toolbar" data-testid="toolbar-search">
+    <input
+      type="search"
+      data-testid="counterparty-search-input"
+      placeholder="거래처명 또는 사업자등록번호 검색 (한국어 fuzzy)"
+      aria-label="거래처 검색"
+    />
+    <select data-testid="counterparty-type-filter" aria-label="유형 필터">
+      <option value="">전체 유형</option>
+      <option value="CUSTOMER">고객</option>
+      <option value="SUPPLIER">공급자</option>
+      <option value="BOTH">양방향</option>
+    </select>
+    <button data-testid="counterparty-search-submit">검색</button>
+  </div>
+
+  <table data-testid="counterparty-table">
+    <thead>
+      <tr>
+        <th>거래처명</th>
+        <th>사업자등록번호</th>
+        <th>유형</th>
+        <th>기본 계정과목</th>
+        <th>최근 거래일</th>
+        <th>주문 건수</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr data-testid="counterparty-row-1">
+        <td>주식회사 에이비씨</td>
+        <td>123-45-67890</td>
+        <td><span class="badge customer">고객</span></td>
+        <td>608 매출</td>
+        <td>2026-05-15</td>
+        <td>34</td>
+        <td class="row-actions">
+          <button data-testid="counterparty-edit-1">편집</button>
+          <button data-testid="counterparty-merge-1">머지</button>
+        </td>
+      </tr>
+      <tr data-testid="counterparty-row-2">
+        <td>한솔물류</td>
+        <td>—</td>
+        <td><span class="badge supplier">공급자</span></td>
+        <td>452 원료매입</td>
+        <td>2026-05-12</td>
+        <td>12</td>
+        <td class="row-actions">
+          <button data-testid="counterparty-edit-2">편집</button>
+          <button data-testid="counterparty-merge-2">머지</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="empty" data-testid="counterparty-empty" hidden>
+    등록된 거래처가 없습니다.
+  </div>
+
+</main>
+
+<!-- 신규/편집 모달 -->
+<div class="modal" data-testid="counterparty-form-modal" data-open="false">
+  <div class="modal-content">
+    <h2 data-testid="counterparty-form-title">신규 거래처 등록</h2>
+    <form data-testid="counterparty-form">
+      <div class="form-row">
+        <label for="cp-name">거래처명 *</label>
+        <input id="cp-name" data-testid="counterparty-name-input" required />
+      </div>
+      <div class="form-row">
+        <label for="cp-bizregno">사업자등록번호</label>
+        <input id="cp-bizregno" data-testid="counterparty-bizregno-input" placeholder="123-45-67890" />
+      </div>
+      <div class="form-row">
+        <label for="cp-type">유형 *</label>
+        <select id="cp-type" data-testid="counterparty-type-input" required>
+          <option value="CUSTOMER">고객</option>
+          <option value="SUPPLIER">공급자</option>
+          <option value="BOTH">양방향</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="cp-defaultcoa">기본 계정과목</label>
+        <select id="cp-defaultcoa" data-testid="counterparty-defaultcoa-input">
+          <option value="">선택 안 함</option>
+          <option value="608">608 매출</option>
+          <option value="452">452 원료매입</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="cp-address">주소</label>
+        <input id="cp-address" data-testid="counterparty-address-input" />
+      </div>
+      <div class="form-row">
+        <label for="cp-contact-name">담당자</label>
+        <input id="cp-contact-name" data-testid="counterparty-contact-name-input" />
+      </div>
+      <div class="form-row">
+        <label for="cp-contact-phone">전화</label>
+        <input id="cp-contact-phone" data-testid="counterparty-contact-phone-input" />
+      </div>
+      <div class="modal-actions">
+        <button type="button" data-testid="counterparty-form-cancel">취소</button>
+        <button type="submit" class="primary" data-testid="counterparty-form-submit">저장</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 머지 확인 모달 (WI-724c, erp:counterparty:merge 권한자만 진입 가능) -->
+<div class="modal" data-testid="counterparty-merge-modal" data-open="false">
+  <div class="modal-content">
+    <h2>거래처 머지 (되돌릴 수 없음)</h2>
+    <div class="merge-warning" data-testid="merge-warning">
+      ⚠ <strong>머지된 거래처는 soft-delete되며 모든 Order가 대상 거래처로 재포인팅됩니다.</strong>
+      <br>이 작업은 감사 로그(CounterpartyMergeLog)에 기록됩니다.
+    </div>
+    <div class="form-row">
+      <label>병합할 대상</label>
+      <input data-testid="merge-target-input" placeholder="거래처명 검색..." />
+    </div>
+    <div class="form-row">
+      <label>사유 *</label>
+      <input data-testid="merge-reason-input" required />
+    </div>
+    <div data-testid="merge-impact-summary">
+      <p>영향: <strong data-testid="merge-order-count">34</strong> 건의 Order가 재포인팅됩니다.</p>
+    </div>
+    <div class="modal-actions">
+      <button type="button" data-testid="counterparty-merge-cancel">취소</button>
+      <button type="button" class="primary" data-testid="counterparty-merge-confirm">머지 실행</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

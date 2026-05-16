@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>ERP 레포팅 대시보드 (Phase 21 WI-733)</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; margin: 0; color: #1a1a1a; }
+  header { padding: 14px 24px; border-bottom: 1px solid #e5e5e5; display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 18px; margin: 0; }
+  nav.crumbs { font-size: 13px; color: #666; }
+  .data-time { font-size: 12px; color: #888; margin-top: 4px; }
+  main { padding: 20px 24px; }
+  .filter-bar { display: flex; gap: 10px; align-items: center; padding: 12px 14px; background: #fafafa; border-radius: 8px; margin-bottom: 16px; }
+  .filter-bar label { font-size: 13px; color: #555; }
+  .filter-bar input, .filter-bar select { padding: 6px 10px; border: 1px solid #d0d0d0; border-radius: 5px; font-size: 13px; }
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid #e5e5e5; margin-bottom: 16px; }
+  .tabs button { padding: 10px 16px; border: none; background: none; cursor: pointer; font-size: 14px; border-bottom: 2px solid transparent; }
+  .tabs button[aria-selected="true"] { border-color: #1f6feb; color: #1f6feb; font-weight: 600; }
+  .report-panel { display: none; }
+  .report-panel[data-active="true"] { display: block; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 8px 12px; border-bottom: 1px solid #eee; text-align: left; }
+  th { background: #fafafa; }
+  .amount { text-align: right; font-variant-numeric: tabular-nums; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  .badge.dead { background: #ffebee; color: #c62828; }
+  .badge.slow { background: #fff3e0; color: #ef6c00; }
+  .badge.healthy { background: #e8f5e9; color: #2e7d32; }
+  .row-pl { font-weight: 600; }
+  .row-pl.profit { color: #2e7d32; }
+  .row-pl.loss { color: #c62828; }
+  .export-bar { margin-top: 16px; padding: 12px 14px; background: #f5f5f5; border-radius: 6px; display: flex; gap: 10px; justify-content: flex-end; }
+  .export-bar button { padding: 8px 14px; border: 1px solid #d0d0d0; background: #fff; border-radius: 5px; cursor: pointer; }
+  .job-status { font-size: 12px; color: #555; margin-right: auto; }
+</style>
+</head>
+<body data-testid="page-erp-reports">
+
+<header>
+  <div>
+    <nav class="crumbs">AXLE › ERP › 리포트</nav>
+    <h1>ERP 레포팅 대시보드</h1>
+    <div class="data-time" data-testid="data-as-of">
+      데이터 기준: 2026-05-17 06:00 (daily refresh)
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <div class="filter-bar" data-testid="report-filters">
+    <label>기간</label>
+    <input type="month" data-testid="filter-from" value="2026-01" aria-label="시작 월" />
+    <span>~</span>
+    <input type="month" data-testid="filter-to" value="2026-05" aria-label="종료 월" />
+    <label>유형</label>
+    <select data-testid="filter-type" aria-label="거래 유형">
+      <option value="">전체</option>
+      <option value="SALE">매출</option>
+      <option value="PURCHASE">매입</option>
+    </select>
+    <button data-testid="filter-apply">조회</button>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-testid="tab-counterparty">거래처별 매출/매입</button>
+    <button role="tab" aria-selected="false" data-testid="tab-income-statement">손익계산서 간이판</button>
+    <button role="tab" aria-selected="false" data-testid="tab-inventory">재고 회전·데드재고</button>
+  </div>
+
+  <!-- 리포트 1: 거래처별 (WI-728) -->
+  <section class="report-panel" data-active="true" data-testid="panel-counterparty">
+    <table data-testid="counterparty-report-table">
+      <thead>
+        <tr>
+          <th>순위</th>
+          <th>거래처</th>
+          <th class="amount">매출</th>
+          <th class="amount">매입</th>
+          <th class="amount">건수</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>주식회사 에이비씨</td><td class="amount">123,450,000</td><td class="amount">—</td><td class="amount">34</td></tr>
+        <tr><td>2</td><td>한솔물류</td><td class="amount">—</td><td class="amount">45,300,000</td><td class="amount">12</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 리포트 2: 손익계산서 (WI-729) -->
+  <section class="report-panel" data-active="false" data-testid="panel-income-statement">
+    <table data-testid="income-statement-table">
+      <thead><tr><th>계정과목</th><th class="amount">금액</th></tr></thead>
+      <tbody>
+        <tr><td>매출 (608)</td><td class="amount">350,000,000</td></tr>
+        <tr><td>매출원가 (452)</td><td class="amount">(220,000,000)</td></tr>
+        <tr class="row-pl"><td>매출총이익</td><td class="amount">130,000,000</td></tr>
+        <tr><td>판매관리비 (811 외)</td><td class="amount">(85,000,000)</td></tr>
+        <tr class="row-pl profit" data-testid="operating-profit-row"><td>영업이익</td><td class="amount">45,000,000</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 리포트 3: 재고 (WI-730) -->
+  <section class="report-panel" data-active="false" data-testid="panel-inventory">
+    <table data-testid="inventory-table">
+      <thead>
+        <tr>
+          <th>상품</th>
+          <th class="amount">현재 재고</th>
+          <th class="amount">최근 출고일</th>
+          <th class="amount">미이동일수</th>
+          <th>상태</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>제품 A</td><td class="amount">120</td><td class="amount">2026-05-15</td><td class="amount">2</td><td><span class="badge healthy">정상</span></td></tr>
+        <tr><td>제품 B</td><td class="amount">45</td><td class="amount">2026-04-08</td><td class="amount">39</td><td><span class="badge slow">저회전</span></td></tr>
+        <tr><td>제품 C</td><td class="amount">8</td><td class="amount">2026-02-10</td><td class="amount">96</td><td><span class="badge dead">데드재고</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- DOCX/PDF 내보내기 (WI-731) -->
+  <div class="export-bar" data-testid="export-bar">
+    <span class="job-status" data-testid="export-job-status">대기 중</span>
+    <button data-testid="export-docx-button">DOCX 내보내기</button>
+    <button data-testid="export-pdf-button">PDF 내보내기</button>
+  </div>
+
+</main>
+
+</body>
+</html>

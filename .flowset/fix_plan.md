@@ -610,3 +610,29 @@
 - [x] WI-624-feat Pack D 모듈 메타데이터 (5개: employees/payroll/attendance/leave/nomu) | L1:Phase19 > L2:ModuleSystem > L3:PackD
 - [x] WI-625-feat Pack E 모듈 메타데이터 (4개: image-generation/builder/presets/workflows) | L1:Phase19 > L2:ModuleSystem > L3:PackE
 - [x] WI-626-feat Pack G 모듈 메타데이터 (3개: portal-automation/cert-management/voice-recording) | L1:Phase19 > L2:ModuleSystem > L3:PackG
+
+### L2: phase21-erp-amplification > L3: ERP Amplification (Counterparty + COA + Reporting) — design 2026-05-17
+
+#### M1 — Master Data (11 WI). 머지 완료 후 1주 dogfooding 윈도우 (종료 조건: 머지 차단 버그 0건 + 사용자 피드백 ≥3건 반영 + 백필 데이터 샘플 50건 검수).
+- [ ] WI-721-feat ErpCounterparty + ChartOfAccounts + CounterpartyMergeLog + CounterpartyBackfillBatch Prisma 모델 + partial unique 인덱스 raw SQL | L1:Phase21 > L2:ERPAmp > L3:Models
+- [ ] WI-722-feat ErpCounterparty CRUD API (/api/erp/counterparties) + ReBAC erp:counterparty:read/write scope 등록 (Prisma ErpCounterparty CRUD) | L1:Phase21 > L2:ERPAmp > L3:CounterpartyCRUD
+- [ ] WI-723a-feat Order.counterpartyId FK constraint NOT VALID 추가 (nullable 유지, 기존 row 손상 없음) | L1:Phase21 > L2:ERPAmp > L3:FKAdd
+- [ ] WI-723b-feat CounterpartyBackfillBatch 기반 백필 스크립트 (dry-run + 1k chunk + advisory lock + 재시작 SKIP) + admin staging UI | L1:Phase21 > L2:ERPAmp > L3:Backfill
+- [ ] WI-723c-feat FK VALIDATE CONSTRAINT + intake/confirm + orders POST 작성 경로 전환 + counterpartyName snapshot 유지 | L1:Phase21 > L2:ERPAmp > L3:FKValidate
+- [ ] WI-724a-prep-chore Supabase pg_trgm 활성화 검증 + ErpCounterparty.normalizedName GIN 인덱스 | L1:Phase21 > L2:ERPAmp > L3:SearchPrep
+- [ ] WI-724a-feat 한국어 fuzzy 검색 API (/api/erp/counterparties/search?q=...) — similarity >= 0.3, 10k row 기준 응답 <=200ms | L1:Phase21 > L2:ERPAmp > L3:Search
+- [ ] WI-724b-feat 중복 감지 read-only 리포트 (/api/erp/counterparties/duplicates) — bizRegNo 동일 OR 유사도 >=0.7 페어 | L1:Phase21 > L2:ERPAmp > L3:Duplicates
+- [ ] WI-724c-feat 머지 API + CounterpartyMergeLog + advisory lock + erp:counterparty:merge 권한 + soft-delete | L1:Phase21 > L2:ERPAmp > L3:Merge
+- [ ] WI-725-feat ChartOfAccounts seed (한국 세무 표준 ~30 과목, 국세청 표준재무제표 v2024 출처) + 사용자 추가/수정 API (isSystem 보호) (Prisma ChartOfAccounts CRUD) | L1:Phase21 > L2:ERPAmp > L3:COASeed
+- [ ] WI-726-feat Product.coaCode + OrderItem.coaCode + SSOT resolver (OrderItem > Product > Counterparty.default) + 모든 생성 경로 resolver 호출 | L1:Phase21 > L2:ERPAmp > L3:COAResolver
+- [ ] WI-727-feat AI suggestedCoaCode (IntakeDraft suggest 단계만) + IntakeDraft.confirmedAt 동시성 보호 + accuracy SLO 75% + dropdown override fallback | L1:Phase21 > L2:ERPAmp > L3:AITagging
+
+#### M2 — Reporting (8 WI). M1 dogfooding 종료 후 진입.
+- [ ] WI-728-prep-feat materialized view mv_erp_monthly_summary + OrderItem.orgId denormalize + 인덱스 + UNIQUE INDEX (CONCURRENTLY 전제) + daily refresh cron | L1:Phase21 > L2:ERPAmp > L3:MVInfra
+- [ ] WI-728-feat 거래처별 매출/매입 요약 API + UI (mv 활용, Top 10, 데이터 기준 시각 노출, Decimal/Date string 직렬화) | L1:Phase21 > L2:ERPAmp > L3:ReportCounterparty
+- [ ] WI-729-feat 계정과목별 손익계산서 간이판 API + UI (월/연도 토글, parentCode 계층 집계) | L1:Phase21 > L2:ERPAmp > L3:ReportIncomeStatement
+- [ ] WI-730-feat 재고 회전율·데드재고 API + UI (30/60/90 임계치 ORG 설정) | L1:Phase21 > L2:ERPAmp > L3:ReportInventory
+- [ ] WI-731-poc-chore mark-docx PoC: 한글 폰트 + @sparticuz/chromium + Fluid Compute + Blob jobId 검증 (실패 시 외부 워커 대안 결정) | L1:Phase21 > L2:ERPAmp > L3:DocxPoC
+- [ ] WI-731-feat DOCX/PDF 비동기 jobId 패턴 내보내기 (POST 즉시 202 + jobId, GET 진행상태 + Blob URL, 5MB+ 동기 반환 금지) | L1:Phase21 > L2:ERPAmp > L3:DocxExport
+- [ ] WI-732-feat ErpCounterparty 페이지 UI (목록 + CRUD 모달 + 머지 액션, wireframes/erp-counterparties.html 참조) | L1:Phase21 > L2:ERPAmp > L3:CounterpartyPage
+- [ ] WI-733-feat 레포팅 대시보드 페이지 (3 리포트 + 필터 공통 + DOCX 트리거, wireframes/erp-reports.html 참조, 샘플 컨설팅 리뷰 DOCX 1건 시각 검수) | L1:Phase21 > L2:ERPAmp > L3:ReportsPage
