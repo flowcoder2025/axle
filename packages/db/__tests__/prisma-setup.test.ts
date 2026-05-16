@@ -73,8 +73,16 @@ describe("Prisma 7 Client Engine + Driver Adapter setup", () => {
       expect(pkg.scripts["db:generate"]).toBeDefined();
     });
 
-    it("has db:push script", () => {
-      expect(pkg.scripts["db:push"]).toBeDefined();
+    it("has db:migrate script (Prisma Migrate replaces db push as of WI-720)", () => {
+      expect(pkg.scripts["db:migrate"]).toBeDefined();
+    });
+
+    it("has db:migrate:deploy script", () => {
+      expect(pkg.scripts["db:migrate:deploy"]).toBeDefined();
+    });
+
+    it("has db:migrate:status script", () => {
+      expect(pkg.scripts["db:migrate:status"]).toBeDefined();
     });
   });
 });

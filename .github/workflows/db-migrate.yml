@@ -1,20 +1,31 @@
 name: DB Migrate (manual)
 
-# Manually triggered workflow to run `prisma db push` and/or one-off
+# Manually triggered workflow to run Prisma migrations and one-off
 # backfill scripts against the production DB using repository secrets.
 # Use via Actions → DB Migrate (manual) → "Run workflow".
+#
+# Actions:
+#   migrate_deploy        — Apply pending migrations (idempotent, safe to re-run)
+#   baseline_resolve      — One-time baseline: mark 0_init migration as applied
+#                           without running it. Use when adopting Prisma Migrate
+#                           on a DB that was previously schema-synced via `db push`.
+#   backfill_aijob_orgid  — Run packages/db/scripts/backfill-aijob-orgid.ts
+#
+# Always start with dry_run=true to preview the action.
 
 on:
   workflow_dispatch:
     inputs:
-      run_db_push:
-        description: "Run `prisma db push` against DATABASE_URL"
-        type: boolean
-        default: false
-      run_backfill_aijob_orgid:
-        description: "Run backfill-aijob-orgid script"
-        type: boolean
-        default: false
+      action:
+        description: "Action to perform"
+        type: choice
+        required: true
+        default: "migrate_status"
+        options:
+          - migrate_status
+          - migrate_deploy
+          - baseline_resolve
+          - backfill_aijob_orgid
       dry_run:
         description: "Dry run (print intended actions only)"
         type: boolean
@@ -43,51 +54,85 @@ jobs:
 
       - name: Summary
         run: |
-          echo "run_db_push=${{ inputs.run_db_push }}"
-          echo "run_backfill_aijob_orgid=${{ inputs.run_backfill_aijob_orgid }}"
+          echo "action=${{ inputs.action }}"
           echo "dry_run=${{ inputs.dry_run }}"
 
-      - name: prisma db push
-        if: inputs.run_db_push && !inputs.dry_run
+      # ─────────────────────────────────────────────────────────────
+      # migrate_status — show pending migrations and current state
+      # ─────────────────────────────────────────────────────────────
+      - name: prisma migrate status
+        if: inputs.action == 'migrate_status'
         working-directory: packages/db
         env:
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
-        # DDL requires direct Postgres connection (not pooler). Pass DIRECT_URL via --url.
-        # Prisma 7 removed --skip-generate (no longer needed; generation is a separate step).
-        run: npx prisma db push --schema=prisma/schema.prisma --url "$DIRECT_URL" --accept-data-loss
-
-      - name: prisma db push (DRY RUN)
-        if: inputs.run_db_push && inputs.dry_run
-        working-directory: packages/db
-        env:
-          # prisma.config.ts reads DATABASE_URL; migrate diff needs direct connection for DDL.
           DATABASE_URL: ${{ secrets.DIRECT_URL }}
-        # Prisma 7 removed --from-url; use --from-config-datasource with prisma.config.ts.
-        run: |
-          echo "[dry-run] Would execute: prisma db push --schema=prisma/schema.prisma"
-          echo ""
-          echo "Schema validate:"
-          npx prisma validate
-          echo ""
-          echo "Diff (current DB vs target schema):"
-          npx prisma migrate diff \
-            --from-config-datasource ./prisma.config.ts \
-            --to-schema-datamodel prisma/schema.prisma \
-            --script || echo "(diff failed — see prisma validate output above)"
+        run: npx prisma migrate status
 
+      # ─────────────────────────────────────────────────────────────
+      # migrate_deploy — apply pending migrations
+      # ─────────────────────────────────────────────────────────────
+      - name: prisma migrate deploy (DRY RUN)
+        if: inputs.action == 'migrate_deploy' && inputs.dry_run
+        working-directory: packages/db
+        env:
+          DATABASE_URL: ${{ secrets.DIRECT_URL }}
+        run: |
+          echo "[dry-run] Would execute: prisma migrate deploy"
+          echo ""
+          echo "Current migration status:"
+          npx prisma migrate status || true
+          echo ""
+          echo "Diff (DB vs schema):"
+          npx prisma migrate diff \
+            --from-config-datasource \
+            --to-schema ./prisma/schema.prisma \
+            --script || echo "(diff empty or failed)"
+
+      - name: prisma migrate deploy
+        if: inputs.action == 'migrate_deploy' && !inputs.dry_run
+        working-directory: packages/db
+        env:
+          DATABASE_URL: ${{ secrets.DIRECT_URL }}
+        run: npx prisma migrate deploy
+
+      # ─────────────────────────────────────────────────────────────
+      # baseline_resolve — one-time: mark 0_init as applied
+      # Use when prod DB was previously schema-synced via `db push` and
+      # adopting Prisma Migrate for the first time.
+      # ─────────────────────────────────────────────────────────────
+      - name: baseline resolve (DRY RUN)
+        if: inputs.action == 'baseline_resolve' && inputs.dry_run
+        working-directory: packages/db
+        env:
+          DATABASE_URL: ${{ secrets.DIRECT_URL }}
+        run: |
+          echo "[dry-run] Would execute: prisma migrate resolve --applied 0_init"
+          echo ""
+          echo "Current migration status:"
+          npx prisma migrate status || true
+
+      - name: baseline resolve
+        if: inputs.action == 'baseline_resolve' && !inputs.dry_run
+        working-directory: packages/db
+        env:
+          DATABASE_URL: ${{ secrets.DIRECT_URL }}
+        run: npx prisma migrate resolve --applied 0_init
+
+      # ─────────────────────────────────────────────────────────────
+      # backfill_aijob_orgid — one-off script
+      # ─────────────────────────────────────────────────────────────
       - name: Install tsx for one-off scripts
-        if: inputs.run_backfill_aijob_orgid
+        if: inputs.action == 'backfill_aijob_orgid'
         run: npm install --no-save tsx
 
       - name: backfill AiJob.orgId
-        if: inputs.run_backfill_aijob_orgid && !inputs.dry_run
+        if: inputs.action == 'backfill_aijob_orgid' && !inputs.dry_run
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
         run: npx tsx packages/db/scripts/backfill-aijob-orgid.ts
 
       - name: backfill AiJob.orgId (DRY RUN)
-        if: inputs.run_backfill_aijob_orgid && inputs.dry_run
+        if: inputs.action == 'backfill_aijob_orgid' && inputs.dry_run
         run: |
           echo "[dry-run] Would execute: tsx packages/db/scripts/backfill-aijob-orgid.ts"
           echo "Script source:"

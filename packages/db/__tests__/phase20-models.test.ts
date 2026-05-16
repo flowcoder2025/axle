@@ -184,43 +184,58 @@ describe("WI-705: Phase 20 ERP + Receipt Intake schema", () => {
   });
 
   describe("migration", () => {
+    // WI-720: phase20_erp_intake migration was folded into the 0_init baseline
+    // when AXLE adopted versioned migrations. Phase 20 tables/enums/FKs now
+    // live in prisma/migrations/0_init/migration.sql.
     const migrationsDir = resolve(PACKAGE_ROOT, "prisma/migrations");
+    const baselineSql = readFileSync(
+      resolve(migrationsDir, "0_init", "migration.sql"),
+      "utf-8",
+    );
 
-    it("phase20_erp_intake migration directory exists", () => {
+    it("0_init baseline migration directory exists", () => {
       expect(existsSync(migrationsDir)).toBe(true);
       const entries = readdirSync(migrationsDir);
-      const match = entries.find((e) => e.endsWith("_phase20_erp_intake"));
-      expect(match).toBeDefined();
+      expect(entries).toContain("0_init");
     });
 
-    it("migration.sql defines 5 enums and 5 tables", () => {
-      const entries = readdirSync(migrationsDir);
-      const dir = entries.find((e) => e.endsWith("_phase20_erp_intake"));
-      expect(dir).toBeDefined();
-      const sqlPath = resolve(migrationsDir, dir!, "migration.sql");
-      const sql = readFileSync(sqlPath, "utf-8");
+    it("baseline defines Phase 20 enums (5) and tables (5)", () => {
+      // Phase 20 specifically: MovementType, ReferenceType, OrderType, OrderStatus, DraftStatus
+      const phase20Enums = [
+        "MovementType",
+        "ReferenceType",
+        "OrderType",
+        "OrderStatus",
+        "DraftStatus",
+      ];
+      for (const e of phase20Enums) {
+        expect(baselineSql).toMatch(new RegExp(`CREATE TYPE "${e}"`));
+      }
 
-      expect((sql.match(/^CREATE TYPE/gm) ?? []).length).toBe(5);
-      expect((sql.match(/^CREATE TABLE/gm) ?? []).length).toBe(5);
-      // No ALTER on User table — back-relation is application-level only
-      expect(sql).not.toMatch(/ALTER TABLE "User"/);
+      // Phase 20 tables: Product, InventoryMovement, Order, OrderItem, IntakeDraft
+      const phase20Tables = [
+        "Product",
+        "InventoryMovement",
+        "Order",
+        "OrderItem",
+        "IntakeDraft",
+      ];
+      for (const t of phase20Tables) {
+        expect(baselineSql).toMatch(new RegExp(`CREATE TABLE "${t}"`));
+      }
     });
 
-    it("migration.sql defines required FKs", () => {
-      const entries = readdirSync(migrationsDir);
-      const dir = entries.find((e) => e.endsWith("_phase20_erp_intake"))!;
-      const sql = readFileSync(resolve(migrationsDir, dir, "migration.sql"), "utf-8");
-
-      expect(sql).toMatch(/InventoryMovement_productId_fkey/);
-      expect(sql).toMatch(/OrderItem_orderId_fkey/);
-      expect(sql).toMatch(/OrderItem_productId_fkey/);
-      expect(sql).toMatch(/IntakeDraft_userId_fkey/);
+    it("baseline defines Phase 20 FKs with correct cascade semantics", () => {
+      expect(baselineSql).toMatch(/InventoryMovement_productId_fkey/);
+      expect(baselineSql).toMatch(/OrderItem_orderId_fkey/);
+      expect(baselineSql).toMatch(/OrderItem_productId_fkey/);
+      expect(baselineSql).toMatch(/IntakeDraft_userId_fkey/);
       // OrderItem.order: Cascade
-      expect(sql).toMatch(
+      expect(baselineSql).toMatch(
         /OrderItem_orderId_fkey[\s\S]*?REFERENCES\s+"Order"\("id"\)\s+ON DELETE CASCADE/,
       );
       // IntakeDraft.user: SetNull
-      expect(sql).toMatch(
+      expect(baselineSql).toMatch(
         /IntakeDraft_userId_fkey[\s\S]*?REFERENCES\s+"User"\("id"\)\s+ON DELETE SET NULL/,
       );
     });
