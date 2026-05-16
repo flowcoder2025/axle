@@ -255,3 +255,59 @@ export function serializeIntakeDraft(d: {
     updatedAt: dateToISO(d.updatedAt),
   };
 }
+
+// ---------------- ErpCounterparty (Phase 21 WI-722) ----------------
+
+export interface SerializedErpCounterparty {
+  id: string;
+  orgId: string;
+  name: string;
+  normalizedName: string;
+  bizRegNo: string | null;
+  address: string | null;
+  contactName: string | null;
+  contactPhone: string | null;
+  contactEmail: string | null;
+  type: "CUSTOMER" | "SUPPLIER" | "BOTH";
+  defaultCoaCode: string | null;
+  deletedAt: string | null;
+  mergedIntoId: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export function serializeCounterparty(c: {
+  id: string;
+  orgId: string;
+  name: string;
+  normalizedName: string;
+  bizRegNo: string | null;
+  address: string | null;
+  contactName: string | null;
+  contactPhone: string | null;
+  contactEmail: string | null;
+  type: string;
+  defaultCoaCode: string | null;
+  deletedAt: Date | null;
+  mergedIntoId: string | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}): SerializedErpCounterparty {
+  return {
+    id: c.id,
+    orgId: c.orgId,
+    name: c.name,
+    normalizedName: c.normalizedName,
+    bizRegNo: c.bizRegNo,
+    address: c.address,
+    contactName: c.contactName,
+    contactPhone: c.contactPhone,
+    contactEmail: c.contactEmail,
+    type: c.type as "CUSTOMER" | "SUPPLIER" | "BOTH",
+    defaultCoaCode: c.defaultCoaCode,
+    deletedAt: dateToISO(c.deletedAt),
+    mergedIntoId: c.mergedIntoId,
+    createdAt: dateToISO(c.createdAt),
+    updatedAt: dateToISO(c.updatedAt),
+  };
+}
