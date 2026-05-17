@@ -25,14 +25,30 @@ vi.mock("@axle/db", () => {
   const order = { create: vi.fn() };
   const inventoryMovement = { create: vi.fn() };
   const organization = { findUnique: vi.fn() };
+  // WI-723c: confirm route now resolves/creates an ErpCounterparty so the
+  // Order.counterpartyId FK is always set. The mock exposes findFirst /
+  // findMany / create — defaults are wired in beforeEach.
+  const erpCounterparty = {
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+  };
 
   const $transaction = vi.fn(async (cb: (tx: unknown) => Promise<unknown>) => {
-    return cb({ intakeDraft, product, order, inventoryMovement });
+    return cb({ intakeDraft, product, order, inventoryMovement, erpCounterparty });
   });
 
   return {
     DB_PACKAGE: "@axle/db",
-    prisma: { intakeDraft, product, order, inventoryMovement, organization, $transaction },
+    prisma: {
+      intakeDraft,
+      product,
+      order,
+      inventoryMovement,
+      erpCounterparty,
+      organization,
+      $transaction,
+    },
   };
 });
 
@@ -52,6 +68,9 @@ const orderMock = (prisma as unknown as {
 const movementMock = (prisma as unknown as {
   inventoryMovement: Record<string, ReturnType<typeof vi.fn>>;
 }).inventoryMovement;
+const cpMock = (prisma as unknown as {
+  erpCounterparty: Record<string, ReturnType<typeof vi.fn>>;
+}).erpCounterparty;
 const organizationMock = (prisma as unknown as {
   organization: Record<string, ReturnType<typeof vi.fn>>;
 }).organization;
@@ -141,12 +160,19 @@ beforeEach(() => {
   });
   movementMock.create.mockResolvedValue({});
 
+  // WI-723c: resolveOrCreateCounterparty path. Default: no master matches
+  // by either bizRegNo or normalizedName → resolver creates a fresh row.
+  cpMock.findFirst.mockResolvedValue(null);
+  cpMock.findMany.mockResolvedValue([]);
+  cpMock.create.mockResolvedValue({ id: "cp_created" });
+
   txMock.mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) => {
     return cb({
       intakeDraft: draftMock,
       product: productMock,
       order: orderMock,
       inventoryMovement: movementMock,
+      erpCounterparty: cpMock,
     });
   });
 });
@@ -386,6 +412,77 @@ describe("POST confirm — product upsert + dedup", () => {
     expect(productMock.upsert).not.toHaveBeenCalled();
     expect(movementMock.create.mock.calls[0]?.[0].data.productId).toBe(
       "p_existing_byname",
+    );
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // WI-723c: counterparty FK is now VALID — every Order write goes
+  // through resolveOrCreateCounterparty.
+  // ─────────────────────────────────────────────────────────────
+
+  it("WI-723c: Order.counterpartyId is always set on confirm (created when no master matches)", async () => {
+    cpMock.findFirst.mockResolvedValue(null);
+    cpMock.findMany.mockResolvedValue([]);
+    cpMock.create.mockResolvedValueOnce({ id: "cp_new_acme" });
+
+    const res = await POST(confirmReq(validBody()), ctx());
+    expect(res.status).toBe(200);
+
+    const orderArgs = orderMock.create.mock.calls[0]?.[0];
+    expect(orderArgs.data.counterpartyId).toBe("cp_new_acme");
+    expect(orderArgs.data.counterpartyName).toBe("ACME"); // snapshot preserved
+    expect(cpMock.create).toHaveBeenCalledTimes(1);
+    // type derived from order.type — PURCHASE → SUPPLIER
+    expect(cpMock.create.mock.calls[0]?.[0].data.type).toBe("SUPPLIER");
+  });
+
+  it("WI-723c: SALE order → CUSTOMER type when creating master", async () => {
+    cpMock.findFirst.mockResolvedValue(null);
+    cpMock.findMany.mockResolvedValue([]);
+    cpMock.create.mockResolvedValueOnce({ id: "cp_customer" });
+    await POST(confirmReq(validBody({ type: "SALE" })), ctx());
+    expect(cpMock.create.mock.calls[0]?.[0].data.type).toBe("CUSTOMER");
+  });
+
+  it("WI-723c: explicit counterpartyId is verified, not silently substituted", async () => {
+    cpMock.findFirst.mockResolvedValueOnce({ id: "cp_explicit" });
+    const res = await POST(
+      confirmReq(validBody({ counterpartyId: "cp_explicit" })),
+      ctx(),
+    );
+    expect(res.status).toBe(200);
+    const orderArgs = orderMock.create.mock.calls[0]?.[0];
+    expect(orderArgs.data.counterpartyId).toBe("cp_explicit");
+    // No create when caller already picked a valid master
+    expect(cpMock.create).not.toHaveBeenCalled();
+  });
+
+  it("WI-723c RED: explicit counterpartyId that belongs to a different tenant → 404", async () => {
+    // First call from resolver: findFirst returns null (no such row in tenant)
+    cpMock.findFirst.mockResolvedValueOnce(null);
+    const res = await POST(
+      confirmReq(validBody({ counterpartyId: "cp_other_tenant" })),
+      ctx(),
+    );
+    expect(res.status).toBe(404);
+    // Critical: no Order is written when resolution fails
+    expect(orderMock.create).not.toHaveBeenCalled();
+  });
+
+  it("WI-723c: counterpartyBizRegNo helps the resolver dedupe before creating", async () => {
+    // bizRegNo path: findFirst by (orgId, bizRegNo) returns existing master
+    cpMock.findFirst.mockResolvedValueOnce({ id: "cp_by_biz" });
+    await POST(
+      confirmReq(
+        validBody({
+          counterpartyBizRegNo: "123-45-67890",
+        }),
+      ),
+      ctx(),
+    );
+    expect(cpMock.create).not.toHaveBeenCalled();
+    expect(orderMock.create.mock.calls[0]?.[0].data.counterpartyId).toBe(
+      "cp_by_biz",
     );
   });
 
