@@ -40,8 +40,14 @@ import {
   requireErpScope,
   toResponse,
   erpBadRequest,
+  erpErrorResponse,
   ErpConflictError,
+  ErpNotFoundError,
 } from "@/lib/erp/auth";
+import {
+  resolveOrCreateCounterparty,
+  CounterpartyResolutionError,
+} from "@/lib/erp/counterparty-resolver";
 
 interface RouteContext {
   params: Promise<{ draftId: string }>;
@@ -57,7 +63,13 @@ class IntakeAlreadyConfirmedError extends Error {
 const ConfirmBody = z.object({
   type: z.enum(["SALE", "PURCHASE"]),
   counterpartyName: z.string().min(1),
+  /** Optional. When supplied the resolver verifies tenant ownership.
+   *  When omitted the resolver matches by bizRegNo / normalizedName or
+   *  creates a new ErpCounterparty so the FK (VALID since WI-723c) holds. */
   counterpartyId: z.string().nullable().optional(),
+  /** Optional canonical/dashed business registration number — improves
+   *  match quality and avoids creating duplicate masters. */
+  counterpartyBizRegNo: z.string().nullable().optional(),
   occurredAt: z.coerce.date(),
   total: z.coerce.number().nonnegative(),
   tax: z.coerce.number().nonnegative().default(0),
@@ -100,6 +112,16 @@ export async function POST(
       if (lock.count === 0) {
         throw new IntakeAlreadyConfirmedError();
       }
+
+      // 1b. Resolve or create the ErpCounterparty master (WI-723c).
+      //     The FK is VALID — Order.counterpartyId may no longer be null.
+      const cpResolution = await resolveOrCreateCounterparty(tx, {
+        orgId: ctx.orgId,
+        counterpartyId: body.counterpartyId ?? null,
+        counterpartyName: body.counterpartyName,
+        bizRegNo: body.counterpartyBizRegNo ?? null,
+        type: body.type === "SALE" ? "CUSTOMER" : "SUPPLIER",
+      });
 
       // 2. Resolve / upsert products for items that need it, with dedup
       //    keyed by sku or lowercased name. Resolved productId is recorded
@@ -167,7 +189,9 @@ export async function POST(
         data: {
           orgId: ctx.orgId,
           type: body.type,
-          counterpartyId: body.counterpartyId ?? null,
+          // WI-723c: counterpartyId is now always set (FK is VALID).
+          // counterpartyName is preserved verbatim as the historical snapshot.
+          counterpartyId: cpResolution.counterpartyId,
           counterpartyName: body.counterpartyName,
           status: "CONFIRMED",
           total: body.total,
@@ -222,6 +246,13 @@ export async function POST(
   } catch (err) {
     if (err instanceof IntakeAlreadyConfirmedError) {
       return toResponse(new ErpConflictError("Already confirmed"));
+    }
+    if (err instanceof CounterpartyResolutionError) {
+      // COUNTERPARTY_NOT_IN_TENANT → 404, NAME_REQUIRED → 400.
+      if (err.code === "COUNTERPARTY_NOT_IN_TENANT") {
+        return toResponse(new ErpNotFoundError(err.message));
+      }
+      return erpErrorResponse(400, err.code, err.message);
     }
     return toResponse(err);
   }
