@@ -21,7 +21,13 @@ import { ZodError } from "zod";
 import { NextResponse } from "next/server";
 import { getActiveTenant } from "@/src/lib/tenant-context";
 
-export type ErpScope = "erp:read" | "erp:write";
+/**
+ * `erp:merge` (Phase 21 WI-724c) is a destructive scope intentionally NOT
+ * covered by `erp:write` — see packages/auth/src/rebac/scopes.ts. Routes
+ * that re-point Orders + soft-delete an ErpCounterparty (e.g. the merge
+ * endpoint) require this scope literally.
+ */
+export type ErpScope = "erp:read" | "erp:write" | "erp:merge";
 
 export class ErpAuthError extends Error {
   constructor(public readonly status: 401 | 403, message: string) {
