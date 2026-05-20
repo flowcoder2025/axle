@@ -45,6 +45,18 @@ const HIERARCHY_RESOURCES = ["hr", "content"] as const;
 /** Resources that only expose read + write. */
 const READ_WRITE_RESOURCES = ["erp"] as const;
 
+/**
+ * Standalone destructive scopes that don't fit the wildcard/hierarchy/
+ * read-write patterns. Granted explicitly to owners only.
+ *
+ * - `erp:merge` (Phase 21 WI-724c) — counterparty merge. Destructively
+ *   re-points Orders + soft-deletes the source ErpCounterparty. Strictly
+ *   stronger than `erp:write` and intentionally NOT covered by it:
+ *   `scopeSatisfies("erp:write", "erp:merge")` is false because "merge"
+ *   has no rank in VERB_RANK. Owners must hold the scope literally.
+ */
+const STANDALONE_SCOPES = ["erp:merge"] as const;
+
 const wildcardScopes = WILDCARD_RESOURCES.flatMap((r) => [
   `${r}:read`,
   `${r}:write`,
@@ -71,6 +83,7 @@ export const MODULE_SCOPES: readonly string[] = [
   ...wildcardScopes,
   ...hierarchyScopes,
   ...readWriteScopes,
+  ...STANDALONE_SCOPES,
   // Admin scopes for Pack B admin modules (HWPX templates, checklist,
   // AI patterns). Single platform-wide scope per sprint contract.
   "platform:admin",
