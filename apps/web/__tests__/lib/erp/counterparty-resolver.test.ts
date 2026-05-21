@@ -31,6 +31,9 @@ interface CpRow {
   normalizedName: string;
   bizRegNo: string | null;
   deletedAt: Date | null;
+  // WI-726: resolver returns this to callers so the coa-resolver can use
+  // it as the layer-3 fallback. Stub rows that omit it are treated as null.
+  defaultCoaCode?: string | null;
 }
 
 function makeTx({ rows = [] as CpRow[] } = {}) {
@@ -39,27 +42,31 @@ function makeTx({ rows = [] as CpRow[] } = {}) {
     erpCounterparty: {
       findFirst: vi.fn(async (args: { where: Record<string, unknown> }) => {
         const w = args.where;
-        return (
-          state.rows.find(
-            (r) =>
-              (!("id" in w) || r.id === w.id) &&
-              (!("orgId" in w) || r.orgId === w.orgId) &&
-              (!("bizRegNo" in w) || r.bizRegNo === w.bizRegNo) &&
-              (!("deletedAt" in w) || r.deletedAt === w.deletedAt),
-          ) ?? null
+        const row = state.rows.find(
+          (r) =>
+            (!("id" in w) || r.id === w.id) &&
+            (!("orgId" in w) || r.orgId === w.orgId) &&
+            (!("bizRegNo" in w) || r.bizRegNo === w.bizRegNo) &&
+            (!("deletedAt" in w) || r.deletedAt === w.deletedAt),
         );
+        if (!row) return null;
+        // Normalize defaultCoaCode → null when omitted by the test fixture
+        // (the resolver expects the field to be present in the selection).
+        return { ...row, defaultCoaCode: row.defaultCoaCode ?? null };
       }),
       findMany: vi.fn(
         async (args: {
           where: { orgId: string; normalizedName: string; deletedAt: null };
           take?: number;
         }) => {
-          const matches = state.rows.filter(
-            (r) =>
-              r.orgId === args.where.orgId &&
-              r.normalizedName === args.where.normalizedName &&
-              r.deletedAt === null,
-          );
+          const matches = state.rows
+            .filter(
+              (r) =>
+                r.orgId === args.where.orgId &&
+                r.normalizedName === args.where.normalizedName &&
+                r.deletedAt === null,
+            )
+            .map((r) => ({ ...r, defaultCoaCode: r.defaultCoaCode ?? null }));
           return args.take ? matches.slice(0, args.take) : matches;
         },
       ),
@@ -87,7 +94,13 @@ describe("resolveOrCreateCounterparty", () => {
       counterpartyId: "cp_known",
       counterpartyName: "Whatever Display",
     });
-    expect(result).toEqual({ counterpartyId: "cp_known", created: false, matched: true });
+    expect(result).toEqual({
+      counterpartyId: "cp_known",
+      created: false,
+      matched: true,
+      // WI-726: defaultCoaCode comes from the existing row (null when unset).
+      defaultCoaCode: null,
+    });
     expect(raw.erpCounterparty.create).not.toHaveBeenCalled();
   });
 

@@ -77,6 +77,12 @@ export interface ResolveResult {
   created: boolean;
   /** True when an existing master was matched by bizRegNo or normalizedName. */
   matched: boolean;
+  /**
+   * WI-726: fallback coaCode (ErpCounterparty.defaultCoaCode) so the
+   * coaCode resolver in the same `$transaction` doesn't need a second
+   * read against the counterparty. Null when the master has no default.
+   */
+  defaultCoaCode: string | null;
 }
 
 /**
@@ -98,7 +104,7 @@ export async function resolveOrCreateCounterparty(
   if (input.counterpartyId) {
     const existing = await tx.erpCounterparty.findFirst({
       where: { id: input.counterpartyId, orgId: input.orgId, deletedAt: null },
-      select: { id: true },
+      select: { id: true, defaultCoaCode: true },
     });
     if (!existing) {
       throw new CounterpartyResolutionError(
@@ -106,7 +112,12 @@ export async function resolveOrCreateCounterparty(
         `counterparty ${input.counterpartyId} is not in this tenant`,
       );
     }
-    return { counterpartyId: existing.id, created: false, matched: true };
+    return {
+      counterpartyId: existing.id,
+      created: false,
+      matched: true,
+      defaultCoaCode: existing.defaultCoaCode,
+    };
   }
 
   const canonicalBizReg = canonicalizeBizRegNo(input.bizRegNo ?? null);
@@ -121,10 +132,15 @@ export async function resolveOrCreateCounterparty(
         bizRegNo: canonicalBizReg,
         deletedAt: null,
       },
-      select: { id: true },
+      select: { id: true, defaultCoaCode: true },
     });
     if (byBizReg) {
-      return { counterpartyId: byBizReg.id, created: false, matched: true };
+      return {
+        counterpartyId: byBizReg.id,
+        created: false,
+        matched: true,
+        defaultCoaCode: byBizReg.defaultCoaCode,
+      };
     }
   }
 
@@ -136,7 +152,7 @@ export async function resolveOrCreateCounterparty(
         normalizedName,
         deletedAt: null,
       },
-      select: { id: true, bizRegNo: true },
+      select: { id: true, bizRegNo: true, defaultCoaCode: true },
       take: 2, // we only care about "exactly one" — no need to fetch more
     });
     if (candidates.length === 1) {
@@ -150,7 +166,12 @@ export async function resolveOrCreateCounterparty(
         !c.bizRegNo ||
         c.bizRegNo === canonicalBizReg
       ) {
-        return { counterpartyId: c.id, created: false, matched: true };
+        return {
+          counterpartyId: c.id,
+          created: false,
+          matched: true,
+          defaultCoaCode: c.defaultCoaCode,
+        };
       }
     }
   }
@@ -166,7 +187,14 @@ export async function resolveOrCreateCounterparty(
     },
     select: { id: true },
   });
-  return { counterpartyId: created.id, created: true, matched: false };
+  // Newly created masters have no defaultCoaCode yet — operators set it
+  // later via the CRUD UI (WI-722).
+  return {
+    counterpartyId: created.id,
+    created: true,
+    matched: false,
+    defaultCoaCode: null,
+  };
 }
 
 /**

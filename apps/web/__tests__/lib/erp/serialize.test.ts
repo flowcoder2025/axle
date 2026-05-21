@@ -69,6 +69,9 @@ describe("serializeProduct", () => {
       unit: "캔",
       unitPrice: "1500",
       category: "음료",
+      // WI-726: coaCode is part of the serialized envelope; default null
+      // when the caller doesn't pass one.
+      coaCode: null,
       archived: false,
       createdAt: ISO,
       updatedAt: ISO,
@@ -89,6 +92,7 @@ describe("serializeProduct", () => {
     });
     expect(s.sku).toBeNull();
     expect(s.category).toBeNull();
+    expect(s.coaCode).toBeNull();
     expect(s.createdAt).toBeNull();
     expect(s.unitPrice).toBe("0");
   });
