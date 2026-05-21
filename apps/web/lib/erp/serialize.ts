@@ -46,6 +46,8 @@ export interface SerializedProduct {
   unit: string;
   unitPrice: string;
   category: string | null;
+  /** WI-726: default ChartOfAccounts.code for this product (SSOT layer 2). */
+  coaCode: string | null;
   archived: boolean;
   createdAt: string | null;
   updatedAt: string | null;
@@ -59,6 +61,7 @@ export function serializeProduct(p: {
   unit: string;
   unitPrice: DecimalLike;
   category: string | null;
+  coaCode?: string | null;
   archived: boolean;
   createdAt: Date | null;
   updatedAt: Date | null;
@@ -71,6 +74,7 @@ export function serializeProduct(p: {
     unit: p.unit,
     unitPrice: decimalToString(p.unitPrice),
     category: p.category,
+    coaCode: p.coaCode ?? null,
     archived: p.archived,
     createdAt: dateToISO(p.createdAt),
     updatedAt: dateToISO(p.updatedAt),

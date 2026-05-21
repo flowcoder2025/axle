@@ -126,17 +126,36 @@ jobs:
       - name: Drift detection (migrations ↔ schema)
         # If schema.prisma drifted from prisma/migrations/, fail the build —
         # forcing developers to add a new migration instead of silent `db push`.
-        # Replays migrations into _prisma_shadow and diffs against schema.prisma.
+        #
+        # WI-726a-fix: Prisma 7.7 dropped the `--shadow-database-url` flag
+        # for `migrate diff`. The shadow DB URL now has to be supplied via
+        # `datasource.shadowDatabaseUrl` in `prisma.config.ts`, which reads
+        # from `SHADOW_DATABASE_URL`. We export the URL just before the
+        # diff so prod migrate_deploy (which doesn't need a shadow) stays
+        # unaffected.
         working-directory: packages/db
         run: |
           set -e
           psql "$DATABASE_URL" -c "DROP DATABASE IF EXISTS _prisma_shadow;"
           psql "$DATABASE_URL" -c "CREATE DATABASE _prisma_shadow;"
-          SHADOW_URL="$(echo "$DATABASE_URL" | sed 's|/postgres|/_prisma_shadow|')"
+
+          # Derive shadow URL from DATABASE_URL by swapping ONLY the
+          # database-name segment (anything after the final `/`). The
+          # earlier `s|/postgres|/_prisma_shadow|` matched the FIRST
+          # `/postgres` — which lives inside `://postgres:…@` — and
+          # corrupted the user portion of the URL. Bash parameter expansion
+          # `${VAR%/*}` strips the trailing `/dbname` deterministically.
+          export SHADOW_DATABASE_URL="${DATABASE_URL%/*}/_prisma_shadow"
+          echo "DATABASE_URL shape: $(echo "$DATABASE_URL" | sed -E 's|://[^@]+@|://<masked>@|')"
+          echo "SHADOW_DATABASE_URL shape: $(echo "$SHADOW_DATABASE_URL" | sed -E 's|://[^@]+@|://<masked>@|')"
+
+          # Sanity check: can we connect to the shadow DB at all? P1000
+          # from prisma means the URL string is wrong, not that pg refused.
+          psql "$SHADOW_DATABASE_URL" -c "SELECT 1 AS shadow_ok;"
+
           npx prisma migrate diff \
             --from-migrations ./prisma/migrations \
             --to-schema ./prisma/schema.prisma \
-            --shadow-database-url "$SHADOW_URL" \
             --exit-code
 
       - name: Prisma generate

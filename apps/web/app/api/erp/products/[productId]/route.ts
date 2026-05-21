@@ -21,6 +21,8 @@ const PatchBody = z.object({
   unit: z.string().trim().min(1).max(20).optional(),
   unitPrice: z.coerce.number().nonnegative().optional(),
   category: z.string().trim().max(100).nullable().optional(),
+  /** WI-726: default ChartOfAccounts.code (nullable to clear). */
+  coaCode: z.string().trim().min(1).max(20).nullable().optional(),
   archived: z.boolean().optional(),
 });
 
@@ -64,6 +66,7 @@ export async function PATCH(req: Request, { params }: Params): Promise<Response>
       ...(body.unit !== undefined ? { unit: body.unit } : {}),
       ...(body.sku !== undefined ? { sku: body.sku } : {}),
       ...(body.category !== undefined ? { category: body.category } : {}),
+      ...(body.coaCode !== undefined ? { coaCode: body.coaCode } : {}),
       ...(body.unitPrice !== undefined ? { unitPrice: body.unitPrice } : {}),
       ...(body.archived !== undefined ? { archived: body.archived } : {}),
     };

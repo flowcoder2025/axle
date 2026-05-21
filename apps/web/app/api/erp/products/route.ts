@@ -23,6 +23,8 @@ const CreateBody = z.object({
   unit: z.string().trim().min(1).max(20),
   unitPrice: z.coerce.number().nonnegative().optional(),
   category: z.string().trim().max(100).nullable().optional(),
+  /** WI-726: default ChartOfAccounts.code used as layer-2 SSOT fallback. */
+  coaCode: z.string().trim().min(1).max(20).nullable().optional(),
 });
 
 export async function GET(req: Request): Promise<Response> {
@@ -62,6 +64,7 @@ export async function POST(req: Request): Promise<Response> {
       unit: body.unit,
       sku: body.sku ?? null,
       category: body.category ?? null,
+      coaCode: body.coaCode ?? null,
       ...(body.unitPrice !== undefined ? { unitPrice: body.unitPrice } : {}),
     };
 

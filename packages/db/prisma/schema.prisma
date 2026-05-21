@@ -1591,6 +1591,7 @@ model Product {
   unit      String // 개, 박스, kg
   unitPrice Decimal  @default(0) // KRW
   category  String?
+  coaCode   String? // Phase 21 WI-726: default ChartOfAccounts.code (SSOT layer 2 — between OrderItem.coaCode and ErpCounterparty.defaultCoaCode)
   archived  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1601,6 +1602,7 @@ model Product {
   @@unique([orgId, sku]) // sku 부재 시 nullable이라 collision 없음
   @@index([orgId, name])
   @@index([orgId, archived])
+  @@index([orgId, coaCode]) // WI-726: product-level coa lookup
 }
 
 model InventoryMovement {
@@ -1653,9 +1655,12 @@ model OrderItem {
   qty         Int
   unitPrice   Decimal
   lineTotal   Decimal
+  coaCode     String? // Phase 21 WI-726: resolved SSOT (OrderItem-level > Product.coaCode > ErpCounterparty.defaultCoaCode); null → "미분류" in reports
 
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id])
+
+  @@index([coaCode]) // WI-726/729: income-statement category rollups scan by coaCode
 }
 
 model IntakeDraft {
@@ -1759,6 +1764,11 @@ model ErpCounterparty {
 
   @@index([orgId, normalizedName])
   @@index([orgId, type])
+  // WI-724a-prep: GIN trigram index for fuzzy search. The `map:` value
+  // pins the SQL name to the raw migration's `ErpCounterparty_normalizedName_trgm_idx`
+  // so `prisma migrate diff --from-migrations --to-schema` reports zero
+  // drift (WI-726a-fix CI drift detection unblock).
+  @@index([normalizedName(ops: raw("gin_trgm_ops"))], type: Gin, map: "ErpCounterparty_normalizedName_trgm_idx")
   // Partial unique index `(orgId, bizRegNo) WHERE bizRegNo IS NOT NULL`
   // is added via raw SQL in migration (Prisma schema doesn't support partial uniques).
 }

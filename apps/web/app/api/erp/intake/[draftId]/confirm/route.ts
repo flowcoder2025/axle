@@ -48,6 +48,7 @@ import {
   resolveOrCreateCounterparty,
   CounterpartyResolutionError,
 } from "@/lib/erp/counterparty-resolver";
+import { resolveCoaCode } from "@/lib/erp/coa-resolver";
 
 interface RouteContext {
   params: Promise<{ draftId: string }>;
@@ -85,6 +86,8 @@ const ConfirmBody = z.object({
         unitPrice: z.coerce.number().nonnegative(),
         unit: z.string().min(1).default("개"),
         shouldRegister: z.boolean().default(true),
+        /** WI-726: line-level coaCode override (winner in SSOT priority). */
+        coaCode: z.string().trim().min(1).max(20).nullable().optional(),
       }),
     )
     .min(1),
@@ -130,11 +133,25 @@ export async function POST(
       const resolvedProductId: (string | null)[] = body.items.map(
         (it) => it.productId ?? null,
       );
-      const productByKey = new Map<string, { id: string }>();
+      // WI-726: track Product.coaCode alongside the resolved id so the
+      // coa-resolver (layer 2) doesn't need a second roundtrip per item.
+      // Keyed by item index — null when the product has no default coa
+      // or when the item is ad-hoc (no productId).
+      const resolvedProductCoa: (string | null)[] = body.items.map(() => null);
+      const productByKey = new Map<string, { id: string; coaCode: string | null }>();
 
       for (let i = 0; i < body.items.length; i++) {
         const item = body.items[i];
-        if (item.productId) continue;
+        if (item.productId) {
+          // Caller picked an existing master — fetch its coaCode for the
+          // layer-2 fallback. Cheap (PK lookup) and runs once per id.
+          const existing = await tx.product.findFirst({
+            where: { id: item.productId, orgId: ctx.orgId },
+            select: { coaCode: true },
+          });
+          resolvedProductCoa[i] = existing?.coaCode ?? null;
+          continue;
+        }
         if (!item.shouldRegister) continue;
 
         const key = item.sku
@@ -144,10 +161,11 @@ export async function POST(
         const cached = productByKey.get(key);
         if (cached) {
           resolvedProductId[i] = cached.id;
+          resolvedProductCoa[i] = cached.coaCode;
           continue;
         }
 
-        let product: { id: string };
+        let product: { id: string; coaCode: string | null };
         if (item.sku) {
           product = await tx.product.upsert({
             where: { orgId_sku: { orgId: ctx.orgId, sku: item.sku } },
@@ -179,8 +197,9 @@ export async function POST(
                 },
               });
         }
-        productByKey.set(key, { id: product.id });
+        productByKey.set(key, { id: product.id, coaCode: product.coaCode ?? null });
         resolvedProductId[i] = product.id;
+        resolvedProductCoa[i] = product.coaCode ?? null;
       }
 
       // 3. Order + nested items (single create — items.create runs in the
@@ -207,6 +226,14 @@ export async function POST(
               qty: it.qty,
               unitPrice: it.unitPrice,
               lineTotal: it.qty * it.unitPrice,
+              // WI-726: SSOT priority OrderItem > Product > Counterparty.
+              // Falls back to null when all three are absent — reports
+              // group nulls under "미분류".
+              coaCode: resolveCoaCode({
+                orderItemCoaCode: it.coaCode ?? null,
+                productCoaCode: resolvedProductCoa[i],
+                counterpartyDefaultCoaCode: cpResolution.defaultCoaCode,
+              }).coaCode,
             })),
           },
         },

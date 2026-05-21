@@ -21,6 +21,7 @@ vi.mock("@axle/db", () => {
     upsert: vi.fn(),
     findFirst: vi.fn(),
     create: vi.fn(),
+    update: vi.fn(),
   };
   const order = { create: vi.fn() };
   const inventoryMovement = { create: vi.fn() };
@@ -147,10 +148,12 @@ beforeEach(() => {
   productMock.upsert.mockImplementation(async (args: { create?: { sku?: string } }) => ({
     id: `p_${args.create?.sku ?? "x"}`,
     sku: args.create?.sku ?? null,
+    coaCode: null,
   }));
   productMock.findFirst.mockResolvedValue(null);
   productMock.create.mockImplementation(async (args: { data: { name: string } }) => ({
     id: `p_new_${args.data.name}`,
+    coaCode: null,
   }));
 
   orderMock.create.mockResolvedValue({
@@ -484,6 +487,84 @@ describe("POST confirm — product upsert + dedup", () => {
     expect(orderMock.create.mock.calls[0]?.[0].data.counterpartyId).toBe(
       "cp_by_biz",
     );
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // WI-726: COA SSOT resolver wiring on every OrderItem write.
+  // ─────────────────────────────────────────────────────────────
+
+  it("WI-726: OrderItem.coaCode wins when caller supplies it explicitly", async () => {
+    productMock.upsert.mockResolvedValueOnce({
+      id: "p_sku1",
+      sku: "SKU-1",
+      coaCode: "401",
+    });
+
+    await POST(
+      confirmReq(
+        validBody({
+          items: [
+            {
+              productName: "콜라",
+              qty: 1,
+              unitPrice: 1500,
+              sku: "SKU-1",
+              shouldRegister: true,
+              coaCode: "511", // explicit override
+            },
+          ],
+        }),
+      ),
+      ctx(),
+    );
+
+    const items = orderMock.create.mock.calls[0]?.[0]?.data.items.create;
+    expect(items[0].coaCode).toBe("511");
+  });
+
+  it("WI-726: falls back to Product.coaCode when OrderItem coa absent", async () => {
+    productMock.upsert.mockResolvedValueOnce({
+      id: "p_sku1",
+      sku: "SKU-1",
+      coaCode: "401",
+    });
+
+    await POST(confirmReq(validBody()), ctx());
+    const items = orderMock.create.mock.calls[0]?.[0]?.data.items.create;
+    expect(items[0].coaCode).toBe("401");
+  });
+
+  it("WI-726: falls back to Counterparty.defaultCoaCode when Product coa is null", async () => {
+    // Counterparty exists with a default coa
+    cpMock.findFirst.mockReset();
+    cpMock.findFirst.mockResolvedValueOnce({
+      id: "cp_default",
+      defaultCoaCode: "999",
+    });
+    productMock.upsert.mockResolvedValueOnce({
+      id: "p_sku1",
+      sku: "SKU-1",
+      coaCode: null, // product has no default
+    });
+
+    await POST(
+      confirmReq(validBody({ counterpartyId: "cp_default" })),
+      ctx(),
+    );
+    const items = orderMock.create.mock.calls[0]?.[0]?.data.items.create;
+    expect(items[0].coaCode).toBe("999");
+  });
+
+  it("WI-726 RED — all three SSOT layers null → OrderItem.coaCode null (미분류)", async () => {
+    productMock.upsert.mockResolvedValueOnce({
+      id: "p_sku1",
+      sku: "SKU-1",
+      coaCode: null,
+    });
+
+    await POST(confirmReq(validBody()), ctx());
+    const items = orderMock.create.mock.calls[0]?.[0]?.data.items.create;
+    expect(items[0].coaCode).toBeNull();
   });
 
   it("sku-collision: upsert update.archived=false restores soft-deleted product", async () => {
