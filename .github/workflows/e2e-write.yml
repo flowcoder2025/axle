@@ -138,7 +138,17 @@ jobs:
           set -e
           psql "$DATABASE_URL" -c "DROP DATABASE IF EXISTS _prisma_shadow;"
           psql "$DATABASE_URL" -c "CREATE DATABASE _prisma_shadow;"
+
+          # Derive shadow URL from DATABASE_URL. Mask user/pass when echoing
+          # for debugging (we just need to verify the *shape* of the URL).
           export SHADOW_DATABASE_URL="$(echo "$DATABASE_URL" | sed 's|/postgres|/_prisma_shadow|')"
+          echo "DATABASE_URL shape: $(echo "$DATABASE_URL" | sed -E 's|://[^@]+@|://<masked>@|')"
+          echo "SHADOW_DATABASE_URL shape: $(echo "$SHADOW_DATABASE_URL" | sed -E 's|://[^@]+@|://<masked>@|')"
+
+          # Sanity check: can we connect to the shadow DB at all? P1000
+          # from prisma means the URL string is wrong, not that pg refused.
+          psql "$SHADOW_DATABASE_URL" -c "SELECT 1 AS shadow_ok;"
+
           npx prisma migrate diff \
             --from-migrations ./prisma/migrations \
             --to-schema ./prisma/schema.prisma \
