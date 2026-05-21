@@ -139,9 +139,13 @@ jobs:
           psql "$DATABASE_URL" -c "DROP DATABASE IF EXISTS _prisma_shadow;"
           psql "$DATABASE_URL" -c "CREATE DATABASE _prisma_shadow;"
 
-          # Derive shadow URL from DATABASE_URL. Mask user/pass when echoing
-          # for debugging (we just need to verify the *shape* of the URL).
-          export SHADOW_DATABASE_URL="$(echo "$DATABASE_URL" | sed 's|/postgres|/_prisma_shadow|')"
+          # Derive shadow URL from DATABASE_URL by swapping ONLY the
+          # database-name segment (anything after the final `/`). The
+          # earlier `s|/postgres|/_prisma_shadow|` matched the FIRST
+          # `/postgres` — which lives inside `://postgres:…@` — and
+          # corrupted the user portion of the URL. Bash parameter expansion
+          # `${VAR%/*}` strips the trailing `/dbname` deterministically.
+          export SHADOW_DATABASE_URL="${DATABASE_URL%/*}/_prisma_shadow"
           echo "DATABASE_URL shape: $(echo "$DATABASE_URL" | sed -E 's|://[^@]+@|://<masked>@|')"
           echo "SHADOW_DATABASE_URL shape: $(echo "$SHADOW_DATABASE_URL" | sed -E 's|://[^@]+@|://<masked>@|')"
 
