@@ -1764,10 +1764,11 @@ model ErpCounterparty {
 
   @@index([orgId, normalizedName])
   @@index([orgId, type])
-  // WI-724a-prep: GIN trigram index for fuzzy search; tracked here so
-  // `prisma migrate diff` sees it in the schema and does not flag the
-  // SQL-only migration as drift (WI-726a-fix CI drift detection unblock).
-  @@index([normalizedName(ops: raw("gin_trgm_ops"))], type: Gin)
+  // WI-724a-prep: GIN trigram index for fuzzy search. The `map:` value
+  // pins the SQL name to the raw migration's `ErpCounterparty_normalizedName_trgm_idx`
+  // so `prisma migrate diff --from-migrations --to-schema` reports zero
+  // drift (WI-726a-fix CI drift detection unblock).
+  @@index([normalizedName(ops: raw("gin_trgm_ops"))], type: Gin, map: "ErpCounterparty_normalizedName_trgm_idx")
   // Partial unique index `(orgId, bizRegNo) WHERE bizRegNo IS NOT NULL`
   // is added via raw SQL in migration (Prisma schema doesn't support partial uniques).
 }
