@@ -336,6 +336,11 @@ export async function POST(
               }
 
               return {
+                // WI-728-prep: denormalized orgId. Same value as the
+                // parent Order — kept in sync by writing it here at
+                // creation time. There is no other OrderItem write path
+                // in the codebase; if one is added, mirror this line.
+                orgId: ctx.orgId,
                 productId: resolvedProductId[i] ?? null,
                 productName: it.productName,
                 qty: it.qty,

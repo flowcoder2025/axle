@@ -451,9 +451,12 @@ async function main() {
   await prisma.orderItem.createMany({
     data: [
       // DRAFT order — 1 ad-hoc line (no productId, no inventory effect).
+      // WI-728-prep: orgId denormalized — all fixture rows live under
+      // org-e2e-1, matching their parent Order.orgId.
       {
         id: "oi-e2e-draft-1",
         orderId: ERP_ORDER_IDS.draft,
+        orgId: ORGS.org1.id,
         productId: null,
         productName: "DRAFT ad-hoc 품목",
         qty: 1,
@@ -466,6 +469,7 @@ async function main() {
       {
         id: "oi-e2e-confirmed-1",
         orderId: ERP_ORDER_IDS.confirmed,
+        orgId: ORGS.org1.id,
         productId: ERP_PRODUCT_IDS.inventory,
         productName: "E2E 재고 추적 상품",
         qty: 10,
@@ -476,6 +480,7 @@ async function main() {
       {
         id: "oi-e2e-cancelled-1",
         orderId: ERP_ORDER_IDS.cancelled,
+        orgId: ORGS.org1.id,
         productId: null,
         productName: "취소된 ad-hoc 품목",
         qty: 1,
@@ -486,6 +491,7 @@ async function main() {
       {
         id: "oi-e2e-from-intake-1",
         orderId: ERP_ORDER_IDS.fromIntake,
+        orgId: ORGS.org1.id,
         productId: null,
         productName: "E2E 시드 상품",
         qty: 5,

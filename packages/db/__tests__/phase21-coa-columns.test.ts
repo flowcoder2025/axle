@@ -79,7 +79,11 @@ describe("WI-726: Product.coaCode + OrderItem.coaCode columns", () => {
     it("OrderItem.coaCode declared as optional String + index", () => {
       const block = schema.match(/model\s+OrderItem\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
       expect(block).toMatch(/coaCode\s+String\?/);
-      expect(block).toMatch(/@@index\(\[coaCode\]\)/);
+      // WI-728-prep replaced the WI-726 single-column index with a
+      // compound (orgId, coaCode, lineTotal) rollup index. The cardinality
+      // assertion is still valid — every reporter scans `coaCode` through
+      // an index that includes it as a prefix.
+      expect(block).toMatch(/@@index\(\[orgId,\s*coaCode,\s*lineTotal\]\)/);
     });
   });
 });
