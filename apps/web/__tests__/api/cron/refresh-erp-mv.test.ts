@@ -10,9 +10,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@axle/db", () => {
   const $executeRawUnsafe = vi.fn();
+  const mvRefreshLog = { create: vi.fn() };
   return {
     DB_PACKAGE: "@axle/db",
-    prisma: { $executeRawUnsafe },
+    prisma: { $executeRawUnsafe, mvRefreshLog },
   };
 });
 
@@ -22,6 +23,9 @@ import { POST, MV_NAME } from "../../../app/api/cron/refresh-erp-mv/route";
 const executeRawUnsafeMock = (prisma as unknown as {
   $executeRawUnsafe: ReturnType<typeof vi.fn>;
 }).$executeRawUnsafe;
+const refreshLogMock = (prisma as unknown as {
+  mvRefreshLog: { create: ReturnType<typeof vi.fn> };
+}).mvRefreshLog;
 
 function cronReq(token?: string): Request {
   const headers: Record<string, string> = { "content-type": "application/json" };
@@ -52,8 +56,9 @@ describe("POST /api/cron/refresh-erp-mv — auth", () => {
 });
 
 describe("POST /api/cron/refresh-erp-mv — refresh path", () => {
-  it("issues REFRESH CONCURRENTLY against the canonical view name", async () => {
+  it("issues REFRESH CONCURRENTLY against the canonical view name + logs the run", async () => {
     executeRawUnsafeMock.mockResolvedValueOnce(undefined);
+    refreshLogMock.create.mockResolvedValueOnce({ id: "log_1" });
     const res = await POST(cronReq("test-secret"));
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -64,6 +69,11 @@ describe("POST /api/cron/refresh-erp-mv — refresh path", () => {
     expect(executeRawUnsafeMock.mock.calls[0]?.[0]).toBe(
       `REFRESH MATERIALIZED VIEW CONCURRENTLY "${MV_NAME}"`,
     );
+    // WI-728-feat: success path writes a MvRefreshLog row
+    expect(refreshLogMock.create).toHaveBeenCalledTimes(1);
+    expect(refreshLogMock.create.mock.calls[0]?.[0]).toMatchObject({
+      data: { viewName: MV_NAME, mode: "concurrent" },
+    });
   });
 
   it("falls back to non-CONCURRENTLY refresh when the view has not been populated", async () => {
@@ -73,6 +83,7 @@ describe("POST /api/cron/refresh-erp-mv — refresh path", () => {
         new Error('materialized view "mv_erp_monthly_summary" has not been populated'),
       )
       .mockResolvedValueOnce(undefined);
+    refreshLogMock.create.mockResolvedValueOnce({ id: "log_init" });
     const res = await POST(cronReq("test-secret"));
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -82,6 +93,10 @@ describe("POST /api/cron/refresh-erp-mv — refresh path", () => {
     expect(executeRawUnsafeMock.mock.calls[1]?.[0]).toBe(
       `REFRESH MATERIALIZED VIEW "${MV_NAME}"`,
     );
+    expect(refreshLogMock.create).toHaveBeenCalledTimes(1);
+    expect(refreshLogMock.create.mock.calls[0]?.[0]).toMatchObject({
+      data: { viewName: MV_NAME, mode: "initial" },
+    });
   });
 
   it("500 on a non-recoverable error (e.g. permission denied)", async () => {
