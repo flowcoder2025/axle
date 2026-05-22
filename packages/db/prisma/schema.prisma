@@ -682,7 +682,8 @@ enum AiJobType {
   GAP_DIAGNOSIS
   EVALUATION
   MATCHING
-  COA_SUGGEST // WI-727: product name → ChartOfAccounts.code 추천
+  COA_SUGGEST   // WI-727: product name → ChartOfAccounts.code 추천
+  REPORT_EXPORT // WI-731: 비동기 DOCX/PDF 리포트 내보내기
 }
 
 enum AiTier {

@@ -15,6 +15,7 @@
 import { put, del, list } from "@vercel/blob";
 
 const PREFIX = "erp/receipts";
+const EXPORT_PREFIX = "erp/exports";
 
 /**
  * Retention window for confirmed receipts. Driven by Korean tax statute:
@@ -69,6 +70,32 @@ export async function uploadReceipt(
 /** Delete a previously uploaded receipt blob. Used by the orphan cleanup cron. */
 export async function deleteReceipt(url: string): Promise<void> {
   await del(url);
+}
+
+/**
+ * Upload a rendered report export (PDF or DOCX). WI-731-feat.
+ *
+ * Path: `erp/exports/<orgId>/<jobId>-<unixMs>.<ext>`. The unguessable
+ * Vercel random suffix is appended via `addRandomSuffix: true` so the
+ * URL acts as an unguessable token until private/signed scope ships.
+ *
+ * Caller decides ext + contentType. Common pairs: "pdf"+"application/pdf",
+ * "docx"+"application/vnd.openxmlformats-officedocument.wordprocessingml.document".
+ */
+export async function uploadReportExport(
+  orgId: string,
+  jobId: string,
+  buf: Buffer,
+  contentType: string,
+  ext: string,
+): Promise<string> {
+  const path = `${EXPORT_PREFIX}/${orgId}/${jobId}-${Date.now()}.${ext}`;
+  const result = await put(path, buf, {
+    access: "public",
+    contentType,
+    addRandomSuffix: true,
+  });
+  return result.url;
 }
 
 /**
