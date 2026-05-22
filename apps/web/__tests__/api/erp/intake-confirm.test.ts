@@ -224,6 +224,7 @@ describe("POST /api/erp/intake/[draftId]/confirm — happy path", () => {
     });
     expect(orderArgs.data.items.create).toHaveLength(1);
     expect(orderArgs.data.items.create[0]).toMatchObject({
+      orgId: "org_test", // WI-728-prep: denormalized from Order.orgId
       productId: "p_SKU-1",
       productName: "콜라 500ml",
       qty: 2,

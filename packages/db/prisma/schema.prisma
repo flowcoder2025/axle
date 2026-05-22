@@ -1646,11 +1646,13 @@ model Order {
 
   @@index([orgId, type, occurredAt])
   @@index([orgId, counterpartyId, occurredAt])
+  @@index([orgId, occurredAt, type]) // WI-728-prep: counterparty/income reports filter window-then-direction
 }
 
 model OrderItem {
   id          String     @id @default(cuid())
   orderId     String
+  orgId       String // WI-728-prep: denormalized from Order so report rollups can index on (orgId, coaCode, lineTotal) without joining
   productId   String? // null = ad-hoc item (사전등록 안 된 품목, InventoryMovement 미생성)
   productName String // snapshot
   qty         Int
@@ -1662,7 +1664,7 @@ model OrderItem {
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id])
 
-  @@index([coaCode]) // WI-726/729: income-statement category rollups scan by coaCode
+  @@index([orgId, coaCode, lineTotal]) // WI-728-prep: income-statement rollups (replaces WI-726's single-column coaCode index)
 }
 
 enum CoaSource {
