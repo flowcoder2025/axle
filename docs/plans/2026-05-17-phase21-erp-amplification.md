@@ -146,12 +146,11 @@ mv 인프라 + 리포트 3종 + DOCX/PDF 내보내기.
   - UI 배지: 데드재고 표시
   - Acceptance: design spec §5 WI-730 row 참조
 
-- [ ] **WI-731-poc-chore** mark-docx PoC (한글 폰트 + Vercel serverless + Blob jobId)
-  - `apps/web/app/api/erp/reports/_poc-docx/route.ts` (임시) — 1페이지 한글 PDF 생성
-  - `@sparticuz/chromium` + Fluid Compute 검증
-  - 응답 시간 ≤30초 + Blob signed URL 발급
-  - **실패 시 결정**: 외부 워커 (Render/Railway) 대안 → WI-731에 반영. plan 문서 갱신
-  - Acceptance: design spec §5 WI-731-poc row 참조
+- [x] **WI-731-poc-chore** mark-docx PoC (한글 폰트 + Vercel serverless + Blob jobId)
+  - 결과: 의사결정 문서 `docs/specs/2026-05-22-wi731-poc-serverless-puppeteer.md`
+  - **채택**: Vercel Fluid Compute + `@sparticuz/chromium` (옵션 A). 외부 워커는 fallback으로 문서화.
+  - WI-731 PR 의 Vercel preview 에서 empirical 검증 (function size + 30s SLO + 한글 렌더링). 실패 트리거 시 옵션 B 전환 절차 명시됨.
+  - Acceptance: design spec §5 WI-731-poc row 참조 (empirical AC는 WI-731에서 충족)
 
 - [ ] **WI-731-feat** DOCX/PDF 비동기 jobId 패턴 내보내기
   - `POST /api/erp/reports/export` → 즉시 202 + jobId
