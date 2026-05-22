@@ -101,12 +101,13 @@ describe("dispatcher registry", () => {
     expect(listRegisteredTypes()).toEqual([]);
   });
 
-  it("registerBuiltinHandlers() registers all 10 AiJobTypes", () => {
+  it("registerBuiltinHandlers() registers all 11 AiJobTypes", () => {
     registerBuiltinHandlers();
     const types = listRegisteredTypes().sort();
     expect(types).toEqual(
       [
         "BUSINESS_PLAN",
+        "COA_SUGGEST",
         "EVALUATION",
         "FINANCIAL_ANALYSIS",
         "GAP_DIAGNOSIS",

@@ -9,6 +9,7 @@ import { financialAnalysisHandler } from "./handlers/financial-analysis.js";
 import { gapDiagnosisHandler } from "./handlers/gap-diagnosis.js";
 import { evaluationHandler } from "./handlers/evaluation.js";
 import { matchingHandler } from "./handlers/matching.js";
+import { coaSuggestHandler } from "./handlers/coa-suggest.js";
 
 /**
  * Register all built-in AiJob handlers.
@@ -28,6 +29,7 @@ export function registerBuiltinHandlers(): void {
   registerHandler(gapDiagnosisHandler);
   registerHandler(evaluationHandler);
   registerHandler(matchingHandler);
+  registerHandler(coaSuggestHandler);
 }
 
 export {
@@ -55,3 +57,4 @@ export { financialAnalysisHandler } from "./handlers/financial-analysis.js";
 export { gapDiagnosisHandler } from "./handlers/gap-diagnosis.js";
 export { evaluationHandler } from "./handlers/evaluation.js";
 export { matchingHandler } from "./handlers/matching.js";
+export { coaSuggestHandler } from "./handlers/coa-suggest.js";

@@ -49,6 +49,8 @@ import {
   CounterpartyResolutionError,
 } from "@/lib/erp/counterparty-resolver";
 import { resolveCoaCode } from "@/lib/erp/coa-resolver";
+import { suggestForLine, MIN_CONFIDENCE } from "@/lib/erp/coa-suggest-engine";
+import type { CoaSource } from "@prisma/client";
 
 interface RouteContext {
   params: Promise<{ draftId: string }>;
@@ -107,13 +109,61 @@ export async function POST(
     const body = ConfirmBody.parse(await req.json());
 
     const order = await prisma.$transaction(async (tx) => {
-      // 1. Atomic PENDING → CONFIRMED lock. updateMany returns count.
+      // 1. Atomic PENDING + confirmedAt=null → CONFIRMED + confirmedAt=now lock.
+      //    WI-727 extends the existing CAS to also guard `confirmedAt`. The
+      //    column is the durable audit record AND a redundant race fence —
+      //    even a tool that bypassed the status check (admin SQL, future
+      //    schema migration) cannot land a transition without filling in
+      //    who/when. updateMany returns the row count; 0 means the draft is
+      //    already confirmed/discarded or in another tenant.
       const lock = await tx.intakeDraft.updateMany({
-        where: { id: draftId, status: "PENDING", orgId: ctx.orgId },
-        data: { status: "CONFIRMED" },
+        where: {
+          id: draftId,
+          status: "PENDING",
+          confirmedAt: null,
+          orgId: ctx.orgId,
+        },
+        data: {
+          status: "CONFIRMED",
+          confirmedAt: new Date(),
+          confirmedBy: ctx.userId ?? null,
+        },
       });
       if (lock.count === 0) {
         throw new IntakeAlreadyConfirmedError();
+      }
+
+      // WI-727: load the AI suggestions written at intake time so we can
+      // promote them when the SSOT layers (OrderItem/Product/Counterparty)
+      // all return null. Lives on the same row so we read it back here.
+      const draftRow = await tx.intakeDraft.findUnique({
+        where: { id: draftId },
+        select: { suggestedCoaCodes: true },
+      });
+      const suggestedByLine = new Map<number, { coaCode: string; confidence: number }>();
+      const rawSuggestions = draftRow?.suggestedCoaCodes;
+      if (Array.isArray(rawSuggestions)) {
+        for (const entry of rawSuggestions) {
+          if (
+            entry &&
+            typeof entry === "object" &&
+            typeof (entry as { lineIndex?: unknown }).lineIndex === "number" &&
+            typeof (entry as { coaCode?: unknown }).coaCode === "string" &&
+            typeof (entry as { confidence?: unknown }).confidence === "number"
+          ) {
+            const cast = entry as {
+              lineIndex: number;
+              coaCode: string;
+              confidence: number;
+            };
+            if (cast.confidence >= MIN_CONFIDENCE) {
+              suggestedByLine.set(cast.lineIndex, {
+                coaCode: cast.coaCode,
+                confidence: cast.confidence,
+              });
+            }
+          }
+        }
       }
 
       // 1b. Resolve or create the ErpCounterparty master (WI-723c).
@@ -204,6 +254,21 @@ export async function POST(
 
       // 3. Order + nested items (single create — items.create runs in the
       //    same tx and the resulting items inherit orderId).
+      //
+      // WI-727 layering on top of WI-726:
+      //   - The SSOT resolver returns (coaCode, source) over the three
+      //     deterministic layers. We map its `source` to the CoaSource
+      //     enum so reports (WI-728~730) can split AI-promoted lines
+      //     from manually classified ones.
+      //   - When all three layers are null AND the IntakeDraft has an
+      //     AI suggestion above MIN_CONFIDENCE for this lineIndex, we
+      //     promote that code with `coaSource: AI`. Otherwise the line
+      //     stays null + `coaSource: UNCLASSIFIED` — reports group nulls
+      //     under "미분류".
+      //   - We re-run the engine for the orderType the user picked at
+      //     confirm time (intake defaults to PURCHASE). If the user
+      //     flipped it to SALE, the original suggestion may no longer
+      //     fit — re-run + override.
       const created = await tx.order.create({
         data: {
           orgId: ctx.orgId,
@@ -220,21 +285,66 @@ export async function POST(
           sourceId: draftId,
           note: body.note ?? null,
           items: {
-            create: body.items.map((it, i) => ({
-              productId: resolvedProductId[i] ?? null,
-              productName: it.productName,
-              qty: it.qty,
-              unitPrice: it.unitPrice,
-              lineTotal: it.qty * it.unitPrice,
-              // WI-726: SSOT priority OrderItem > Product > Counterparty.
-              // Falls back to null when all three are absent — reports
-              // group nulls under "미분류".
-              coaCode: resolveCoaCode({
+            create: body.items.map((it, i) => {
+              const resolved = resolveCoaCode({
                 orderItemCoaCode: it.coaCode ?? null,
                 productCoaCode: resolvedProductCoa[i],
                 counterpartyDefaultCoaCode: cpResolution.defaultCoaCode,
-              }).coaCode,
-            })),
+              });
+
+              let coaCode: string | null = resolved.coaCode;
+              let coaSource: CoaSource;
+              switch (resolved.source) {
+                case "orderItem":
+                  coaSource = "ORDER_ITEM";
+                  break;
+                case "product":
+                  coaSource = "PRODUCT";
+                  break;
+                case "counterparty":
+                  coaSource = "COUNTERPARTY";
+                  break;
+                default: {
+                  // All three SSOT layers were null. Try the AI tier.
+                  // Re-run the engine with the actual orderType the user
+                  // picked at confirm time (intake stored a PURCHASE
+                  // default) — if it produces a confident suggestion,
+                  // promote it.
+                  const liveSuggestion = suggestForLine({
+                    lineIndex: i,
+                    productName: it.productName,
+                    orderType: body.type,
+                  });
+                  const intakeSuggestion = suggestedByLine.get(i);
+                  // Prefer the live engine result (matches the actual
+                  // direction); fall back to whatever the intake row
+                  // captured if the live run returned null.
+                  const aiPick =
+                    liveSuggestion && liveSuggestion.confidence >= MIN_CONFIDENCE
+                      ? { coaCode: liveSuggestion.coaCode, confidence: liveSuggestion.confidence }
+                      : intakeSuggestion ?? null;
+
+                  if (aiPick) {
+                    coaCode = aiPick.coaCode;
+                    coaSource = "AI";
+                  } else {
+                    coaCode = null;
+                    coaSource = "UNCLASSIFIED";
+                  }
+                  break;
+                }
+              }
+
+              return {
+                productId: resolvedProductId[i] ?? null,
+                productName: it.productName,
+                qty: it.qty,
+                unitPrice: it.unitPrice,
+                lineTotal: it.qty * it.unitPrice,
+                coaCode,
+                coaSource,
+              };
+            }),
           },
         },
       });
