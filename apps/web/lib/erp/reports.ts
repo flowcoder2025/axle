@@ -513,3 +513,261 @@ function signedNonOperating(node: IncomeStatementNode): number {
   const cents = numericToCents(node.total);
   return isExpense ? -cents : cents;
 }
+
+// =============================================================================
+// Inventory turnover + dead-stock (WI-730).
+// Reads InventoryMovement directly. No mv exists for this report — movement
+// counts are bounded by product count × period length, which fits a single
+// indexed scan via the existing `(orgId, productId, occurredAt)` index.
+// =============================================================================
+
+export interface InventoryTurnoverRow {
+  productId: string;
+  productName: string;
+  sku: string | null;
+  unit: string;
+  /** Sum of qty across IN movements in the window. */
+  totalIn: number;
+  /** Sum of qty across OUT movements in the window. */
+  totalOut: number;
+  /** ISO timestamp of the latest movement, or null if none in the window. */
+  lastMovementAt: string | null;
+  /** Per-day OUT qty over the window — the "회전율" proxy operators look for. */
+  turnoverPerDay: string; // fixed-4
+  /** Number of distinct movement rows in the window (any direction). */
+  movementCount: number;
+}
+
+export interface InventoryTurnoverOptions {
+  orgId: string;
+  /** Inclusive ISO date (YYYY-MM-DD). Defaults to (to - 90 days). */
+  from?: string;
+  /** Inclusive ISO date (YYYY-MM-DD). Defaults to today. */
+  to?: string;
+  /** Default 20. Caps at 100. */
+  limit?: number;
+}
+
+/** Truncate a Date to YYYY-MM-DD in UTC (server-side report). */
+function toIsoDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+/** Parse YYYY-MM-DD into Date at UTC midnight. */
+function parseIsoDate(s: string): Date {
+  // Strict — only accept YYYY-MM-DD; the caller already validated via Zod.
+  return new Date(`${s}T00:00:00.000Z`);
+}
+
+function inclusiveEndOfDay(s: string): Date {
+  return new Date(`${s}T23:59:59.999Z`);
+}
+
+export async function inventoryTurnoverReport(
+  opts: InventoryTurnoverOptions,
+): Promise<{
+  from: string;
+  to: string;
+  rows: InventoryTurnoverRow[];
+  generatedAt: string;
+}> {
+  const limit = Math.max(1, Math.min(opts.limit ?? 20, 100));
+  const today = new Date();
+  const toDate = opts.to ? parseIsoDate(opts.to) : today;
+  const fromDate = opts.from
+    ? parseIsoDate(opts.from)
+    : new Date(toDate.getTime() - 90 * 24 * 60 * 60 * 1000);
+  if (toDate < fromDate) {
+    throw new Error("REPORT_BAD_RANGE: 'to' must be >= 'from'");
+  }
+  const fromStr = toIsoDate(fromDate);
+  const toStr = toIsoDate(toDate);
+
+  // Aggregate movements per product in the window. Using $queryRawUnsafe
+  // because Prisma's groupBy doesn't express conditional sums cleanly,
+  // and the source columns are simple enough that injection surface is
+  // limited to the parameter slots.
+  const rows = await prisma.$queryRawUnsafe<
+    Array<{
+      productId: string;
+      total_in: bigint | number | null;
+      total_out: bigint | number | null;
+      last_at: Date | null;
+      movement_count: bigint | number;
+    }>
+  >(
+    `SELECT
+        "productId",
+        SUM(CASE WHEN "type" = 'IN'  THEN "qty" ELSE 0 END) AS total_in,
+        SUM(CASE WHEN "type" = 'OUT' THEN "qty" ELSE 0 END) AS total_out,
+        MAX("occurredAt")  AS last_at,
+        COUNT(*)           AS movement_count
+      FROM "InventoryMovement"
+      WHERE "orgId" = $1
+        AND "occurredAt" BETWEEN $2 AND $3
+      GROUP BY "productId"`,
+    opts.orgId,
+    fromDate,
+    inclusiveEndOfDay(toStr),
+  );
+
+  if (rows.length === 0) {
+    return {
+      from: fromStr,
+      to: toStr,
+      rows: [],
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  // Hydrate product info in one batch (orgId-scoped).
+  const products = await prisma.product.findMany({
+    where: { orgId: opts.orgId, id: { in: rows.map((r) => r.productId) } },
+    select: { id: true, name: true, sku: true, unit: true },
+  });
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
+  const periodDays = Math.max(
+    1,
+    Math.ceil((toDate.getTime() - fromDate.getTime()) / (24 * 60 * 60 * 1000)) + 1,
+  );
+
+  const result: InventoryTurnoverRow[] = rows
+    .map((r) => {
+      const product = productMap.get(r.productId);
+      if (!product) return null; // archived/deleted — drop
+      const totalIn = Number(r.total_in ?? 0);
+      const totalOut = Number(r.total_out ?? 0);
+      const movementCount = Number(r.movement_count);
+      const turnoverPerDay = totalOut / periodDays;
+      return {
+        productId: product.id,
+        productName: product.name,
+        sku: product.sku,
+        unit: product.unit,
+        totalIn,
+        totalOut,
+        lastMovementAt: r.last_at ? r.last_at.toISOString() : null,
+        turnoverPerDay: turnoverPerDay.toFixed(4),
+        movementCount,
+      } satisfies InventoryTurnoverRow;
+    })
+    .filter((r): r is InventoryTurnoverRow => r !== null)
+    .sort(
+      (a, b) =>
+        // Prefer higher OUT/day; ties → larger absolute OUT volume.
+        Number(b.turnoverPerDay) - Number(a.turnoverPerDay) ||
+        b.totalOut - a.totalOut,
+    )
+    .slice(0, limit);
+
+  return {
+    from: fromStr,
+    to: toStr,
+    rows: result,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+export interface DeadStockRow {
+  productId: string;
+  productName: string;
+  sku: string | null;
+  unit: string;
+  unitPrice: string;
+  /** ISO timestamp of the most recent OUT movement, or null if never. */
+  lastOutAt: string | null;
+  /** Whole days since lastOutAt, or null if never moved. */
+  daysSinceLastOut: number | null;
+}
+
+export interface DeadStockOptions {
+  orgId: string;
+  /** A product with no OUT movement in the last `days` days qualifies.
+   *  Defaults to 60 (mid-tier 30/60/90 from design). */
+  days?: number;
+  /** Default 50. Caps at 200. */
+  limit?: number;
+}
+
+/**
+ * Products that have NOT moved out in the last `days` days. Implementation
+ * is two indexed scans:
+ *   1. Pull all OUT movements per product, latest first, restricted to
+ *      orgId. We aggregate `MAX(occurredAt) WHERE type=OUT GROUP BY productId`.
+ *   2. Pull all non-archived products for the org and left-join the OUT map.
+ *      A product is dead-stock when:
+ *      - lastOutAt is null (RED AC #4: never moved → dead-stock candidate), OR
+ *      - lastOutAt < (now - days days)
+ *
+ * Sorted by inactivity duration desc (oldest dead first).
+ */
+export async function deadStockReport(
+  opts: DeadStockOptions,
+): Promise<{
+  thresholdDays: number;
+  cutoffAt: string;
+  rows: DeadStockRow[];
+  generatedAt: string;
+}> {
+  const days = Math.max(1, Math.min(opts.days ?? 60, 365));
+  const limit = Math.max(1, Math.min(opts.limit ?? 50, 200));
+  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  // Latest OUT per product.
+  const lastOuts = await prisma.$queryRawUnsafe<
+    Array<{ productId: string; last_out: Date | null }>
+  >(
+    `SELECT "productId", MAX("occurredAt") AS last_out
+      FROM "InventoryMovement"
+      WHERE "orgId" = $1 AND "type" = 'OUT'
+      GROUP BY "productId"`,
+    opts.orgId,
+  );
+  const lastOutMap = new Map<string, Date>();
+  for (const r of lastOuts) {
+    if (r.last_out) lastOutMap.set(r.productId, r.last_out);
+  }
+
+  // All non-archived products for the org.
+  const products = await prisma.product.findMany({
+    where: { orgId: opts.orgId, archived: false },
+    select: { id: true, name: true, sku: true, unit: true, unitPrice: true },
+  });
+
+  const rows: DeadStockRow[] = [];
+  for (const p of products) {
+    const lastOut = lastOutMap.get(p.id) ?? null;
+    if (lastOut && lastOut >= cutoff) continue; // recent OUT → not dead
+    const daysSince =
+      lastOut === null
+        ? null
+        : Math.floor(
+            (Date.now() - lastOut.getTime()) / (24 * 60 * 60 * 1000),
+          );
+    rows.push({
+      productId: p.id,
+      productName: p.name,
+      sku: p.sku,
+      unit: p.unit,
+      unitPrice: decimalToString(p.unitPrice as never),
+      lastOutAt: lastOut ? lastOut.toISOString() : null,
+      daysSinceLastOut: daysSince,
+    });
+  }
+
+  // Sort: never-moved first (oldest dead), then by daysSince desc.
+  rows.sort((a, b) => {
+    if (a.daysSinceLastOut === null && b.daysSinceLastOut === null) return 0;
+    if (a.daysSinceLastOut === null) return -1;
+    if (b.daysSinceLastOut === null) return 1;
+    return b.daysSinceLastOut - a.daysSinceLastOut;
+  });
+
+  return {
+    thresholdDays: days,
+    cutoffAt: cutoff.toISOString(),
+    rows: rows.slice(0, limit),
+    generatedAt: new Date().toISOString(),
+  };
+}
