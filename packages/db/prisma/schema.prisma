@@ -1625,6 +1625,20 @@ model InventoryMovement {
   @@index([orgId, occurredAt])
 }
 
+/// Phase 21 WI-728-feat: audit log for materialized-view refreshes.
+/// Reports surface the most recent successful row's `refreshedAt` as the
+/// "데이터 기준 시각" so operators can tell stale numbers apart from live ones.
+model MvRefreshLog {
+  id          String   @id @default(cuid())
+  viewName    String
+  refreshedAt DateTime @default(now())
+  durationMs  Int
+  mode        String? // "concurrent" | "initial" — first-run fallback path
+  createdAt   DateTime @default(now())
+
+  @@index([viewName, refreshedAt])
+}
+
 model Order {
   id               String         @id @default(cuid())
   orgId            String

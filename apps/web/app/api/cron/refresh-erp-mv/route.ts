@@ -45,6 +45,12 @@ export async function POST(request: Request): Promise<Response> {
       `REFRESH MATERIALIZED VIEW CONCURRENTLY "${MV_NAME}"`,
     );
     const durationMs = Date.now() - startedAt;
+    // WI-728-feat: record successful refresh so reports can surface
+    // "데이터 기준 시각" without scraping pg_stat. One row per call;
+    // tail is read by `lib/erp/mv-freshness.ts`.
+    await prisma.mvRefreshLog.create({
+      data: { viewName: MV_NAME, durationMs, mode: "concurrent" },
+    });
     return NextResponse.json({
       ok: true,
       view: MV_NAME,
@@ -63,10 +69,14 @@ export async function POST(request: Request): Promise<Response> {
         await prisma.$executeRawUnsafe(
           `REFRESH MATERIALIZED VIEW "${MV_NAME}"`,
         );
+        const durationMs = Date.now() - startedAt;
+        await prisma.mvRefreshLog.create({
+          data: { viewName: MV_NAME, durationMs, mode: "initial" },
+        });
         return NextResponse.json({
           ok: true,
           view: MV_NAME,
-          durationMs: Date.now() - startedAt,
+          durationMs,
           refreshedAt: new Date().toISOString(),
           mode: "initial",
         });
