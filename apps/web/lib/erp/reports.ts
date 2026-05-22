@@ -222,3 +222,294 @@ export async function counterpartyReport(
     dataAsOf: latestRefresh ? latestRefresh.refreshedAt.toISOString() : null,
   };
 }
+
+// =============================================================================
+// Income statement (WI-729) — simplified P&L report grouped by ChartOfAccounts.
+// =============================================================================
+
+export type CoaCategory =
+  | "REVENUE"
+  | "COGS"
+  | "OPEX"
+  | "NON_OPERATING"
+  | "OTHER";
+
+export interface IncomeStatementLeaf {
+  code: string;
+  name: string;
+  category: CoaCategory;
+  parentCode: string | null;
+  total: string; // cents-as-fixed-2 string
+}
+
+export interface IncomeStatementNode extends IncomeStatementLeaf {
+  children: IncomeStatementNode[];
+}
+
+export interface IncomeStatementCategory {
+  category: CoaCategory;
+  total: string;
+  rows: IncomeStatementNode[];
+}
+
+export interface IncomeStatementOptions {
+  orgId: string;
+  year: number;
+  /** 1-12 (inclusive). Omit for the full-year report. */
+  month?: number;
+}
+
+/**
+ * Build a simplified P&L for a single month or a full year.
+ *
+ * The mv exposes (orgId, year, month, counterpartyId, coaCode, type). Income
+ * statement doesn't care about counterparty or direction — the COA category
+ * itself determines whether a row contributes to REVENUE / COGS / OPEX.
+ *
+ * Hierarchy (design §5 WI-729 AC 3): codes with `parentCode` roll into their
+ * parent. The seed currently ships depth-2 (e.g. 401/402/404 → 400 (매출);
+ * 514/515/... → 500 (판매비와관리비)). We aggregate at the application layer
+ * so the API stays portable across tenants that may grow deeper trees later.
+ *
+ * Empty result: AC #4 — when no orders matched, every category total is 0
+ * and rows are empty. Status is still 200 (no error).
+ */
+export async function incomeStatementReport(
+  opts: IncomeStatementOptions,
+): Promise<{
+  year: number;
+  month: number | null;
+  categories: Record<CoaCategory, IncomeStatementCategory>;
+  operatingIncome: string;
+  netIncome: string;
+  generatedAt: string;
+  dataAsOf: string | null;
+}> {
+  const monthFilter =
+    opts.month !== undefined
+      ? `AND month = ${opts.month}`
+      : ``; // full-year — all months 1..12 for the requested year
+  if (opts.month !== undefined && (opts.month < 1 || opts.month > 12)) {
+    throw new Error("REPORT_BAD_MONTH: month must be 1-12");
+  }
+
+  // Sum mv rows per coaCode for the window. coaCode can be null (intake
+  // line that no SSOT layer + no AI tier could classify). Those rows
+  // are excluded from the IS report — they show up as "미분류" in the
+  // counterparty report and the operator is expected to fix the line.
+  const raw = await prisma.$queryRawUnsafe<
+    Array<{ coaCode: string | null; total_amount: unknown }>
+  >(
+    `SELECT "coaCode", SUM(total_amount) AS total_amount
+      FROM "${ERP_MV_NAME}"
+      WHERE "orgId" = $1 AND year = $2 ${monthFilter}
+      GROUP BY "coaCode"`,
+    opts.orgId,
+    opts.year,
+  );
+
+  // coaCode → cents
+  const cents = new Map<string, number>();
+  for (const r of raw) {
+    if (!r.coaCode) continue;
+    cents.set(r.coaCode, (cents.get(r.coaCode) ?? 0) + numericToCents(r.total_amount));
+  }
+
+  // Pull ChartOfAccounts rows the COA codes the report actually touched.
+  // Tenant-scoped (orgId), so we don't leak system seed across orgs.
+  const codes = Array.from(cents.keys());
+  const coaMap = new Map<
+    string,
+    { code: string; name: string; category: CoaCategory; parentCode: string | null }
+  >();
+  if (codes.length > 0) {
+    const rows = await prisma.chartOfAccounts.findMany({
+      where: { orgId: opts.orgId, code: { in: codes } },
+      select: { code: true, name: true, category: true, parentCode: true },
+    });
+    for (const r of rows) {
+      coaMap.set(r.code, {
+        code: r.code,
+        name: r.name,
+        category: r.category as CoaCategory,
+        parentCode: r.parentCode ?? null,
+      });
+    }
+  }
+
+  // Roll children into parents. If a child has a parentCode that's not
+  // already in the COA pull (because no transactions hit it directly),
+  // we still surface it as a "synthetic" parent so the tree renders;
+  // we pull parents in one extra batch.
+  const missingParents = Array.from(coaMap.values())
+    .map((c) => c.parentCode)
+    .filter(
+      (p): p is string => p !== null && !coaMap.has(p) && !cents.has(p),
+    );
+  if (missingParents.length > 0) {
+    const parents = await prisma.chartOfAccounts.findMany({
+      where: { orgId: opts.orgId, code: { in: missingParents } },
+      select: { code: true, name: true, category: true, parentCode: true },
+    });
+    for (const p of parents) {
+      coaMap.set(p.code, {
+        code: p.code,
+        name: p.name,
+        category: p.category as CoaCategory,
+        parentCode: p.parentCode ?? null,
+      });
+    }
+  }
+
+  // Build tree per category.
+  const categories: Record<CoaCategory, IncomeStatementCategory> = {
+    REVENUE: { category: "REVENUE", total: "0.00", rows: [] },
+    COGS: { category: "COGS", total: "0.00", rows: [] },
+    OPEX: { category: "OPEX", total: "0.00", rows: [] },
+    NON_OPERATING: { category: "NON_OPERATING", total: "0.00", rows: [] },
+    OTHER: { category: "OTHER", total: "0.00", rows: [] },
+  };
+
+  const totals: Record<CoaCategory, number> = {
+    REVENUE: 0,
+    COGS: 0,
+    OPEX: 0,
+    NON_OPERATING: 0,
+    OTHER: 0,
+  };
+
+  // Per-category: build map node by code, then attach children to parents.
+  const byCategory = new Map<CoaCategory, Map<string, IncomeStatementNode>>();
+  for (const cat of Object.keys(categories) as CoaCategory[]) {
+    byCategory.set(cat, new Map());
+  }
+
+  for (const c of coaMap.values()) {
+    const node: IncomeStatementNode = {
+      code: c.code,
+      name: c.name,
+      category: c.category,
+      parentCode: c.parentCode,
+      total: "0.00",
+      children: [],
+    };
+    byCategory.get(c.category)?.set(c.code, node);
+  }
+
+  // Inject leaf totals (codes that had transactions).
+  for (const [code, value] of cents.entries()) {
+    const meta = coaMap.get(code);
+    if (!meta) continue; // orphan code — code exists in mv but not in COA (e.g. operator deleted it). Skip.
+    const node = byCategory.get(meta.category)?.get(code);
+    if (node) {
+      node.total = centsToString(value);
+      totals[meta.category] += value;
+    }
+  }
+
+  // Assemble trees + roll up children into parent totals (one pass —
+  // depth is bounded by the seed, max 2 today).
+  for (const cat of Object.keys(categories) as CoaCategory[]) {
+    const nodes = byCategory.get(cat)!;
+    const roots: IncomeStatementNode[] = [];
+    for (const node of nodes.values()) {
+      if (node.parentCode && nodes.has(node.parentCode)) {
+        nodes.get(node.parentCode)!.children.push(node);
+      } else {
+        roots.push(node);
+      }
+    }
+    // Roll children into parent totals. Two passes suffice for depth 2;
+    // for deeper trees a topological sort would be safer — we'd need to
+    // visit children-first.
+    const visit = (node: IncomeStatementNode): number => {
+      let childCents = 0;
+      for (const child of node.children) {
+        childCents += visit(child);
+      }
+      const selfCents =
+        node.total === "0.00"
+          ? 0
+          : numericToCents(node.total);
+      const sum = selfCents + childCents;
+      // Only override if children contributed — keeps the seeded total
+      // intact when leaf rows were the only data.
+      if (childCents > 0 && selfCents === 0) {
+        node.total = centsToString(sum);
+      } else if (childCents > 0) {
+        // Both leaf-on-parent (operator coded a transaction directly to the
+        // parent) and children totals exist — sum them. That matches the
+        // operator's intent: the parent's leaf transactions PLUS its
+        // children's transactions.
+        node.total = centsToString(sum);
+        totals[node.category] += childCents; // include children in category total
+      }
+      return sum;
+    };
+    for (const root of roots) {
+      const total = visit(root);
+      // If the root had no leaf and children rolled up, we already adjusted
+      // node.total; but the category total counted leaves only. Add the
+      // rolled-up children that weren't already counted.
+      // (Simpler accounting: re-derive category total from roots after rollup.)
+      void total;
+    }
+    // Re-derive category total from rolled-up roots.
+    let catTotal = 0;
+    for (const root of roots) {
+      catTotal += numericToCents(root.total);
+    }
+    totals[cat] = catTotal;
+    categories[cat].total = centsToString(catTotal);
+    categories[cat].rows = roots;
+  }
+
+  // Operating income = REVENUE - COGS - OPEX
+  const opIncomeCents = totals.REVENUE - totals.COGS - totals.OPEX;
+  // Non-operating net is included in the seed as separate revenue / cost
+  // codes (901/951 etc). The mv stores them with positive amounts in each
+  // direction; the income statement treats "영업외수익" codes as +, "영업외비용"
+  // codes as -. The COA seed encodes this via parentCode (900 vs 950)
+  // but the category column is the same for both. For the simplified
+  // report we use the convention: codes whose parentCode is 900 (or whose
+  // own code starts with '9' and ends with revenue-side digits) are +;
+  // 950-derived are -. Implementation: read parent code.
+  let nonOpNet = 0;
+  for (const root of categories.NON_OPERATING.rows) {
+    nonOpNet += signedNonOperating(root);
+  }
+  const netIncomeCents = opIncomeCents + nonOpNet;
+
+  // Freshness.
+  const latestRefresh = await prisma.mvRefreshLog.findFirst({
+    where: { viewName: ERP_MV_NAME },
+    orderBy: { refreshedAt: "desc" },
+    select: { refreshedAt: true },
+  });
+
+  return {
+    year: opts.year,
+    month: opts.month ?? null,
+    categories,
+    operatingIncome: centsToString(opIncomeCents),
+    netIncome: centsToString(netIncomeCents),
+    generatedAt: new Date().toISOString(),
+    dataAsOf: latestRefresh ? latestRefresh.refreshedAt.toISOString() : null,
+  };
+}
+
+/**
+ * For a NON_OPERATING tree node, return its cents contribution to the
+ * non-operating net total. By 국세청 seed convention:
+ *   - parentCode 900 (or own code 900) → +revenue
+ *   - parentCode 950 (or own code 950) → -expense
+ * The "999 기타" category lives under OTHER, not NON_OPERATING, so it's
+ * never reached here.
+ */
+function signedNonOperating(node: IncomeStatementNode): number {
+  // Take the code's own parent (or self if it's a root with no parent).
+  const anchor = node.parentCode ?? node.code;
+  const isExpense = anchor.startsWith("95") || node.code.startsWith("95");
+  const cents = numericToCents(node.total);
+  return isExpense ? -cents : cents;
+}
