@@ -36,6 +36,7 @@ import {
 import { uploadReceipt } from "@/lib/erp/blob";
 import { topMatches } from "@/lib/erp/fuzzy-match";
 import { serializeIntakeDraft } from "@/lib/erp/serialize";
+import { suggestForLines } from "@/lib/erp/coa-suggest-engine";
 
 // Claude Vision (parseReceipt) can need 30+s with retries — Pro Fluid 60s.
 export const maxDuration = 60;
@@ -117,8 +118,9 @@ export async function POST(req: Request): Promise<Response> {
       errorMsg = err instanceof Error ? err.message : String(err);
     }
 
-    // 4. Fuzzy-match suggestions. Skipped if OCR failed.
+    // 4. Fuzzy-match suggestions + COA suggestions. Skipped if OCR failed.
     let matchSuggestions: unknown = {};
+    let suggestedCoaCodes: unknown = null;
     if (!errorMsg) {
       const [products, clients] = await Promise.all([
         prisma.product.findMany({
@@ -157,6 +159,22 @@ export async function POST(req: Request): Promise<Response> {
           candidates: topMatches(parsedVendor, clientLite, (c) => c.name),
         },
       };
+
+      // WI-727: deterministic COA suggest for each parsed line. The
+      // engine has no network dependency so this runs inline (no AiJob
+      // row). Direction is unknown at intake time (the user picks SALE
+      // / PURCHASE on the confirm screen) — we default to PURCHASE
+      // because the vast majority of receipts AXLE processes are
+      // expense receipts. The confirm route re-runs the engine with
+      // the actual orderType if the user flipped it.
+      const intakeSuggestions = suggestForLines(
+        parsedItems.map((it, idx) => ({
+          lineIndex: idx,
+          productName: typeof it?.name === "string" ? it.name : "",
+          orderType: "PURCHASE",
+        })),
+      );
+      suggestedCoaCodes = intakeSuggestions.length > 0 ? intakeSuggestions : null;
     }
 
     // 5. Persist the enriched draft.
@@ -167,6 +185,7 @@ export async function POST(req: Request): Promise<Response> {
         ocrJson: ocrJson as never,
         parsedJson: parsedJson as never,
         matchSuggestions: matchSuggestions as never,
+        suggestedCoaCodes: suggestedCoaCodes as never,
         errorMsg,
       },
     });

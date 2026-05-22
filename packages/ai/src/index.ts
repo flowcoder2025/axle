@@ -99,3 +99,19 @@ export {
   InvalidJobInputError,
 } from "./dispatcher/index.js";
 export type { AiJobHandler } from "./dispatcher/index.js";
+
+// ERP — COA (Chart of Accounts) suggestion engine (WI-727)
+export {
+  MIN_CONFIDENCE,
+  ACCURACY_SLO_TOP1,
+  suggestForLine,
+  suggestForLines,
+  evaluateAccuracy,
+} from "./erp/coa-suggest.js";
+export type {
+  OrderDirection,
+  CoaSuggestLineInput,
+  CoaSuggestion,
+  AccuracyCase,
+  AccuracyReport,
+} from "./erp/coa-suggest.js";

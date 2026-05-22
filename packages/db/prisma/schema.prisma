@@ -682,6 +682,7 @@ enum AiJobType {
   GAP_DIAGNOSIS
   EVALUATION
   MATCHING
+  COA_SUGGEST // WI-727: product name → ChartOfAccounts.code 추천
 }
 
 enum AiTier {
@@ -1648,7 +1649,7 @@ model Order {
 }
 
 model OrderItem {
-  id          String  @id @default(cuid())
+  id          String     @id @default(cuid())
   orderId     String
   productId   String? // null = ad-hoc item (사전등록 안 된 품목, InventoryMovement 미생성)
   productName String // snapshot
@@ -1656,6 +1657,7 @@ model OrderItem {
   unitPrice   Decimal
   lineTotal   Decimal
   coaCode     String? // Phase 21 WI-726: resolved SSOT (OrderItem-level > Product.coaCode > ErpCounterparty.defaultCoaCode); null → "미분류" in reports
+  coaSource   CoaSource? // WI-727: SSOT layer that supplied coaCode (audit trail)
 
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id])
@@ -1663,19 +1665,30 @@ model OrderItem {
   @@index([coaCode]) // WI-726/729: income-statement category rollups scan by coaCode
 }
 
+enum CoaSource {
+  ORDER_ITEM   // WI-727: explicit override on the line
+  PRODUCT      // Product.coaCode fallback
+  COUNTERPARTY // ErpCounterparty.defaultCoaCode fallback
+  AI           // IntakeDraft.suggestedCoaCodes promotion
+  UNCLASSIFIED // all layers null
+}
+
 model IntakeDraft {
-  id               String      @id @default(cuid())
-  orgId            String
-  userId           String? // nullable — onDelete: SetNull 요건 (Plan review C9 fix)
-  blobUrl          String // 영수증 이미지 (Vercel Blob, public unguessable URL — Phase 20 MVP. signed URL은 Phase 21+)
-  ocrJson          Json // raw OCR 결과
-  parsedJson       Json // 구조화된 추출 결과
-  matchSuggestions Json // product/client 매칭 후보 (Decimal은 string으로 변환 후 저장 — Plan review M9 fix)
-  status           DraftStatus // PENDING | CONFIRMED | DISCARDED
-  confirmedOrderId String? // unique (한 draft → 한 Order)
-  errorMsg         String?
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  id                String      @id @default(cuid())
+  orgId             String
+  userId            String? // nullable — onDelete: SetNull 요건 (Plan review C9 fix)
+  blobUrl           String // 영수증 이미지 (Vercel Blob, public unguessable URL — Phase 20 MVP. signed URL은 Phase 21+)
+  ocrJson           Json // raw OCR 결과
+  parsedJson        Json // 구조화된 추출 결과
+  matchSuggestions  Json // product/client 매칭 후보 (Decimal은 string으로 변환 후 저장 — Plan review M9 fix)
+  suggestedCoaCodes Json? // WI-727: [{ lineIndex, productName, coaCode, confidence, alternatives }]
+  status            DraftStatus // PENDING | CONFIRMED | DISCARDED
+  confirmedAt       DateTime? // WI-727: CAS guard against double-confirm (null → 처리 가능)
+  confirmedBy       String? // WI-727: userId at confirm time (audit)
+  confirmedOrderId  String? // unique (한 draft → 한 Order)
+  errorMsg          String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 

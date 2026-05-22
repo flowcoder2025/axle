@@ -47,6 +47,13 @@ export function resolveAiTier(jobType: AiJobType, config?: RouterConfig): AiTier
     case "MATCHING":
       return "API_HAIKU";
 
+    case "COA_SUGGEST":
+      // Deterministic keyword engine — no network call. The "tier" is
+      // notional: handler runs locally regardless of route. Reuses
+      // LOCAL_MLX when available so observability shows it as not
+      // counting against the cloud quota.
+      return isLocalAvailable ? "LOCAL_MLX" : "API_HAIKU";
+
     default:
       return "API_HAIKU";
   }
