@@ -1683,7 +1683,7 @@ model IntakeDraft {
   ocrJson           Json // raw OCR 결과
   parsedJson        Json // 구조화된 추출 결과
   matchSuggestions  Json // product/client 매칭 후보 (Decimal은 string으로 변환 후 저장 — Plan review M9 fix)
-  suggestedCoaCodes Json? // WI-727: [{ lineIndex, productName, coaCode, confidence, alternatives }]
+  suggestedCoaCodes Json? // WI-727: array of lineIndex+productName+coaCode+confidence+alternatives objects
   status            DraftStatus // PENDING | CONFIRMED | DISCARDED
   confirmedAt       DateTime? // WI-727: CAS guard against double-confirm (null → 처리 가능)
   confirmedBy       String? // WI-727: userId at confirm time (audit)
