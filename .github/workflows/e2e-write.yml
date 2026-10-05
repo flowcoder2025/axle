@@ -6,32 +6,8 @@
 # regression-issue automation on main push.
 name: E2E Write Tests (ephemeral)
 
+# Preserved repo, no longer operated: manual runs only (2026-10). Uses an ephemeral DB, not the paused prod DB.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'apps/web/**'
-      - 'packages/**'
-      - 'e2e/**'
-      - 'playwright.config.ts'
-      - 'package-lock.json'
-      - '.github/workflows/e2e-write.yml'
-  pull_request:
-    paths:
-      - 'apps/web/app/(admin)/**'
-      - 'apps/web/app/api/admin/**'
-      - 'apps/web/app/api/clients/**'
-      - 'apps/web/app/api/projects/**'
-      - 'apps/web/src/components/clients/**'
-      - 'packages/auth/**'
-      - 'packages/db/prisma/schema.prisma'
-      - 'packages/db/seed.ts'
-      - 'packages/db/seed-e2e.ts'
-      - 'e2e/**'
-      - 'playwright.config.ts'
-      - '.github/workflows/e2e-write.yml'
-  schedule:
-    - cron: '0 17 * * *'  # 02:00 KST (17:00 UTC prior day)
   workflow_dispatch:
 
 permissions:
