@@ -71,3 +71,6 @@ htmlcov/
 
 # Playwright auth storage
 .playwright-auth/
+
+# Local FlowSet config (machine-specific; untracked 2026-10)
+.flowsetrc
