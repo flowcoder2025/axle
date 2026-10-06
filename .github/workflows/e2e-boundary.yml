@@ -5,8 +5,8 @@
 # and exercise auth/ReBAC against that localhost instance.
 name: E2E Boundary Tests
 
+# Preserved repo: database paused, manual runs only (2026-10).
 on:
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -84,7 +84,6 @@ jobs:
           name: playwright-boundary-trace-${{ github.run_id }}
           path: |
             test-results/
-            .playwright-auth/
             /tmp/web-server.log
           retention-days: 7
           if-no-files-found: ignore

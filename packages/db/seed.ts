@@ -103,8 +103,8 @@ async function seed() {
   const owner = await prisma.user.create({
     data: {
       id: ID.userOwner,
-      email: "hyunil8702@gmail.com",
-      name: "최현일",
+      email: "owner@example.com",
+      name: "대표 컨설턴트",
       image: null,
       password: hashedPassword,
     },
