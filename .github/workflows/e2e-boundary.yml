@@ -84,7 +84,6 @@ jobs:
           name: playwright-boundary-trace-${{ github.run_id }}
           path: |
             test-results/
-            .playwright-auth/
             /tmp/web-server.log
           retention-days: 7
           if-no-files-found: ignore

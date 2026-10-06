@@ -2,8 +2,8 @@
 # Write (DB-mutating) E2E tests — run against a fully ephemeral Supabase local
 # stack (Postgres + Storage) brought up by `supabase start`. This lets the
 # @write/@smoke suite freely create/update/delete and exercises file uploads
-# against a real Storage API without touching prod. Also keeps the
-# regression-issue automation on main push.
+# against a real Storage API without touching prod. The regression-issue step
+# only runs on main push / schedule, which are no longer triggers (2026-10).
 name: E2E Write Tests (ephemeral)
 
 # Preserved repo, no longer operated: manual runs only (2026-10). Uses an ephemeral DB, not the paused prod DB.
@@ -173,7 +173,7 @@ jobs:
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: e2e-results.json
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          if [ "${{ github.event_name }}" != "push" ] && [ "${{ github.event_name }}" != "schedule" ]; then
             npx playwright test --grep "@write|@smoke" --reporter=json
           else
             npx playwright test --grep "@write|@smoke" --reporter=json || true
@@ -210,7 +210,8 @@ jobs:
           if-no-files-found: ignore
 
       - name: Check results and create regression issues
-        # Only on main push / schedule — PR failures surface via exit code above.
+        # Only on main push / schedule — no longer triggers (2026-10), so this step
+        # does not run. Other events fail via the exit code above.
         if: always() && (github.event_name == 'push' || github.event_name == 'schedule')
         env:
           GH_TOKEN: ${{ github.token }}
